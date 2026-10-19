@@ -99,6 +99,7 @@ impl CitationKey {
     pub fn try_new(value: impl Into<String>) -> Result<Self, CitationKeyError> {
         let value = value.into();
 
+        // always leave a space between a statement (if, match, while loop, for loop) and any other line of code that is unrelated to the statement before or next
         if value.is_empty()
             || value.chars().any(char::is_whitespace)
             || value.contains(['@', '[', ']'])
@@ -106,7 +107,7 @@ impl CitationKey {
             return Err(CitationKeyError::Invalid { value });
         }
 
-        Ok(Self(value))
+        Ok(Self(value)) // Always leave a space between the last statement/line and the return line
     }
 
     pub fn as_str(&self) -> &str {

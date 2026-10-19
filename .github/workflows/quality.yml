@@ -1,0 +1,118 @@
+name: Desktop quality
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            os: windows-2025
+          - name: macOS ARM64
+            os: macos-15
+          - name: macOS Intel
+            os: macos-15-intel
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # Windows provides C++ Build Tools/SDK; macOS provides Xcode tools.
+      # https://v2.tauri.app/start/prerequisites/
+      - name: Check macOS native tools
+        if: runner.os == 'macOS'
+        run: |
+          xcode-select -p
+          clang --version
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
+      - name: Install pinned pnpm
+        run: npm install --global pnpm@11.17.0
+
+      - name: Load pinned Rust toolchain
+        run: rustup show
+
+      - name: Show tool versions
+        run: |
+          node --version
+          pnpm --version
+          rustc -vV
+          cargo --version
+
+      - name: Install from lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Check quality
+        run: pnpm quality
+
+      - name: Build desktop without installers
+        run: pnpm build:desktop
+
+      - name: Check tracked files stay unchanged
+        run: git diff --exit-code
+
+  fedora:
+    name: Fedora 44 x64
+    runs-on: ubuntu-24.04
+    # The host supplies Docker; builds and tests run in Fedora userspace.
+    # https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/run-jobs-in-a-container
+    container: fedora:44
+    timeout-minutes: 45
+    steps:
+      - name: Install Fedora native dependencies
+        run: dnf install -y ca-certificates curl-minimal git tar gzip gcc gcc-c++ make pkgconf-pkg-config webkit2gtk4.1-devel openssl-devel libappindicator-gtk3-devel librsvg2-devel libxdo-devel
+
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
+      - name: Install pinned pnpm
+        run: npm install --global pnpm@11.17.0
+
+      - name: Install rustup and load pinned toolchain
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup-init.sh
+          sh /tmp/rustup-init.sh -y --no-modify-path --profile minimal --default-toolchain none
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          "$HOME/.cargo/bin/rustup" show
+
+      - name: Show platform and tool versions
+        run: |
+          cat /etc/os-release
+          node --version
+          pnpm --version
+          rustc -vV
+          cargo --version
+
+      - name: Install from lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Check quality
+        run: pnpm quality
+
+      - name: Build desktop without installers
+        run: pnpm build:desktop
+
+      - name: Check tracked files stay unchanged
+        run: git diff --exit-code

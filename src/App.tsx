@@ -1,49 +1,86 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
+import { getDiagnostics, type Diagnostics } from "./diagnostics";
 import "./App.css";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+type DiagnosticState =
+  | { status: "idle" | "loading" }
+  | { status: "ready"; data: Diagnostics }
+  | { status: "error" };
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
+function App() {
+  const [diagnostic, setDiagnostic] = useState<DiagnosticState>({ status: "idle" });
+
+  async function loadDiagnostics() {
+    setDiagnostic({ status: "loading" });
+
+    try {
+      const data = await getDiagnostics();
+      setDiagnostic({ status: "ready", data });
+    } catch {
+      setDiagnostic({ status: "error" });
+    }
   }
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    <main className="mx-auto max-w-3xl space-y-8 px-6 py-10">
+      <header className="space-y-2">
+        <h1>Nightingale</h1>
+        <p>Base de desarrollo del escritorio.</p>
+      </header>
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
+      <section aria-labelledby="diagnostics-heading" className="space-y-4">
+        <h2 id="diagnostics-heading" className="text-xl font-semibold">
+          Diagnóstico local
+        </h2>
+        <p>Comprueba la comunicación entre esta interfaz y el proceso Rust.</p>
+        <button
+          type="button"
+          className="disabled:cursor-wait disabled:opacity-60"
+          onClick={loadDiagnostics}
+          disabled={diagnostic.status === "loading"}
+        >
+          {diagnostic.status === "loading" ? "Consultando…" : "Consultar diagnóstico"}
+        </button>
+        <p role="status">
+          {diagnostic.status === "idle" && "Sin consultar."}
+          {diagnostic.status === "loading" && "Consultando el proceso local…"}
+          {diagnostic.status === "ready" && "Diagnóstico recibido desde Rust."}
+        </p>
 
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
+        {diagnostic.status === "error" && (
+          <p role="alert">
+            No se pudo consultar el diagnóstico local. Comprueba que usas la
+            aplicación de escritorio y vuelve a intentarlo.
+          </p>
+        )}
+
+        {diagnostic.status === "ready" && (
+          <dl className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <dt className="text-sm text-gray-600">Versión de la app</dt>
+              <dd className="font-mono">{diagnostic.data.appVersion}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-600">Sistema operativo</dt>
+              <dd className="font-mono">{diagnostic.data.platform}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-600">Arquitectura</dt>
+              <dd className="font-mono">{diagnostic.data.architecture}</dd>
+            </div>
+          </dl>
+        )}
+      </section>
+
+      <section aria-labelledby="scope-heading" className="space-y-2 border-t border-gray-200 pt-6">
+        <h2 id="scope-heading" className="text-xl font-semibold">
+          Funciones pendientes
+        </h2>
+        <p>
+          La gestión de pacientes, citas, sesiones y sincronización aún no está
+          implementada. Los servicios web tendrán sus propios planes.
+        </p>
+      </section>
     </main>
   );
 }

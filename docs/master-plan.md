@@ -44,7 +44,7 @@ Este plan evita repetir información que ya está definida en otros documentos.
 
 | Código | Documento | Responsabilidad |
 |---|---|---|
-| SRS | `docs/srs.md`, versión 0.2 | Visión, usuarios, alcance y requisitos funcionales |
+| SRS | `docs/srs.md`, versión 0.3 | Visión, usuarios, alcance y requisitos funcionales |
 | DAT | `docs/technical-architecture.md`, versión 0.1 | Arquitectura general, flujos, sincronización, despliegue y decisiones técnicas |
 | PMD | Este documento | Estructura normativa para desarrollar componentes y módulos |
 
@@ -144,6 +144,7 @@ No se incorporarán CRDT, bloqueos distribuidos ni event sourcing completo en el
 | Orquestación | n8n como adaptador, no como propietario del dominio |
 | Analítica | ETL y PostgreSQL analítico separado del flujo operativo |
 | UI inicial | Esqueleto Tauri funcional, sin diseño final |
+| Plataformas de la base de desarrollo | Windows, macOS y Linux desde el inicio; matriz concreta en el ADR de la base de escritorio, aceptada en C01 |
 | IA | Fuera del alcance inicial; proveedor sin definir |
 
 ### 5.2 Abiertas
@@ -153,7 +154,6 @@ No se incorporarán CRDT, bloqueos distribuidos ni event sourcing completo en el
 | Lenguaje y framework del backend cloud | Abierto |
 | Proveedor cloud | Abierto; AWS y DigitalOcean son candidatos |
 | Broker o cola final | Abierto |
-| Sistema operativo inicial | Abierto |
 | Cifrado de SQLite | Abierto |
 | Autenticación cloud | Abierta |
 | Duración fija o variable de citas | Abierta |
@@ -439,6 +439,8 @@ nightingale/
 ### 8.1 Carácter conceptual
 
 La estructura fija responsabilidades y límites. Los nombres exactos de archivos generados, manifiestos o carpetas propias del framework podrán adaptarse cuando se elija el backend.
+
+La base de desarrollo del escritorio conservará inicialmente las rutas Tauri actuales según el [ADR de la base de escritorio](decisions/desktop-foundation.md), aceptado en C01. Ese ADR concreta el mapa de rutas, herramientas y matriz de desarrollo para Windows, macOS y Linux. Los servicios web tendrán planes posteriores; esto no los retira del alcance del producto ni elige su tecnología.
 
 ### 8.2 Workspaces
 
@@ -1966,7 +1968,7 @@ Este plan conserva abiertos los puntos que requieren evaluación específica:
 1. Lenguaje y framework del backend cloud.
 2. Protocolo y formato final de la API.
 3. Proveedor cloud.
-4. Sistema operativo inicial.
+4. Versiones y arquitecturas de distribución soportadas; Windows, macOS y Linux ya están confirmados para la base de desarrollo.
 5. Estrategia de cifrado de SQLite.
 6. Proveedor de identidad o autenticación propia.
 7. Cola o broker definitivo.

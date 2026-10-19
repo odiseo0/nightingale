@@ -5,9 +5,11 @@
 ## 1. Identificación del producto
 
 **Nombre del producto:** Nightingale  
-**Descripción:** Aplicación para que clínicas y especialistas gestionen citas médicas, se comuniquen con sus pacientes y reduzcan el ausentismo.  
-**Versión del documento:** 0.2  
+**Descripción:** Aplicación para que médicos y especialistas independientes gestionen citas médicas, se comuniquen con sus pacientes y reduzcan el ausentismo.\
+**Versión del documento:** 0.3\
 **Fecha:** 19/10/2026
+
+El segmento inicial incluye al profesional y a sus asistentes autorizados. La gestión de clínicas con varios médicos o sedes queda para una evolución posterior, conforme al plan maestro §4.1.
 
 ## 2. Problema que queremos resolver
 
@@ -52,17 +54,19 @@ El seguimiento clínico, las analíticas avanzadas y la gestión de récipes pod
 
 ## 6. Alcance del producto
 
+Las listas de este documento definen el alcance esperado; no indican funciones implementadas. Los planes de `tasks/` registran el trabajo y sus comprobaciones. La base de desarrollo actual se limita al escritorio; los servicios web tendrán planes posteriores.
+
 ### 6.1 Funciones incluidas en la primera versión
 
-- [x] Registro y administración de los datos básicos de pacientes.
-- [x] Consulta de médicos, especialidades, servicios y horarios previamente configurados.
-- [x] Creación, consulta, confirmación, cancelación y reprogramación de citas.
-- [x] Control de disponibilidad y prevención de conflictos de horario.
-- [x] Recordatorios y notificaciones automáticas mediante WhatsApp.
-- [x] Patient Hub básico accesible desde un enlace seguro.
-- [x] Lista de espera y recuperación de horarios cancelados.
-- [x] Registro de asistencia y ausencias.
-- [x] Panel de indicadores básicos.
+- Registro y administración de los datos básicos de pacientes.
+- Consulta del profesional, su especialidad, servicios y horarios previamente configurados.
+- Creación, consulta, confirmación, cancelación y reprogramación de citas.
+- Control de disponibilidad y prevención de conflictos de horario.
+- Recordatorios y notificaciones automáticas mediante WhatsApp.
+- Patient Hub básico accesible desde un enlace seguro para gestionar citas existentes.
+- Lista de espera y recuperación de horarios cancelados.
+- Registro de asistencia y ausencias.
+- Panel de indicadores básicos.
 
 ### 6.2 Funciones no incluidas en la primera versión
 
@@ -93,10 +97,10 @@ Desde ese acceso podrá:
 - Consultar la fecha, hora, especialista, servicio y lugar de la cita.
 - Confirmar su asistencia.
 - Cancelar la cita.
-- Solicitar una reprogramación entre los horarios permitidos.
+- Solicitar una reprogramación para que el profesional o su asistente la revise.
 - Consultar el estado actualizado de su cita.
 
-El paciente no tendrá que instalar una aplicación. Queda pendiente decidir si necesitará una cuenta permanente o si el acceso se realizará únicamente mediante enlaces temporales.
+El paciente no tendrá que instalar una aplicación. El acceso inicial será mediante un enlace seguro asociado con una cita existente, con vencimiento y revocación. La duración y la verificación adicional del enlace quedan pendientes. El Patient Hub no permitirá crear citas nuevas, consultar la agenda general ni reservar otro horario. Una solicitud de reprogramación no modificará la cita hasta que el personal la revise y defina el cambio, conforme al plan maestro §17.
 
 ### 7.3 Ante una cancelación o posible ausencia
 
@@ -125,7 +129,7 @@ La ausencia no se registrará de forma automática por falta de respuesta: deber
 
 ## 9. Reglas del servicio
 
-- **Reservas:** solo el personal autorizado y, si la clínica habilita esta opción, el paciente desde el Patient Hub podrán crear una cita. Toda cita deberá asociarse con un paciente, un servicio, un profesional y un horario disponible.
+- **Reservas:** solo el profesional o su asistente autorizado podrán crear una cita. Toda cita deberá asociarse con un paciente, un servicio, un profesional y un horario disponible. El Patient Hub solo gestionará citas existentes.
 - **Disponibilidad:** un horario estará disponible cuando forme parte de la agenda habilitada y no esté reservado, bloqueado o afectado por una ausencia del profesional.
 - **Confirmaciones:** el sistema solicitará confirmación mediante recordatorios configurables. La falta de respuesta no cancelará automáticamente la cita.
 - **Cancelaciones:** el paciente podrá cancelar desde el Patient Hub dentro del plazo definido por la clínica. Después de ese plazo, la solicitud podrá requerir intervención del personal.
@@ -139,14 +143,14 @@ Los plazos exactos para recordatorios, cancelaciones, márgenes de espera y ofer
 
 ## 10. Información que gestionará el producto
 
-- [x] Identificación y datos de contacto básicos de los pacientes.
-- [x] Médicos o especialistas, especialidades y servicios disponibles.
-- [x] Horarios, bloqueos y disponibilidad.
-- [x] Citas y su historial de cambios.
-- [x] Confirmaciones, cancelaciones, reprogramaciones, asistencias y ausencias.
-- [x] Posiciones y solicitudes de la lista de espera.
-- [x] Comunicaciones enviadas y respuestas recibidas.
-- [x] Usuarios internos, funciones y permisos.
+- Identificación y datos de contacto básicos de los pacientes.
+- Profesional, especialidad y servicios disponibles.
+- Horarios, bloqueos y disponibilidad.
+- Citas y su historial de cambios.
+- Confirmaciones, cancelaciones, reprogramaciones, asistencias y ausencias.
+- Posiciones y solicitudes de la lista de espera.
+- Comunicaciones enviadas y respuestas recibidas.
+- Usuarios internos, funciones y permisos.
 
 **Información que no deberá almacenarse en la primera versión:** historia clínica, diagnósticos, resultados médicos, imágenes clínicas, información financiera completa o cualquier dato que no sea necesario para administrar la cita.
 
@@ -239,17 +243,17 @@ Los valores iniciales y las metas numéricas deberán establecerse con datos rea
 
 ## 16. Preguntas pendientes
 
-1. ¿El primer cliente objetivo será un especialista independiente, una clínica pequeña o una clínica con varios especialistas?
-2. ¿El Patient Hub utilizará enlaces temporales sin cuenta o una cuenta permanente para cada paciente?
-3. ¿El paciente podrá crear una cita desde el Patient Hub o solo gestionar una cita creada por la clínica?
-4. ¿Cuántos recordatorios se enviarán y con cuánta anticipación?
-5. ¿Hasta qué momento podrá el paciente cancelar o reprogramar sin intervención de recepción?
-6. ¿Qué criterio determinará el orden de los pacientes en la lista de espera?
-7. ¿Cuánto tiempo debe pasar antes de marcar una cita como ausencia?
-8. ¿Qué datos mínimos del paciente serán obligatorios?
-9. ¿Qué información exacta podrá consultar el médico o especialista?
-10. ¿Qué significa “gestión de récipes” dentro de la visión futura del producto?
+Las preguntas sobre el segmento inicial, la creación de citas por el paciente y el tipo de acceso al Patient Hub quedan resueltas en §§1, 7.2 y 9, conforme al plan maestro. Quedan pendientes:
+
+1. ¿Cuánto durarán los enlaces del Patient Hub y qué acciones exigirán una verificación adicional?
+2. ¿Cuántos recordatorios se enviarán y con cuánta anticipación?
+3. ¿Hasta qué momento podrá el paciente cancelar o solicitar un cambio sin seguimiento adicional del personal?
+4. ¿Qué criterio determinará el orden de los pacientes en la lista de espera?
+5. ¿Cuánto tiempo debe pasar antes de marcar una cita como ausencia?
+6. ¿Qué datos mínimos del paciente serán obligatorios?
+7. ¿Qué información exacta podrá consultar el médico o especialista?
+8. ¿Qué significa “gestión de récipes” dentro de la visión futura del producto?
 
 ## 17. Resumen ejecutivo
 
-> **Nightingale** será una solución dirigida a clínicas, especialistas y personal administrativo que permitirá centralizar las citas, automatizar recordatorios y facilitar que los pacientes gestionen sus reservas mediante un Patient Hub sencillo. Su primera versión incluirá el registro básico de pacientes, el motor de agenda, las confirmaciones, cancelaciones y reprogramaciones, las notificaciones por WhatsApp, la lista de espera y los indicadores operativos. Excluirá la historia clínica, los diagnósticos automatizados, los pagos, las autorizaciones y las integraciones con sistemas clínicos existentes. El producto será considerado exitoso cuando reduzca las ausencias y el trabajo administrativo, aumente las confirmaciones y permita recuperar de forma medible los horarios cancelados.
+> **Nightingale** será una solución dirigida inicialmente a médicos y especialistas independientes y sus asistentes. Permitirá centralizar las citas, automatizar recordatorios y facilitar que los pacientes gestionen citas existentes mediante un Patient Hub sencillo. Su primera versión incluirá el registro básico de pacientes, el motor de agenda, las confirmaciones, cancelaciones y reprogramaciones, las notificaciones por WhatsApp, la lista de espera y los indicadores operativos. Excluirá la historia clínica, los diagnósticos automatizados, los pagos, las autorizaciones y las integraciones con sistemas clínicos existentes. El producto será considerado exitoso cuando reduzca las ausencias y el trabajo administrativo, aumente las confirmaciones y permita recuperar de forma medible los horarios cancelados.

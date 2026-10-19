@@ -1,16 +1,20 @@
-# Elio Project Rules
+# Nightingale Project Rules
 
 ## Project
 
-Nightingale it is an app that helps clinics and specialists manage medical appointments, communicate with their patients, and reduce no-shows.
+Nightingale helps doctors and specialists manage appointments, contact patients, and reduce missed visits. The first version serves independent practices and their assistants. Support for clinics with many doctors or sites comes later.
 
 ## Source of truth
 
 The [Master Plan](./docs/master-plan.md) is the project source of truth.
 
 - Read the relevant parts before plans, design choices, or product code changes.
-- Keep its main boundaries: user-owned files, Markdown as readable text, a document model between text and the view, rebuildable indexes, and local use by default.
-- Keep concepts separate when the spec does: folders and notebooks, Calendar and Agenda, Canvas and FreeLayout, Git history and undo, dictation and editing.
+- Use SQLite for local work on each device. PostgreSQL holds the final shared state. Send changes through the API; do not share or replicate database files.
+- Keep domain rules free of framework and storage code. React calls specific Rust commands through Tauri; React does not run SQL or hold cloud secrets.
+- Keep appointment status separate from sync status. A local booking stays provisional until the server accepts it.
+- The Patient Hub manages existing appointments only. A request to change a time does not reserve a new time.
+- Keep clinical records, diagnoses, and medical results outside the first version.
+- The current foundation covers desktop development on Windows, macOS, and Linux. Web services need later plans; their absence does not block this foundation.
 - A direct user request can change the spec. If a request conflicts with it and does not clearly replace it, state the conflict before implementation.
 - Do not edit the spec as a side effect of code work. Change it only when the user asks or approves a spec change.
 
@@ -47,7 +51,8 @@ Core tools:
 - [React documentation](https://react.dev/reference/react)
 - [TypeScript documentation](https://www.typescriptlang.org/docs/)
 - [Vite guide](https://vite.dev/guide/)
-- [SQLite FTS5 documentation](https://www.sqlite.org/fts5.html)
+- [SQLite documentation](https://www.sqlite.org/docs.html)
+- [PostgreSQL documentation](https://www.postgresql.org/docs/)
 - [Git documentation](https://git-scm.com/doc)
 
 Agent workflow:

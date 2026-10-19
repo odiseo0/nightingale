@@ -3,7 +3,7 @@
 **Versión:** 0.1  
 **Fecha:** 19/10/2026  
 **Estado:** Borrador técnico inicial  
-**Documento relacionado:** Especificación de Requisitos de Software de Nightingale, versión 0.2
+**Documento relacionado:** Especificación de Requisitos de Software de Nightingale, versión 0.3
 
 ## 1. Propósito del documento
 
@@ -110,7 +110,7 @@ Nightingale manejará información necesaria para organizar la atención, pero n
 | Infraestructura cloud | AWS o DigitalOcean, entre otras posibles | Pendiente |
 | IA administrada | AWS Bedrock o DigitalOcean Inference | Futura e indefinida |
 | Backend cloud | Lenguaje y framework pendientes | Pendiente |
-| Sistema operativo inicial | Windows, macOS o Linux | Pendiente |
+| Plataformas de la base de desarrollo | Windows, macOS y Linux | Confirmada por el usuario; matriz concreta aceptada en C01 |
 
 ## 6. Vista general de la arquitectura
 
@@ -486,6 +486,8 @@ Estados iniciales propuestos:
 
 Una reprogramación conservará historial y reiniciará la confirmación cuando cambien la fecha o la hora.
 
+**Pendiente antes de implementar Citas:** definir todas las salidas de `reschedule_requested` y su relación con la solicitud separada de reprogramación. El diagrama no decide qué ocurre si se rechaza o retira la solicitud, ni cómo se conserva la confirmación previa. No añadir transiciones por deducción; resolverlas en el plan de esa ruta.
+
 ## 12. Flujos principales
 
 ### 12.1 Crear una cita con conexión
@@ -568,6 +570,8 @@ La cancelación prevalecerá sobre modificaciones locales antiguas que aún no h
 6. Se crea una nueva solicitud de confirmación.
 
 ### 12.7 Recordatorio
+
+**Pendiente antes de implementar Recordatorios:** las flechas del ejecutor hacia PostgreSQL simplifican el flujo y no autorizan acceso directo desde n8n. El plan maestro §16.5 exige que n8n consulte y registre resultados mediante la API interna. La ruta de Recordatorios deberá ajustar este diagrama y separar los accesos del planificador, la API y el ejecutor antes de implementar sus adaptadores.
 
 ```mermaid
 sequenceDiagram
@@ -996,7 +1000,7 @@ Los objetivos numéricos de tiempo de respuesta y capacidad se definirán antes 
 
 | Decisión | Impacto |
 |---|---|
-| Sistema operativo inicial | Instaladores, pruebas, soporte y almacenamiento seguro |
+| Versiones y arquitecturas de distribución | Las tres plataformas ya están confirmadas para desarrollo; falta definir el soporte de instaladores y producción |
 | Duración fija o variable de las consultas | Modelo de disponibilidad y prevención de solapamientos |
 | Lenguaje y framework del backend cloud | Reutilización de lógica, despliegue y capacidad del equipo |
 | Proveedor cloud | Servicios administrados, costos, regiones y operación |

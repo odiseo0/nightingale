@@ -46,6 +46,6 @@ Lee [CONTRIBUTING.md](CONTRIBUTING.md) antes de tomar una ruta. El [Master Plan]
 
 ## Estado de verificación
 
-La instalación, calidad, compilación y apertura se han probado en Windows x64. La [matriz de CI](.github/workflows/quality.yml) contempla Windows x64, macOS 15 ARM64/Intel y Fedora 44 x64. Fedora usa un contenedor de CI; su apertura en escritorio aún no se ha probado. Su ejecución remota sigue pendiente hasta que el propietario configure el remoto. También faltan las aperturas en macOS/Linux y la revisión de esta guía por otro colaborador. Consulta la evidencia en [C05](tasks/P-20261019-01-desktop-foundation/todo.md#c05-después-de-t10t11).
+La instalación, calidad, compilación y apertura se han probado en Windows x64. La base contempla Windows x64, macOS 15 ARM64/Intel y Fedora 44 x64. El usuario aceptó el cierre de la base el 2026-10-21 sin las pruebas manuales macOS/Fedora ni la revisión de otro colaborador. Estas pruebas no se realizaron; la aceptación no equivale a una verificación técnica. Consulta la evidencia en [C05](tasks/P-20261019-01-desktop-foundation/todo.md#c05-después-de-t10t11).
 
-Un workflow escrito no prueba que esos hosts pasen. No se han preparado firmas, instaladores, actualizaciones ni releases.
+El equipo ejecuta los controles desde la terminal. Por decisión del propietario del 2026-10-21, esta base no incluye jobs de GitHub Actions. Se conservan `pnpm quality` y `pnpm build:desktop`. No se han preparado firmas, instaladores, actualizaciones ni releases.

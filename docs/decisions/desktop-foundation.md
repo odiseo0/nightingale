@@ -12,6 +12,8 @@ El usuario confirmó Windows, macOS y Linux desde el inicio. La base actual cont
 
 El manifiesto Cargo raíz no tiene un target válido y bloquea también la carga del manifiesto de Tauri. No hay lockfile JavaScript ni versiones de herramientas declaradas para el equipo. Esta decisión fija la base que se aplicará en T03–T04; todavía no demuestra que compile.
 
+**Vigencia de CI (2026-10-21):** el usuario retiró los jobs de GitHub Actions. Las referencias a hosts y contenedores CI que siguen registran la decisión anterior; ya no describen una obligación ni un workflow presente. La cobertura de desarrollo sigue siendo Windows 11 x64, macOS 15 ARM/Intel y Fedora 44 x64, con los controles locales y pruebas manuales.
+
 ## Decisión
 
 ### 1. Conservar las rutas útiles de la plantilla

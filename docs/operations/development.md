@@ -10,7 +10,7 @@ Esta guía cubre la base local de Nightingale. No requiere servicios web, Postgr
 | macOS 15 | ARM64 o Intel | Xcode Command Line Tools; terminal y herramientas de la misma arquitectura. |
 | Fedora 44 | x64 | Compilador C/C++, pkg-config y bibliotecas Tauri indicadas abajo. |
 
-La matriz de referencia no incluye todas las versiones o distribuciones. En CI, Windows Server 2025 compila el código; su resultado no sustituye la prueba de ventana en Windows 11. Cada Mac compila para su arquitectura.
+La matriz de referencia no incluye todas las versiones o distribuciones. Cada equipo ejecuta los controles locales. Cada Mac compila para su arquitectura. Esta base no incluye jobs de CI.
 
 En macOS, instala las herramientas si aún no están presentes:
 
@@ -54,7 +54,7 @@ cargo --version
 
 ## Primera ejecución
 
-Obtén una copia de la rama compartida del equipo y entra en su raíz, donde están `package.json` y `Cargo.toml`. El propietario aún debe configurar el remoto; esta guía no presupone una URL privada.
+Obtén una copia de la rama compartida del equipo y entra en su raíz, donde están `package.json` y `Cargo.toml`. El remoto del equipo es [odiseo0/nightingale](https://github.com/odiseo0/nightingale).
 
 ```sh
 pnpm install --frozen-lockfile
@@ -123,11 +123,11 @@ No se ha activado WAL ni cifrado. rusqlite 0.40.2 incluye SQLite al compilar, as
 
 ## Verificar otra plataforma o un clon limpio
 
-Usa un clon nuevo sin copiar `node_modules`, `dist`, `target`, archivos `.env` o bases. Sigue esta guía, ejecuta calidad y compilación, y prueba la ventana con datos sintéticos. Un colaborador distinto debe comprobar el recorrido.
+Usa un clon nuevo sin copiar `node_modules`, `dist`, `target`, archivos `.env` o bases. Sigue esta guía, ejecuta calidad y compilación, y prueba la ventana con datos sintéticos. Para una revisión independiente, otro colaborador puede repetir el recorrido. El usuario aceptó el cierre de esta base sin esa revisión el 2026-10-21.
 
-Registra en [C05](../../tasks/P-20261019-01-desktop-foundation/todo.md#c05-después-de-t10t11) el sistema/versión, arquitectura, revisión Git, comandos y códigos de salida, resultado del diagnóstico, reapertura SQLite y responsable. Para CI añade enlaces de los cuatro jobs de la misma revisión. No incluyas rutas personales, bases ni registros con datos privados.
+Registra en [C05](../../tasks/P-20261019-01-desktop-foundation/todo.md#c05-después-de-t10t11) el sistema/versión, arquitectura, revisión Git, comandos y códigos de salida, resultado del diagnóstico, reapertura SQLite y responsable. No incluyas rutas personales, bases ni registros con datos privados.
 
-El [workflow](../../.github/workflows/quality.yml) instala dependencias, ejecuta calidad y compila en cuatro entornos. Linux compila dentro de Fedora 44 en un contenedor sobre un host Ubuntu de GitHub; no utiliza las bibliotecas Ubuntu. No abre la ventana ni prueba Wayland/X11. El equipo usa Fedora 44 y no dispone ahora de un Mac o un equipo para completar estas pruebas. El propietario dejó pendiente configurar el remoto y ejecutar GitHub Actions. Hasta disponer de resultados y pruebas manuales, macOS/Linux y la aceptación final siguen pendientes.
+El propietario pidió retirar los jobs de GitHub Actions el 2026-10-21. La verificación continúa con los comandos de esta guía en cada equipo; la retirada no demuestra que la app abra en plataformas aún no probadas. El usuario aceptó el cierre sin pruebas manuales macOS/Fedora ni revisión de otro colaborador el 2026-10-21. No consta que estas comprobaciones se realizaran.
 
 ## Fuentes técnicas
 
@@ -136,4 +136,4 @@ El [workflow](../../.github/workflows/quality.yml) instala dependencias, ejecuta
 - [rusqlite 0.40.2: SQLite incluido y SQLCipher](https://github.com/rusqlite/rusqlite/blob/v0.40.2/README.md).
 - [pnpm: scripts](https://pnpm.io/cli/run) e [instalación fija](https://pnpm.io/cli/install#--frozen-lockfile).
 
-La selección de paquetes Fedora se cotejó con la guía Tauri 2 y el catálogo oficial de [WebKitGTK 4.1 para Fedora 44](https://packages.fedoraproject.org/pkgs/webkitgtk/webkit2gtk4.1-devel/fedora-44.html) y [libappindicator para Fedora 44](https://packages.fedoraproject.org/pkgs/libappindicator/libappindicator-gtk3-devel/fedora-44.html). El workflow instala curl-minimal en su contenedor; el comando anterior sirve para el equipo de desarrollo. La ejecución real de ambos sigue pendiente.
+La selección de paquetes Fedora se cotejó con la guía Tauri 2 y el catálogo oficial de [WebKitGTK 4.1 para Fedora 44](https://packages.fedoraproject.org/pkgs/webkitgtk/webkit2gtk4.1-devel/fedora-44.html) y [libappindicator para Fedora 44](https://packages.fedoraproject.org/pkgs/libappindicator/libappindicator-gtk3-devel/fedora-44.html). La ejecución local de estos comandos en Fedora sigue pendiente.

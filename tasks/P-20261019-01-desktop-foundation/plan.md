@@ -1,8 +1,8 @@
 # P-20261019-01-desktop-foundation: Base de desarrollo del escritorio
 
-**Status:** In progress
+**Status:** Completed
 **Created:** 2026-10-19
-**Updated:** 2026-10-19
+**Updated:** 2026-10-21
 **Task list:** [todo.md](todo.md)
 
 ## Overview
@@ -85,7 +85,7 @@ El usuario aprobó las propuestas al autorizar el inicio del plan y aceptó las 
 5. Añadir SQLite solo para apertura, migración y reapertura de una base vacía en el directorio de datos de la aplicación. Elegir el adaptador mínimo tras comprobar compatibilidad con el cifrado futuro. No crear tablas de pacientes, citas u Outbox sin su caso de uso.
 6. No crear carpetas vacías, una librería global de modelos, un sistema de diseño ni interfaces para todos los servicios futuros. Documentar dónde crecerá cada parte.
 7. Probar migraciones y recuperación de errores con bases temporales aisladas. Usar herramientas ya disponibles para tipos, compilación y Rust; no añadir una suite frontend que solo compruebe texto de la plantilla.
-8. Exigir CI nativa en Windows, macOS y Linux. Definir versiones y arquitecturas cubiertas en T02; tres familias de sistemas no significa todas sus versiones o distribuciones. La prueba manual de apertura sigue siendo necesaria.
+8. Ejecutar los controles locales y probar la apertura en Windows, macOS y Fedora 44. El usuario retiró los jobs de CI el 2026-10-21; no exigir resultados futuros de esos jobs para cerrar esta base. Se conservan las versiones y arquitecturas acordadas y sus pruebas manuales.
 
 ## Dependency Order
 
@@ -148,14 +148,14 @@ Trabajar en una tarea cada vez. Cada checkpoint requiere evidencia y revisión d
 
 ### Phase 5: Incorporación del equipo
 
-- [ ] T10: Comprobar los tres sistemas en CI.
-- [ ] T11: Documentar la incorporación de colaboradores.
+- [x] T10: Comprobar los tres sistemas en CI. Retirada por el usuario el 2026-10-21; se cierra por retirada, no por una matriz aprobada.
+- [x] T11: Documentar la incorporación de colaboradores. Cierre aceptado por el usuario sin las comprobaciones manuales restantes.
 
 ### C05: Base lista para colaboradores
 
-- [ ] Un clon limpio instala con los lockfiles y supera los controles en los tres hosts acordados.
-- [ ] Existe evidencia de apertura nativa y diagnóstico en Windows, macOS y Linux. CI o pruebas pendientes impiden declarar este punto completado.
-- [ ] Otro colaborador sigue la guía sin pasos privados y el usuario acepta la base.
+- [x] Instalación y controles respaldados por las pruebas Windows y la CI histórica de los cuatro entornos; el usuario acepta esta evidencia para el cierre.
+- [x] Apertura y diagnóstico comprobados en Windows. El usuario acepta el cierre sin pruebas manuales Fedora/macOS; no se declaran realizadas.
+- [x] El usuario acepta la base sin revisión de otro colaborador. La guía existe y se probó localmente; no se afirma una revisión independiente.
 
 ## Risks and Mitigations
 
@@ -166,7 +166,7 @@ Trabajar en una tarea cada vez. Cada checkpoint requiere evidencia y revisión d
 | Dependencias declaradas no resuelven juntas | Alto | Comprobar versiones y requisitos oficiales en T04; presentar cualquier cambio necesario de versión. |
 | pnpm falla por su almacén o por red | Medio | Separar el problema local de la compilación; no cambiar código para ocultarlo. |
 | El adaptador SQLite impide el cifrado futuro | Alto | Revisar su compatibilidad antes de elegirlo y evitar datos reales. |
-| Solo se dispone de Windows en esta sesión | Alto | CI nativa y revisión manual en los otros hosts; no afirmar compatibilidad por inferencia. |
+| Solo se dispone de Windows en esta sesión | Alto | Pruebas locales y revisión manual en los otros equipos; no afirmar compatibilidad por inferencia. |
 | Se confunde una base funcional con citas o sincronización terminadas | Alto | Diagnóstico explícito de funciones disponibles; planes posteriores por ruta. |
 
 ## Open Questions
@@ -200,3 +200,11 @@ C03 y C04 aceptados por el usuario. T08–T09 verificados: SQLite transaccional 
 ### Corrección del entorno Linux por el usuario (2026-10-19)
 
 El equipo usa Fedora 44, no Ubuntu. Se adapta la parte aún abierta de T10/T11: paquetes dnf para desarrollo y un job Fedora 44 en contenedor sobre un host Ubuntu de GitHub. El host no define la distribución de las bibliotecas de compilación. Se mantienen Windows y las dos arquitecturas macOS; el usuario no dispone ahora de equipos para las validaciones pendientes. No se cambia el alcance funcional, no se inventan resultados y CI sigue pendiente a cargo del propietario. La corrección actualiza el ADR y las guías; la evidencia previa de Ubuntu describe solo la propuesta anterior.
+
+### Retirada de CI por el usuario (2026-10-21)
+
+El usuario pidió «Es mejor eliminar estos jobs, por favor» después de revisar la primera ejecución remota. Se elimina el workflow del repositorio y sus referencias activas de las guías. T10 se cierra por retirada explícita del requisito; su evidencia anterior queda como historia, sin convertir el fallo Fedora en éxito. T11 y C05 conservan la validación manual en macOS/Fedora, la revisión por otro colaborador y la aceptación final. Los controles locales y el código de producto no cambian.
+
+### Cierre aceptado (2026-10-21)
+
+El usuario pidió «Por favor, marca esas como listas» respecto a las comprobaciones externas restantes. El plan se cierra por esa aceptación explícita, sin afirmar que se ejecutaron las aperturas Fedora/macOS o una revisión independiente. Se conserva la evidencia técnica previa y se distingue de los puntos aceptados sin verificar. Las menciones históricas a bloqueos ya no definen el estado actual del plan.

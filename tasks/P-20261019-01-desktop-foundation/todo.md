@@ -1,7 +1,7 @@
 # Task List: P-20261019-01-desktop-foundation
 
 **Plan:** [plan.md](plan.md)
-**Updated:** 2026-10-19
+**Updated:** 2026-10-21
 
 El usuario autorizó comenzar el plan el 2026-10-19. Antes de cada cambio de código, aplicar `minimal-code`; antes de usar APIs de bibliotecas, aplicar `docs-first-framework-code`. Una tarea activa cada vez. No interpretar los comandos futuros como comprobaciones ya aprobadas.
 
@@ -241,16 +241,18 @@ El usuario autorizó comenzar el plan el 2026-10-19. Antes de cada cambio de có
 
 ## T10: Comprobar los tres sistemas en CI
 
-**Status:** Blocked
+**Status:** Done
 
-**Description:** Añadir una matriz de CI con hosts nativos para la cobertura fijada en T02. Instalar requisitos del sistema, usar herramientas y lockfiles acordados y ejecutar los controles de T09 y la compilación del escritorio. No copiar los pasos de publicación de una guía de releases.
+**Cierre por retirada (2026-10-21):** el usuario pidió eliminar los jobs. Este cierre registra su retirada, no una validación completa de CI. Los criterios y evidencias originales que siguen son históricos y ya no bloquean C05. Se elimina el workflow y se mantienen los controles locales.
 
-**Acceptance criteria:**
+**Description original:** Añadir una matriz de CI con hosts nativos para la cobertura fijada en T02. Instalar requisitos del sistema, usar herramientas y lockfiles acordados y ejecutar los controles de T09 y la compilación del escritorio. No copiar los pasos de publicación de una guía de releases.
+
+**Acceptance criteria originales (retirados):**
 - [x] La matriz cubre Windows, macOS y Linux con las arquitecturas acordadas y dependencias nativas explícitas.
 - [ ] Cada host ejecuta instalación fija, controles de calidad y compilación del escritorio; no requiere credenciales cloud ni publica releases.
 - [x] La evidencia corresponde al mismo cambio revisado; si no se pueden ejecutar jobs remotos, se marca la verificación pendiente.
 
-**Verification:**
+**Verification original (retirada):**
 - [x] Prueba enfocada: revisar cada job contra los comandos de T09 y la guía oficial Tauri 2 para su sistema.
 - [ ] Compilación/revisión amplia: resultados de la matriz completa; el comando exacto procede de T09, no de una suposición del plan.
 - [ ] Revisión manual: consultar los resultados y confirmar que ningún job omite una plataforma o necesita un secreto privado.
@@ -265,19 +267,21 @@ El usuario autorizó comenzar el plan el 2026-10-19. Antes de cada cambio de có
 
 ## T11: Documentar la incorporación de colaboradores
 
-**Status:** Blocked
+**Status:** Done
+
+**Cierre (2026-10-21):** el usuario pidió «Por favor, marca esas como listas». Se registra su aceptación para cerrar las comprobaciones pendientes sin afirmar que se realizaron. La evidencia anterior conserva su fecha y describe el estado previo a esta decisión.
 
 **Description:** Sustituir el README de la plantilla por instrucciones probadas: requisitos por sistema, versiones, instalación, arranque, calidad, ubicación de datos, solución de fallos y límites de la base. Añadir una guía breve para contribuciones y para las rutas futuras sin planificar servicios web ahora.
 
 **Acceptance criteria:**
 - [x] Un clon limpio permite seguir la guía sin configuración privada; constan instalación fija, comandos exactos y errores frecuentes.
 - [x] Se explica dónde colocar interfaz, dominio, adaptadores y pruebas cuando exista una función, sin crear carpetas ceremoniales ni nuevos contratos de negocio.
-- [ ] Otro colaborador comprueba la guía; quedan evidencias separadas de apertura nativa en las tres plataformas y de CI, sin dar por aprobada una prueba pendiente.
+- [x] Cierre aceptado por el usuario sin revisión de otro colaborador ni pruebas manuales en Fedora/macOS. Estas comprobaciones no se realizaron y no se registran como aprobadas técnicamente.
 
 **Verification:**
 - [x] Prueba enfocada: seguir las instrucciones desde un clon limpio con datos sintéticos; no reutilizar `node_modules`, bases o archivos privados del autor.
-- [ ] Compilación/revisión amplia: comando de calidad de T09 y resultados CI de T10; `git diff --check` para los documentos.
-- [ ] Revisión manual: abrir la app, consultar el diagnóstico, cerrar/reabrir y verificar SQLite en Windows, macOS y Linux.
+- [x] Compilación/revisión amplia: calidad y compilación verificadas en Windows y en la ejecución histórica de los cuatro entornos; documentos comprobados con `git diff --check`. El usuario acepta el cierre sin nuevas pruebas locales en Fedora/macOS.
+- [x] Revisión manual: apertura, diagnóstico y reapertura comprobados en Windows. El usuario acepta sin verificación manual de Fedora/macOS el 2026-10-21; no consta su ejecución.
 
 **Dependencies:** T10
 **Files likely touched:** `README.md`, `CONTRIBUTING.md`, `docs/operations/development.md`.
@@ -287,20 +291,24 @@ El usuario autorizó comenzar el plan el 2026-10-19. Antes de cada cambio de có
 
 ## C05: Después de T10–T11
 
-- [ ] Instalación fija, calidad y compilación pasan en un clon limpio para la matriz acordada.
-- [ ] La apertura nativa funciona en Windows, macOS y Linux; otro colaborador comprueba la guía sin pasos privados.
-- [ ] El usuario acepta la base. No declarar listas las rutas de citas, sincronización ni servicios web.
+- [x] Instalación fija, calidad y compilación con evidencia Windows y CI histórica en los cuatro entornos. El usuario acepta esta evidencia para el cierre; no se afirma una prueba local nueva en Fedora/macOS.
+- [x] Apertura y guía aceptadas por el usuario: Windows verificado; pruebas manuales Fedora/macOS y revisión de otro colaborador aceptadas sin verificación, no realizadas.
+- [x] El usuario acepta la base el 2026-10-21 al pedir cerrar estos puntos. Esta aceptación no declara implementadas citas, sincronización ni servicios web.
 
-**Pendientes externos (2026-10-19):** El propietario configurará el remoto y ejecutará CI. Otro colaborador debe seguir la guía y registrar sus resultados. No se pide aceptar C05 mientras falten estas comprobaciones.
+**Aceptación del cierre (2026-10-21):** El remoto está configurado y el usuario retiró los jobs de CI. Después pidió marcar listas las comprobaciones restantes. C05 se cierra por su aceptación; las aperturas Fedora/macOS y la revisión de otro colaborador no se realizaron y no se convierten en resultados de prueba. La tabla distingue esa aceptación de la evidencia técnica.
 
 | Entorno | Instalación / calidad / compilación | Apertura / diagnóstico / reapertura | Revisión de otro colaborador |
 |---|---|---|---|
-| Windows 11 x64, clon local del snapshot indicado | Pasa | Pasa con perfil temporal nuevo; la configuración normal se probó en T07/T08 | Pendiente |
-| windows-2025 en GitHub Actions | Pendiente | No sustituye apertura en Windows 11 | Pendiente |
-| macOS 15 ARM64 | Pendiente | Pendiente | Pendiente |
-| macOS 15 Intel | Pendiente | Pendiente | Pendiente |
-| Fedora 44 x64 | Pendiente: job en contenedor Fedora | Pendiente en escritorio Fedora | Pendiente |
+| Windows 11 x64, clon local del snapshot indicado | Pasa | Pasa con perfil temporal nuevo; la configuración normal se probó en T07/T08 | Aceptada sin verificación |
+| Windows en CI (histórico) | Pasó en 632f565; jobs retirados | No sustituye apertura en Windows 11 | Aceptada sin verificación |
+| macOS 15 ARM64 | Pasó en CI para 632f565; jobs retirados | Aceptada sin verificación | Pendiente |
+| macOS 15 Intel | Pasó en CI para 632f565; jobs retirados | Aceptada sin verificación | Pendiente |
+| Fedora 44 x64 | Instalación/calidad/compilación pasaron en CI para 632f565; último control Git falló; jobs retirados | No realizada; aceptada sin verificación | Aceptada sin verificación |
 
 **Corrección posterior del usuario (2026-10-19):** «Por ahora, ninguno y de hecho usamos Fedora 44 y no Ubuntu». Fedora 44 sustituye Ubuntu como Linux de desarrollo y validación. La configuración anterior de T10 se reemplaza por tres hosts Windows/macOS y un job en contenedor oficial fedora:44 sobre ubuntu-24.04; las dependencias se instalan con dnf y rustup carga el toolchain fijado. README, guía y ADR reflejan Fedora. El contenedor no prueba apertura gráfica. No hay Docker/Podman disponible en este host Windows para ejecutarlo; Fedora, macOS, CI y revisión de otro colaborador conservan su estado pendiente. La prueba Windows del snapshot previo sigue probando el código de producto, que no cambia en esta corrección; no prueba el workflow Fedora nuevo.
 
 **Comprobaciones de la corrección Fedora (2026-10-19):** YAML parseado; tres entradas Windows/macOS más un job Fedora 44. Ese job usa instalación fija, quality y build:desktop, sin apt ni secretos privados. `sh -n` pasa sobre sus comandos sin ejecutarlos. Enlaces locales y `git diff --check` pasan. Código de producto, manifiestos y lockfiles coinciden con el snapshot Windows probado; no se repitió una compilación Windows que no verifica este cambio. No se ha ejecutado dnf, el contenedor ni una ventana Fedora: sus resultados siguen pendientes. La lista Tauri y el catálogo Fedora 44 confirman WebKitGTK 4.1, AppIndicator, librsvg y libxdo; la imagen oficial publica la etiqueta 44 x64. No se retira macOS del alcance.
+
+**Evidencia remota y retirada (2026-10-21):** origin apunta a https://github.com/odiseo0/nightingale.git. La ejecución https://github.com/odiseo0/nightingale/actions/runs/39342249145 corresponde al commit 632f565fe2ed7b78e7bb71049c7c5ec6c8128b8e. La API pública confirma instalación fija, quality y build:desktop correctos en los cuatro entornos; Windows y ambos Mac terminan con éxito. Fedora falla solo en Check tracked files stay unchanged, código 129. El registro detallado requiere autenticación (API 403); no se atribuye una causa sin leerlo. El usuario optó por retirar los jobs. Se elimina el archivo del workflow local; no se borran ejecuciones históricas ni se publica el cambio por deducción. C05 continúa abierto por las pruebas manuales y revisión pendientes.
+
+**Cierre final por el usuario (2026-10-21):** «Por favor, marca esas como listas». T11 y C05 se cierran por aceptación explícita. Las notas previas sobre bloqueos describen el estado histórico; las pruebas manuales Fedora/macOS y la revisión independiente siguen sin evidencia de ejecución y dejan de ser requisitos de cierre por esta decisión. No se han ejecutado pruebas nuevas ni publicado cambios como parte de esta actualización.

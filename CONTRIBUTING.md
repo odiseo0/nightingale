@@ -30,7 +30,7 @@ pnpm build:desktop
 git diff --check
 ```
 
-Prueba la ventana si el cambio afecta al arranque, la vista, IPC, permisos o persistencia. Indica sistema y arquitectura. Explica qué cambió, por qué y cómo lo comprobaste; adjunta resultados reales y separa lo pendiente. CI no sustituye la prueba manual de apertura.
+Prueba la ventana si el cambio afecta al arranque, la vista, IPC, permisos o persistencia. Indica sistema y arquitectura. Explica qué cambió, por qué y cómo lo comprobaste; adjunta resultados reales y separa lo pendiente. Esta base no incluye jobs de CI; ejecuta los controles locales y prueba la apertura.
 
 Incluye los lockfiles si cambian dependencias. Revisa los archivos añadidos: no subas `.env`, credenciales, bases, registros con datos personales o recursos de pacientes. Los ejemplos deben ser ficticios. Esta base no admite datos reales hasta cerrar cifrado, claves y controles de acceso.
 

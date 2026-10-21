@@ -6,10 +6,12 @@
 
 **Nombre del producto:** Nightingale  
 **Descripción:** Aplicación para que médicos y especialistas independientes gestionen citas médicas, se comuniquen con sus pacientes y reduzcan el ausentismo.\
-**Versión del documento:** 0.3\
-**Fecha:** 19/10/2026
+**Versión del documento:** 0.5\
+**Fecha:** 21/10/2026
 
 El segmento inicial incluye al profesional y a sus asistentes autorizados. La gestión de clínicas con varios médicos o sedes queda para una evolución posterior, conforme al plan maestro §4.1.
+
+La [decisión de tres proyectos y API transaccional](decisions/transactional-sync-three-projects.md) del 2026-10-21 separa Nightingale (escritorio), Nightingale Patient Hub y Nightingale API. Conserva la operación local y sustituye el acceso directo a la base cloud por aceptación remota mediante API. No declara funciones implementadas.
 
 ## 2. Problema que queremos resolver
 
@@ -86,6 +88,8 @@ Las listas de este documento definen el alcance esperado; no indican funciones i
 
 El personal autorizado podrá registrar una cita asociando al paciente con un médico o especialista, un servicio, una fecha y un horario disponible. Podrá consultar la agenda, cambiar la cita, reprogramarla o cancelarla cuando sea necesario.
 
+El escritorio permitirá consultar la agenda almacenada de hoy y mañana y realizar cambios locales permitidos sin Internet. Los cambios se conservarán al cerrar y reabrir la aplicación y se compartirán cuando vuelva la conexión. La disponibilidad local no garantiza conocer los cambios de otros equipos que todavía no se recibieron.
+
 Antes de la consulta, Nightingale enviará los recordatorios definidos por el servicio y actualizará la cita según la respuesta del paciente. El personal podrá identificar las citas confirmadas, canceladas y pendientes de respuesta, así como registrar si el paciente asistió o se ausentó.
 
 ### 7.2 Para el paciente
@@ -99,6 +103,8 @@ Desde ese acceso podrá:
 - Cancelar la cita.
 - Solicitar una reprogramación para que el profesional o su asistente la revise.
 - Consultar el estado actualizado de su cita.
+
+El escritorio también consultará el servicio del Patient Hub para sus acciones y solicitudes; no mantendrá otra autoridad sobre ellas. Sin conexión podrá mostrar la última información recibida, con su antigüedad, sin afirmar que una acción remota se completó. El resto de las funciones locales continuará disponible.
 
 El paciente no tendrá que instalar una aplicación. El acceso inicial será mediante un enlace seguro asociado con una cita existente, con vencimiento y revocación. La duración y la verificación adicional del enlace quedan pendientes. El Patient Hub no permitirá crear citas nuevas, consultar la agenda general ni reservar otro horario. Una solicitud de reprogramación no modificará la cita hasta que el personal la revise y defina el cambio, conforme al plan maestro §17.
 
@@ -126,6 +132,10 @@ La ausencia no se registrará de forma automática por falta de respuesta: deber
 | RF-10 | Permitir registrar una cita como atendida, cancelada, reprogramada o ausencia sin aviso. | Alta |
 | RF-11 | Mostrar indicadores básicos de citas, confirmaciones, cancelaciones, ausencias y horarios recuperados. | Media |
 | RF-12 | Restringir las acciones y la información disponible según el tipo de usuario. | Alta |
+| RF-13 | Consultar la agenda local de hoy y mañana y guardar operaciones permitidas sin Internet, conservándolas tras reiniciar. Los datos deben haberse recibido o creado antes. | Alta |
+| RF-14 | Compartir cambios pendientes al recuperar conexión, sin duplicarlos ni perder intenciones ante conflictos. | Alta |
+| RF-15 | Conservar los últimos permisos válidos sin conexión; exigir conexión para cambiarlos y revisar su vigencia al reconectar. | Alta |
+| RF-16 | Usar el servicio del Patient Hub como único propietario de sus capacidades y distinguir sus resultados recibidos de una vista local desactualizada. | Alta |
 
 ## 9. Reglas del servicio
 
@@ -136,6 +146,7 @@ La ausencia no se registrará de forma automática por falta de respuesta: deber
 - **Reprogramaciones:** una cita solo podrá trasladarse a un horario disponible. El sistema conservará el historial del cambio y liberará el horario anterior.
 - **Lista de espera:** solo se ofrecerán horarios compatibles con el servicio solicitado. El horario se asignará al primer paciente que lo acepte de forma válida, conforme a la regla de prioridad que defina la clínica.
 - **Ausencias:** una cita se marcará como ausencia cuando haya pasado la hora y el margen de espera definido, y el personal confirme que el paciente no asistió.
+- **Permisos sin conexión:** no se modificarán roles, membresías o permisos offline. Los cambios pendientes identificarán la versión de permisos utilizada. Las fechas servirán para revisión junto con versiones y referencias temporales verificables; la hora declarada por un equipo no bastará para aceptar una operación ante una revocación.
 - **Privacidad:** el paciente solo podrá consultar sus propias citas. Cada integrante del personal verá únicamente la información necesaria para su función.
 - **Mensajes:** los recordatorios no deberán incluir diagnósticos, resultados médicos ni otra información clínica sensible.
 
@@ -162,7 +173,7 @@ Los plazos exactos para recordatorios, cancelaciones, márgenes de espera y ofer
 - **Velocidad:** la consulta de agenda y las acciones habituales deberán responder sin interrumpir el trabajo de recepción. El tiempo objetivo deberá definirse antes de las pruebas de aceptación.
 - **Seguridad y privacidad:** el acceso deberá estar limitado por funciones; las acciones relevantes deberán quedar registradas y los enlaces para pacientes deberán ser seguros y limitados a sus propias citas.
 - **Accesibilidad:** el Patient Hub deberá funcionar correctamente desde teléfonos móviles sin exigir la instalación de una aplicación.
-- **Continuidad:** ante una interrupción de conexión o del servicio de mensajería, no deberán duplicarse citas ni perderse cambios confirmados. Los mensajes pendientes deberán quedar identificados para su reintento o seguimiento manual.
+- **Continuidad:** el escritorio no exigirá una conexión a servicios web o a PostgreSQL para operar sobre los datos locales. Ante una interrupción de conexión o del servicio de mensajería, no deberán duplicarse citas ni perderse cambios guardados. Los mensajes pendientes deberán quedar identificados para su reintento o seguimiento manual.
 
 ## 12. Integraciones necesarias
 
@@ -177,6 +188,13 @@ Los plazos exactos para recordatorios, cancelaciones, márgenes de espera y ofer
 WhatsApp será la única integración externa considerada indispensable en la primera versión. Las demás podrán evaluarse posteriormente.
 
 ## 13. Límites y condicionantes
+
+**Reparto de responsabilidades:**
+
+- Nightingale ejecuta la operación administrativa en Rust y conserva datos en SQLite. Sincroniza operaciones mediante Nightingale API; no accede directamente a la base cloud.
+- Nightingale Patient Hub tiene web y API propias; posee accesos, reglas del paciente y solicitudes. Usa Nightingale API para consultar y modificar el estado compartido de citas. El escritorio consume las capacidades del Hub por su servicio.
+- Nightingale API autoriza y acepta las operaciones compartidas. Sus módulos y workers ejecutan recordatorios, integración con n8n y analítica con los equipos apagados y fuera de las transacciones de sincronización. No conocen cambios que aún solo existen en un dispositivo desconectado.
+- Los tres proyectos tendrán repositorios separados. La API remota no sustituye los casos de uso locales ni exige conexión para guardar operaciones locales permitidas. Una operación guardada localmente puede seguir pendiente de aceptación compartida.
 
 **Restricciones conocidas:**
 
@@ -253,6 +271,8 @@ Las preguntas sobre el segmento inicial, la creación de citas por el paciente y
 6. ¿Qué datos mínimos del paciente serán obligatorios?
 7. ¿Qué información exacta podrá consultar el médico o especialista?
 8. ¿Qué significa “gestión de récipes” dentro de la visión futura del producto?
+9. ¿Qué política verificable determina la aceptación de operaciones pendientes si un permiso cambió o fue revocado durante la desconexión?
+10. ¿Cómo se concreta el ciclo completo de solicitudes del Hub y su coordinación con los cambios de citas aceptados por Nightingale API, sin perder intenciones ante fallos parciales?
 
 ## 17. Resumen ejecutivo
 

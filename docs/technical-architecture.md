@@ -1,9 +1,11 @@
 # Documento de Arquitectura Técnica de Nightingale
 
-**Versión:** 0.1  
-**Fecha:** 19/10/2026  
-**Estado:** Borrador técnico inicial  
-**Documento relacionado:** Especificación de Requisitos de Software de Nightingale, versión 0.3
+**Versión:** 0.3\
+**Fecha:** 21/10/2026\
+**Estado:** Arquitectura revisada por decisión del usuario\
+**Documento relacionado:** Especificación de Requisitos de Software de Nightingale, versión 0.5
+
+La [decisión de tres proyectos y sincronización transaccional por API](decisions/transactional-sync-three-projects.md), aceptada el 2026-10-21, sustituye el acceso directo del escritorio a PostgreSQL. Mantiene los casos de uso locales en Rust/SQLite. Esta revisión describe la arquitectura objetivo, no funciones implementadas.
 
 ## 1. Propósito del documento
 
@@ -39,7 +41,7 @@ El producto deberá continuar funcionando durante interrupciones eléctricas o d
 - Interfaz construida con React, TypeScript y TailwindCSS.
 - Núcleo local desarrollado en Rust.
 - Persistencia local en SQLite.
-- API de sincronización y servicios en la nube.
+- Sincronización coordinada por Rust mediante Nightingale API; Patient Hub y API tienen repositorios separados.
 - PostgreSQL como fuente central de verdad.
 - Varios dispositivos concurrentes por cuenta profesional.
 - Patient Hub web para citas existentes.
@@ -70,11 +72,15 @@ El producto deberá continuar funcionando durante interrupciones eléctricas o d
 
 La aplicación debe permitir consultar y modificar la agenda localmente cuando no exista conexión. PostgreSQL conservará el estado central y permitirá reconstruir una instalación nueva después de perder o reemplazar un dispositivo.
 
-### 4.2 PostgreSQL es la fuente central de verdad
+### 4.2 PostgreSQL conserva el estado compartido
 
-SQLite no se replicará directamente con PostgreSQL. Los dispositivos intercambiarán operaciones y cambios mediante una API controlada.
+Rust posee los casos de uso operativos del escritorio. SQLite mantiene el estado necesario para trabajar sin conexión y PostgreSQL conserva los cambios compartidos entre dispositivos.
 
-Cuando exista una diferencia entre dispositivos, el servidor determinará el estado definitivo utilizando versiones, restricciones y reglas de conflicto simples.
+El coordinador nativo envía operaciones completas y recibe cambios de Nightingale API por HTTPS. API revalida autorización, versiones y reglas compartidas y confirma transacciones PostgreSQL. El escritorio no tiene acceso SQL ni credenciales de esa base. No se copian archivos SQLite ni se replica indiscriminadamente todo el contenido de ambas bases.
+
+La aceptación compartida depende de transacciones, versiones, permisos y restricciones en PostgreSQL. Las reglas nativas validan los datos que el equipo conoce; no garantizan ausencia de conflictos con cambios aún no recibidos.
+
+El Patient Hub es una excepción: su API posee las capacidades del Hub y el escritorio consume sus resultados, sin una segunda implementación de esas reglas.
 
 ### 4.3 La operación local debe ser inmediata
 
@@ -82,11 +88,11 @@ La interfaz no esperará una respuesta de la nube para cada acción. Una operaci
 
 ### 4.4 La complejidad debe responder a una necesidad real
 
-El volumen inicial será moderado. No se introducirán microservicios, replicación compleja, CRDT, event sourcing completo ni bloqueos distribuidos en la primera versión.
+El volumen inicial será moderado. No se dividirá el núcleo nativo en servicios HTTP ni se introducirán replicación compleja, CRDT, event sourcing completo o bloqueos distribuidos. Nightingale API y Nightingale Patient Hub tendrán repositorios propios; su ausencia no bloquea la ejecución del dominio local.
 
 ### 4.5 Los procesos externos no controlan el dominio
 
-n8n, WhatsApp y futuros proveedores de inteligencia artificial podrán ejecutar integraciones, pero no serán la fuente de verdad de las citas.
+n8n, WhatsApp y futuros proveedores de inteligencia artificial ejecutarán integraciones sin poseer la agenda del escritorio. El Hub sí posee sus accesos, acciones y solicitudes: Rust consulta su API y aplica sus resultados versionados según el plan maestro §17.
 
 ### 4.6 Las funciones médicas y administrativas estarán separadas
 
@@ -109,27 +115,38 @@ Nightingale manejará información necesaria para organizar la atención, pero n
 | Canal inicial | WhatsApp | Confirmada |
 | Infraestructura cloud | AWS o DigitalOcean, entre otras posibles | Pendiente |
 | IA administrada | AWS Bedrock o DigitalOcean Inference | Futura e indefinida |
-| Backend cloud | Lenguaje y framework pendientes | Pendiente |
+| Servicios cloud | Nightingale API con Python/FastAPI, transacciones y workers; Nightingale Patient Hub con web y API propia; repositorios separados | Confirmada |
 | Plataformas de la base de desarrollo | Windows, macOS y Linux | Confirmada por el usuario; matriz concreta aceptada en C01 |
 
 ## 6. Vista general de la arquitectura
 
+El sistema se reparte en tres proyectos con repositorios propios. La operación local no espera a la aceptación remota.
+
 ```mermaid
-flowchart TD
-    D["Aplicación de escritorio: Tauri, React y Rust"] --> L["SQLite local"]
-    D --> A["API cloud"]
-    A --> P["PostgreSQL operativo"]
-    A --> H["Patient Hub web"]
-    P --> R["Planificador de recordatorios"]
-    R --> Q["Cola de trabajos"]
-    Q --> N["n8n o workers"]
-    N --> W["WhatsApp"]
-    P --> E["ETL incremental"]
-    E --> PA["PostgreSQL analítico"]
-    PA --> S["Servicio web de analítica"]
+flowchart LR
+    subgraph D["Nightingale · escritorio"]
+        UI["React"] --> R["Rust · casos de uso y sincronización"]
+        R <--> L["SQLite local · cifrado antes de datos reales"]
+    end
+    subgraph H["Nightingale Patient Hub"]
+        WEB["Web del paciente"] --> HUB["API del Hub · accesos y reglas del paciente"]
+    end
+    subgraph A["Nightingale API"]
+        SYNC["API · autorización y transacciones"]
+        WORK["Módulos y workers · recordatorios y analítica"]
+        SYNC --> JOB["Trabajos y eventos persistentes"]
+        JOB --> WORK
+    end
+    R <-->|"HTTPS · operaciones y cambios"| SYNC
+    R <-->|"HTTPS · capacidades del Hub"| HUB
+    HUB <-->|"HTTPS interno autenticado · citas"| SYNC
+    SYNC <--> PG["PostgreSQL operativo · red privada"]
+    WORK <--> PG
+    WORK <-->|"API interna autenticada"| N["n8n · herramienta externa"]
+    WORK --> ANALYTICS["PostgreSQL analítico"]
 ```
 
-La aplicación de escritorio será la interfaz principal del médico y su asistente. Los demás componentes funcionarán en la nube para permanecer disponibles aunque los dispositivos estén desconectados o apagados.
+El escritorio y el Hub no reciben credenciales PostgreSQL. Los workers usan permisos de su módulo; no cambian citas por fuera de la aceptación común. La transacción de sincronización no espera a WhatsApp, n8n, Hub o analítica. El diagrama no representa una transacción global entre proyectos. Véase el [ADR vigente](decisions/transactional-sync-three-projects.md).
 
 ## 7. Componentes del sistema
 
@@ -168,12 +185,13 @@ React no deberá:
 
 Rust se encargará de:
 
-- Reglas locales del dominio.
+- Reglas y casos de uso operativos del escritorio.
 - Validación de operaciones.
 - Acceso a SQLite.
 - Registro de operaciones en la bandeja de sincronización.
-- Comunicación segura con la API.
-- Gestión de sesiones y secretos locales.
+- Coordinación de sincronización por HTTPS con Nightingale API.
+- Consumo HTTP del Hub y de los servicios de apoyo que requiera cada función.
+- Acceso local con los últimos permisos válidos, sesiones y secretos seguros.
 - Migraciones de la base local.
 - Detección de conectividad.
 - Procesamiento de reintentos.
@@ -193,28 +211,19 @@ SQLite contendrá:
 - Identificadores de operaciones ya procesadas.
 - El punto hasta el que se recibieron cambios del servidor.
 
-SQLite no se almacenará en una carpeta de red compartida. Cada dispositivo sincronizará mediante la API.
+SQLite no se almacenará en una carpeta de red compartida. Rust sincronizará operaciones mediante su cliente HTTPS de Nightingale API. La agenda local de hoy y mañana seguirá disponible después de su descarga o creación, también tras reiniciar sin red.
 
 Se evaluará el modo WAL para permitir lecturas y escrituras concurrentes dentro de la aplicación. La estrategia de cifrado del archivo local deberá definirse antes de utilizar información real de pacientes.
 
-### 7.3 API cloud
+### 7.3 Nightingale API y procesos de apoyo
 
-La API será el límite entre los dispositivos y los servicios en la nube.
+Nightingale API es un proyecto Python/FastAPI separado. Recibe operaciones completas del escritorio, autoriza cada entrada y revalida versiones, transiciones y reglas compartidas. Confirma efecto, resultado idempotente, auditoría y Change Log en una transacción PostgreSQL. No es un acceso SQL genérico ni un guardado ciego.
 
-Sus responsabilidades serán:
+También incluye módulos y workers para recordatorios, entregas y webhooks, integración con n8n y ETL/analítica. Los trabajos se conservan de forma duradera y se ejecutan después del commit. Una caída o entrega repetida no debe perder ni duplicar efectos. n8n es una herramienta externa que usa API interna autenticada.
 
-- Autenticar usuarios y dispositivos.
-- Autorizar cada operación según la cuenta y la función del usuario.
-- Recibir operaciones sincronizadas.
-- Garantizar idempotencia.
-- Validar versiones.
-- Impedir reservas incompatibles.
-- Registrar cambios y auditoría.
-- Entregar actualizaciones incrementales a los dispositivos.
-- Servir al Patient Hub.
-- Exponer operaciones internas para recordatorios y analítica.
+Nightingale Patient Hub es otro proyecto, con web y API propias. Posee enlaces, acceso y reglas del paciente y llama a Nightingale API para consultar y modificar citas. No escribe directamente en PostgreSQL operativo.
 
-Los dispositivos no se conectarán directamente a PostgreSQL.
+Las operaciones locales no necesitan estos servicios. Una caída de API deja cambios pendientes; una caída del Hub afecta sus capacidades. Las sesiones remotas y el desbloqueo local se distinguirán; las políticas concretas de identidad y revocación quedan pendientes.
 
 ### 7.4 PostgreSQL operativo
 
@@ -225,18 +234,18 @@ PostgreSQL será la fuente central de verdad para:
 - Pacientes.
 - Servicios y horarios.
 - Citas y su historial.
-- Confirmaciones y solicitudes.
+- Estado compartido de confirmaciones y referencias a resultados del Hub cuando su contrato lo requiera; accesos y solicitudes privadas pertenecen al Hub.
 - Lista de espera.
 - Recordatorios.
 - Entregas de mensajes.
 - Auditoría.
 - Registro de cambios para sincronización.
 
-Las operaciones que afecten la disponibilidad de horarios se ejecutarán dentro de transacciones.
+Nightingale API será la única vía para aceptar escrituras compartidas de citas, tanto nativas como del Hub. Aplicará autorización y transiciones, mientras PostgreSQL impedirá reservas incompatibles mediante restricciones. Solo sus procesos autorizados accederán a la base privada con permisos limitados. Escritorio, navegador y Hub no recibirán credenciales SQL.
 
 ### 7.5 Patient Hub
 
-El Patient Hub será una aplicación web móvil, independiente de la aplicación de escritorio.
+Nightingale Patient Hub tendrá su repositorio con una web móvil y una API propia. Su backend consultará y modificará citas mediante Nightingale API, sin acceso directo al PostgreSQL operativo. Es el único propietario de sus accesos, acciones y solicitudes. El escritorio también consume esa API; su vista SQLite es derivada y conserva la versión y la última actualización recibida.
 
 El paciente accederá mediante un enlace seguro asociado con una cita existente. No podrá navegar por la agenda completa ni crear citas nuevas.
 
@@ -249,11 +258,11 @@ Permitirá:
 - Consultar el estado actual.
 - Ver instrucciones administrativas permitidas.
 
-Una solicitud de reprogramación no cambiará directamente la agenda. El médico o asistente deberá revisar y aprobar el nuevo horario.
+Una solicitud de reprogramación no cambiará directamente la agenda. El médico o asistente revisará el nuevo horario desde el escritorio y coordinará el resultado con el Hub por su API. Sin conexión se puede consultar la última vista recibida, pero no declarar completada una acción que el Hub no aceptó. El contrato definirá la frontera con Citas y cualquier intención pendiente antes de implementarla.
 
 ### 7.6 Servicio de recordatorios
 
-El servicio de recordatorios funcionará en la nube y no dependerá de que la aplicación de escritorio esté abierta.
+El módulo de recordatorios y sus workers pertenecerán a Nightingale API y no dependerán de que la aplicación de escritorio esté abierta. Su ejecución ocurrirá fuera de las transacciones de sincronización.
 
 Se dividirá conceptualmente en:
 
@@ -277,7 +286,7 @@ n8n podrá utilizarse para:
 n8n no deberá:
 
 - Ser la fuente de verdad de una cita.
-- Asignar definitivamente un horario sin validación de la API.
+- Asignar definitivamente un horario: Rust solicita la reserva y Nightingale API valida y confirma el estado compartido mediante una transacción PostgreSQL.
 - Modificar directamente tablas operativas.
 - Almacenar reglas críticas que no existan también como reglas del dominio.
 - Conservar credenciales dentro de flujos exportados sin protección.
@@ -286,7 +295,7 @@ Si se utiliza el modo de cola de n8n, Redis o Valkey podrá actuar como su broke
 
 ### 7.8 Subsistema analítico
 
-La analítica tendrá componentes separados del flujo transaccional:
+La analítica pertenecerá a módulos y workers de Nightingale API, separados del flujo transaccional:
 
 - Registro de eventos operativos.
 - Proceso ETL incremental.
@@ -307,7 +316,7 @@ Los posibles proveedores considerados son:
 
 Los posibles usos futuros incluyen interpretar respuestas abiertas de pacientes o asistir al personal con comunicaciones administrativas. El proveedor y el modelo se mantendrán abstraídos detrás de un servicio cloud propio.
 
-La aplicación de escritorio no contendrá credenciales del proveedor de IA. Ningún modelo podrá confirmar, cancelar o reprogramar una cita sin pasar por las validaciones ordinarias de la API.
+La aplicación de escritorio no contendrá credenciales del proveedor de IA. Ningún modelo podrá confirmar, cancelar o reprogramar una cita sin pasar por el propietario de esa capacidad: Citas nativo o la API del Hub según el contrato. No tendrá acceso directo de escritura a la base compartida.
 
 ## 8. Modos de operación
 
@@ -325,14 +334,16 @@ Las funciones que requieren Internet, como WhatsApp o la consulta del estado má
 
 ### 9.1 Enfoque
 
-Nightingale utilizará una arquitectura **cloud-authoritative con clientes offline-capable**:
+Nightingale opera de forma nativa sobre SQLite y sincroniza mediante Nightingale API:
 
-- PostgreSQL conserva el estado definitivo.
-- SQLite mantiene una copia operativa por dispositivo.
-- La API recibe operaciones, no archivos SQLite.
-- Cada operación tiene un identificador único.
-- Los dispositivos descargan cambios incrementales.
-- Los conflictos se resuelven mediante reglas sencillas.
+- Rust ejecuta los casos de uso; las lecturas y escrituras locales no dependen de HTTP.
+- El coordinador Rust registra operaciones, las envía por HTTPS y descarga cambios autorizados de Nightingale API.
+- Cada operación tiene un identificador único y una versión esperada.
+- Nightingale API confirma en una transacción PostgreSQL el cambio compartido, el resultado idempotente, la auditoría y el cambio incremental.
+- La descarga se aplica localmente antes de avanzar el cursor.
+- Los resultados del Hub se consumen por su API y se reconcilian con las mismas versiones, sin duplicar efectos ni propietarios.
+
+El contrato deberá definir acceso, permisos, compatibilidad HTTP, orden confirmado del Change Log y recuperación. La API administra su esquema sin exponerlo a los clientes. No equivale a compartir archivos ni a una replicación automática fila por fila.
 
 ### 9.2 Tablas locales de control
 
@@ -371,7 +382,7 @@ Los dispositivos generarán UUID para pacientes, citas y operaciones. Esto permi
 
 ### 9.5 Idempotencia
 
-La API conservará el identificador de cada operación procesada. Si un dispositivo reenvía la misma operación por un corte de red, el servidor devolverá el resultado anterior sin aplicarla nuevamente.
+Nightingale API conservará en PostgreSQL el identificador, contenido verificable y resultado de cada operación procesada. Registrará efecto, resultado idempotente, auditoría y Change Log en una transacción. Tras perder una respuesta después del commit, un reintento autorizado recuperará el resultado sin repetirlo. Reusar el identificador con contenido distinto se rechazará.
 
 ### 9.6 Versionado optimista
 
@@ -383,15 +394,15 @@ Un dispositivo enviará:
 - Versión sobre la que realizó el cambio.
 - Operación solicitada.
 
-El servidor aceptará el cambio únicamente si la versión coincide. Cuando lo acepte, incrementará la versión.
+Nightingale API condicionará la escritura PostgreSQL a la versión esperada e incrementará la versión dentro de la misma transacción. Una restricción o un cambio concurrente podrá rechazarla.
 
-Si la versión no coincide, devolverá el estado actual para que el dispositivo lo muestre o solicite intervención.
+Si la versión no coincide, el coordinador consultará el estado compartido y conservará la intención local para mostrar el conflicto. No basta con comprobar la versión antes de la transacción.
 
 ### 9.7 Descarga incremental
 
-El servidor conservará un registro ordenado de cambios sincronizables. El dispositivo solicitará los cambios posteriores a su cursor.
+Nightingale API entregará páginas autorizadas del registro de cambios PostgreSQL posteriores al cursor. Su contrato definirá orden confirmado, retención y recuperación sin omitir transacciones que confirmen en otro orden.
 
-La respuesta incluirá:
+La lectura incluirá:
 
 - Cambios creados o modificados.
 - Cancelaciones o eliminaciones lógicas.
@@ -407,7 +418,7 @@ Las entidades sincronizadas no se eliminarán físicamente de inmediato. Se util
 
 La interfaz distinguirá:
 
-- `synced`: confirmado por la nube.
+- `synced`: confirmado en el estado compartido.
 - `pending`: cambio local pendiente.
 - `syncing`: operación en proceso.
 - `conflict`: diferencia que requiere atención.
@@ -449,7 +460,7 @@ No se implementarán bloqueos distribuidos. La concurrencia se controlará media
 
 Una cita creada sin conexión se mostrará localmente como provisional hasta que PostgreSQL la acepte.
 
-Si el horario fue ocupado desde otro dispositivo, el servidor rechazará la reserva y la aplicación solicitará seleccionar otro horario.
+Si otro dispositivo ocupó el intervalo, PostgreSQL rechazará la escritura compartida y Rust mostrará el conflicto sin borrar la intención local.
 
 Para reducir la complejidad, la primera versión debería utilizar bloques de horario definidos. La decisión sobre citas de duración fija o servicios que ocupen varios bloques permanece pendiente.
 
@@ -495,17 +506,23 @@ Una reprogramación conservará historial y reiniciará la confirmación cuando 
 ```mermaid
 sequenceDiagram
     participant U as Médico o asistente
-    participant D as Escritorio
-    participant A as API
-    participant P as PostgreSQL
-    U->>D: Registra la cita
-    D->>D: Guarda en SQLite y Outbox
-    D->>A: Envía operación con UUID
-    A->>P: Valida disponibilidad y versión
-    P-->>A: Cita aceptada
-    A-->>D: Estado y versión definitiva
-    D->>D: Marca la operación como sincronizada
+    participant R as Rust del escritorio
+    participant L as SQLite
+    participant A as Nightingale API
+    participant P as PostgreSQL privado
+    U->>R: Registra la cita
+    R->>R: Valida estado y permisos locales
+    R->>L: Guarda cita y Outbox en una transacción
+    R-->>U: Guardada localmente, pendiente de sincronización
+    R->>A: Operación completa, UUID y versión esperada
+    A->>A: Autoriza y revalida reglas compartidas
+    A->>P: Efecto, resultado, auditoría y Change Log en una transacción
+    P-->>A: Commit o conflicto
+    A-->>R: Resultado autorizado y versión
+    R->>L: Registra resultado y conserva conflictos
 ```
+
+El guardado local no espera a la red. Las capacidades del Hub usan su API según §7.5. No se ejecutan proveedores externos dentro de la transacción de sincronización.
 
 ### 12.2 Crear una cita sin conexión
 
@@ -514,90 +531,89 @@ sequenceDiagram
 3. SQLite guarda la cita con estado de sincronización `pending`.
 4. La misma transacción añade la operación a `sync_outbox`.
 5. La interfaz identifica la cita como provisional.
-6. Al recuperar la conexión, el dispositivo envía la operación.
-7. PostgreSQL acepta o rechaza la reserva.
+6. Al recuperar la conexión, Rust envía la operación a Nightingale API.
+7. API comprueba autorización y reglas compartidas y acepta o rechaza la reserva en una transacción PostgreSQL.
 8. SQLite se actualiza con el resultado definitivo.
 
 ### 12.3 Recuperar la conexión
 
 ```mermaid
 sequenceDiagram
-    participant D as Dispositivo
-    participant A as API
-    participant P as PostgreSQL
-    D->>A: Envía operaciones pendientes
-    A->>P: Aplica operaciones idempotentes
-    P-->>A: Resultados y conflictos
-    A-->>D: Confirma resultados
-    D->>A: Solicita cambios desde el cursor
-    A->>P: Consulta registro incremental
-    P-->>A: Cambios recientes
-    A-->>D: Cambios y nuevo cursor
-    D->>D: Actualiza SQLite
+    participant R as Coordinador Rust
+    participant A as Nightingale API
+    participant P as PostgreSQL privado
+    participant H as API del Patient Hub
+    participant L as SQLite
+    R->>A: Verifica sesión y envía operaciones pendientes
+    A->>A: Comprueba cuenta, permisos, revocación y versiones
+    A->>P: Acepta cada operación en transacción idempotente
+    P-->>A: Resultados confirmados
+    A-->>R: Resultados y conflictos
+    R->>A: Solicita página desde cursor
+    A-->>R: Cambios autorizados y cursor
+    R->>L: Aplica página y cursor en una transacción
+    R->>H: Consulta capacidades y resultados propios del Hub
+    H-->>R: Resultado versionado
+    R->>L: Actualiza vista sin duplicar efectos
 ```
 
-El envío y la descarga se realizarán en lotes pequeños. Un error en una operación no deberá impedir que se procesen otras operaciones independientes.
+Las operaciones independientes no forman una transacción global del lote. API no acepta una operación solo por su fecha local. Un fallo del Hub no bloquea sincronización nativa ajena a él; un fallo de API mantiene cambios locales pendientes. Se aplica la política de permisos de §17.2.
 
 ### 12.4 Confirmación desde el Patient Hub
 
 1. El paciente abre un enlace asociado con su cita.
-2. El Patient Hub valida el enlace con la API.
-3. La API devuelve el estado actual de la cita.
-4. El paciente confirma.
-5. PostgreSQL actualiza la cita y registra auditoría.
-6. El cambio queda disponible para los dispositivos en la siguiente sincronización.
+2. La API del Hub valida el enlace y su alcance.
+3. El backend consulta la cita mediante Nightingale API y devuelve la vista permitida.
+4. El paciente confirma y el Hub envía la acción idempotente a Nightingale API.
+5. Nightingale API revalida autorización, versión y transición y confirma cita, auditoría y Change Log en PostgreSQL.
+6. El escritorio consulta el resultado versionado por la API del Hub y actualiza su vista local sin duplicar el efecto ya persistido en PostgreSQL.
 
 Si la cita fue reprogramada, el enlace deberá mostrar la información más reciente o solicitar una nueva confirmación.
 
 ### 12.5 Cancelación desde el Patient Hub
 
 1. El paciente solicita cancelar.
-2. La API verifica que la cita sea cancelable.
-3. PostgreSQL marca la cita como cancelada.
-4. El horario se libera.
-5. Se genera un evento para la lista de espera.
-6. Los dispositivos reciben la cancelación.
+2. La API del Hub verifica el enlace y su política de cancelación y llama a Nightingale API.
+3. Nightingale API revalida el alcance y la transición y acepta la cancelación en PostgreSQL.
+4. La misma transacción libera el horario y conserva historial y resultado idempotente.
+5. Se registra un evento para la lista de espera; su procesamiento ocurre después del commit.
+6. El escritorio consulta la API del Hub e incorpora la cancelación aceptada; la sincronización no aplica dos veces ese mismo efecto.
 
 La cancelación prevalecerá sobre modificaciones locales antiguas que aún no hayan sido sincronizadas.
 
 ### 12.6 Solicitud de reprogramación
 
 1. El paciente solicita un cambio desde el Patient Hub.
-2. PostgreSQL registra la solicitud sin modificar el horario.
+2. El Hub valida y registra la solicitud en su almacenamiento privado sin modificar ni reservar un horario.
 3. El médico o asistente recibe una alerta.
 4. El personal selecciona un nuevo horario.
-5. La cita se reprograma y conserva el historial.
-6. Se crea una nueva solicitud de confirmación.
+5. Rust guarda el cambio local pendiente y solicita su aceptación a Nightingale API, que revalida y conserva el historial compartido.
+6. El escritorio comunica la nueva versión al Hub según el contrato para invalidar la confirmación anterior. La capacidad de confirmación sigue teniendo un único propietario en el Hub.
 
 ### 12.7 Recordatorio
-
-**Pendiente antes de implementar Recordatorios:** las flechas del ejecutor hacia PostgreSQL simplifican el flujo y no autorizan acceso directo desde n8n. El plan maestro §16.5 exige que n8n consulte y registre resultados mediante la API interna. La ruta de Recordatorios deberá ajustar este diagrama y separar los accesos del planificador, la API y el ejecutor antes de implementar sus adaptadores.
 
 ```mermaid
 sequenceDiagram
     participant P as PostgreSQL
-    participant S as Planificador
+    participant S as Servicio de recordatorios
     participant Q as Cola
     participant N as n8n o worker
     participant W as WhatsApp
-    S->>P: Consulta trabajos vencidos
-    S->>Q: Publica reminder_id
+    S->>P: Consulta datos compartidos y trabajos vencidos
+    S->>Q: Publica reminder_job_id
     Q->>N: Entrega el trabajo
-    N->>P: Verifica estado vigente
-    N->>W: Envía plantilla
-    W-->>N: Resultado inicial
-    N->>P: Registra intento
-    W-->>N: Webhook de entrega o respuesta
-    N->>P: Actualiza el estado
+    N->>S: Solicita trabajo y estado vigente por API interna
+    S->>P: Verifica cita, versión y estado del trabajo
+    S-->>N: Trabajo permitido o descartado
+    N->>W: Envía plantilla si procede
+    W-->>N: Resultado inicial o webhook
+    N->>S: Registra intento, entrega o respuesta
+    S->>P: Persiste resultado idempotente
 ```
 
-Antes de enviar, el ejecutor deberá confirmar que:
+El servicio valida que la cita compartida siga activa, que la versión coincida, que no haya envío previo y que exista habilitación y plantilla válidas. No puede conocer cambios que aún solo existan en SQLite.
 
-- La cita continúa activa.
-- El horario no cambió.
-- El recordatorio no fue enviado previamente.
-- El paciente puede recibir comunicaciones.
-- La plantilla corresponde al tipo de cita.
+Rust registra la intención y configura la comunicación desde el escritorio. La planificación y ejecución cloud continúan con los escritorios apagados. n8n no escribe directamente en tablas operativas.
 
 ### 12.8 Lista de espera
 
@@ -605,8 +621,8 @@ Antes de enviar, el ejecutor deberá confirmar que:
 2. El sistema identifica entradas compatibles por servicio y disponibilidad.
 3. Se selecciona la siguiente entrada según la regla configurada.
 4. Se envía una oferta con tiempo limitado.
-5. Si el paciente acepta, la API valida nuevamente el horario.
-6. Si continúa disponible, se asigna.
+5. La respuesta del paciente queda registrada por el servicio correspondiente; no garantiza la asignación.
+6. Rust procesa la aceptación, valida el intervalo conocido y pide a Nightingale API confirmar la reserva compartida cuando disponga de conexión.
 7. Si no responde o rechaza, se ofrece a la siguiente persona.
 
 La regla exacta de prioridad de la lista de espera permanece pendiente.
@@ -624,35 +640,35 @@ La regla exacta de prioridad de la lista de espera permanece pendiente.
 | `schedule_block` | Bloqueo, ausencia o excepción de agenda |
 | `appointment` | Reserva actual |
 | `appointment_history` | Cambios de estado, horario y responsable |
-| `reschedule_request` | Solicitud del paciente pendiente de revisión |
+| `reschedule_request` | Solicitud del paciente en almacenamiento privado del Hub, pendiente de revisión |
 | `waitlist_entry` | Interés de un paciente en un horario o servicio |
 | `waitlist_offer` | Oferta de un horario liberado |
 | `reminder_job` | Recordatorio programado y persistente |
 | `message_delivery` | Intentos, entrega y respuesta de comunicaciones |
-| `patient_access_token` | Acceso limitado al Patient Hub |
+| `patient_access_token` | Acceso limitado en almacenamiento privado del Patient Hub; fuera del esquema operativo de API |
 | `sync_operation` | Operación recibida desde un dispositivo |
 | `change_log` | Cambios incrementales para sincronización |
 | `audit_event` | Acción relevante para seguridad y trazabilidad |
 
 Todas las entidades principales incluirán `practice_id` para aislar la información de cada cuenta profesional y permitir una futura evolución hacia clínicas sin rediseñar completamente el sistema.
 
-## 14. Superficie inicial de la API
+Este catálogo es conceptual, no un único esquema físico. Nightingale API posee el PostgreSQL operativo; Patient Hub posee accesos y solicitudes privadas. Su tecnología de almacenamiento queda pendiente y no habilita acceso directo a las tablas operativas.
 
-La API se organizará por capacidades, no por acceso genérico a tablas.
+## 14. Contratos de integración
 
-| Grupo | Operaciones principales |
+Se separan los contratos nativos de los HTTP externos. Una interfaz pública de componente Rust no implica un servicio HTTP.
+
+| Límite | Responsabilidad |
 |---|---|
-| Autenticación | Iniciar sesión, renovar sesión, cerrar sesión y registrar dispositivo |
-| Sincronización | Enviar operaciones, obtener resultados y descargar cambios desde un cursor |
-| Pacientes | Crear, consultar y actualizar datos administrativos |
-| Agenda | Consultar disponibilidad y bloqueos |
-| Citas | Crear, confirmar, cancelar, reprogramar y registrar asistencia |
-| Patient Hub | Validar acceso, consultar cita, confirmar, cancelar y solicitar cambio |
-| Lista de espera | Registrar entrada, ofrecer horario y aceptar o rechazar oferta |
-| Recordatorios | Programar, cancelar, consultar estado y registrar resultado |
-| Analítica | Consultar indicadores autorizados |
+| React hacia Rust | Comandos Tauri específicos y tipados; sin SQL o secretos en React |
+| Coordinador Rust hacia Nightingale API | Operaciones completas, resultados idempotentes, versiones, autorización y descarga incremental |
+| Rust y web hacia API del Patient Hub | Accesos, política del paciente, acciones y solicitudes propias del Hub |
+| Backend del Hub hacia Nightingale API | Consultas limitadas y aceptación transaccional de cambios de citas con actor y alcance verificables |
+| Rust hacia recordatorios | Intención, configuración y consulta de trabajos y entregas |
+| n8n hacia servicio de recordatorios | Obtención de trabajos y registro de resultados autenticados |
+| Analítica | Entrega de datos preparados por los servicios externos |
 
-La forma exacta de los endpoints, protocolo y contratos se definirá en la especificación de API.
+Nightingale API expondrá operaciones de alto nivel, no SQL ni escritura libre sobre tablas. Posee su fuente contractual y las migraciones operativas; el Hub posee su contrato público. Las formas HTTP exactas se acordarán antes de implementar clientes. Las especificaciones iniciales son [API](specifications/nightingale-api.md) y [Patient Hub](specifications/nightingale-patient-hub.md).
 
 ## 15. Diseño de recordatorios y cola
 
@@ -694,7 +710,7 @@ En la alternativa inicial más sencilla:
 - n8n utiliza su modo de ejecución con cola.
 - Redis o Valkey distribuye ejecuciones a workers.
 - PostgreSQL conserva los trabajos de Nightingale y los estados de negocio.
-- n8n actualiza Nightingale mediante una API interna autenticada.
+- n8n registra sus resultados mediante la API interna autenticada del servicio de recordatorios.
 
 Una cola separada como SQS o RabbitMQ podrá evaluarse cuando existan más consumidores, mayor carga o necesidades de aislamiento.
 
@@ -741,7 +757,8 @@ Los datos analíticos deberán utilizar identificadores seudonimizados cuando no
 - Cada usuario tendrá una identidad propia.
 - No se compartirán credenciales entre médico y asistente.
 - Los dispositivos se registrarán y podrán revocarse.
-- Las sesiones cloud utilizarán tokens de duración limitada.
+- Los servicios de apoyo verificarán su propio acceso; sus sesiones utilizarán tokens de duración limitada.
+- El mecanismo de alta, credenciales y posible ayuda remota de identidad sigue pendiente. El acceso local no requerirá una llamada HTTP por operación.
 - El almacenamiento local de secretos utilizará mecanismos seguros del sistema operativo.
 
 ### 17.2 Autorización
@@ -752,7 +769,13 @@ Roles iniciales:
 - Asistente administrativo.
 - Operador técnico limitado, si resulta necesario.
 
-Cada operación validará `practice_id`, usuario, rol y alcance.
+Cada operación validará practice_id, usuario, rol y alcance.
+
+Sin conexión, Rust conservará la última versión válida de los permisos y no permitirá modificarlos. Cambiar roles, membresías o permisos exige conexión y autorización. Nightingale API comprobará permisos remotos en cada operación y PostgreSQL aplicará además sus restricciones y permisos; una comprobación en el ejecutable no sustituye esa protección.
+
+Los cambios locales registrarán la versión de permisos utilizada y su fecha; las modificaciones remotas tendrán versión y fecha de efecto verificables. Al reconectar se revisarán cambios y revocaciones antes de aceptar el intercambio.
+
+La hora del equipo no demuestra por sí sola que una operación preceda una revocación. El plan de identidad/sincronización deberá definir una política verificable de aceptación temporal. Las operaciones que no pueda validar se conservarán para rechazo o revisión, sin aceptarlas por una fecha declarada ni perderlas en silencio. Véase plan maestro §9.1.
 
 ### 17.3 Seguridad de Tauri
 
@@ -764,7 +787,7 @@ Cada operación validará `practice_id`, usuario, rol y alcance.
 
 ### 17.4 Protección local
 
-Antes de producción deberán definirse:
+Antes de introducir datos reales, incluso en pruebas, deberán definirse:
 
 - Cifrado de SQLite.
 - Custodia de la clave local.
@@ -773,10 +796,13 @@ Antes de producción deberán definirse:
 - Borrado de información al revocar un dispositivo.
 - Protección de archivos temporales y registros.
 
+El borrado local depende de recibir la revocación y de poder ejecutarla: no garantiza eliminar copias que un atacante ya obtuvo ni actuar de inmediato sobre un equipo sin conexión. Cifrar el archivo no protege datos que un proceso intervenido ya puede descifrar.
+
 ### 17.5 Protección en tránsito y en la nube
 
 - Todo tráfico utilizará TLS.
-- PostgreSQL no será accesible directamente desde Internet.
+- Rust accederá a Nightingale API por HTTPS autenticado. PostgreSQL operativo permanecerá privado y solo accesible por los procesos cloud autorizados; el Hub accederá a citas mediante API.
+- No se distribuirán credenciales de administrador ni credenciales comunes con acceso a todas las cuentas.
 - Las credenciales se almacenarán en un gestor de secretos.
 - Los servicios utilizarán permisos mínimos.
 - Las copias de seguridad estarán cifradas.
@@ -789,6 +815,7 @@ Antes de producción deberán definirse:
 - Las acciones sensibles podrán requerir una verificación adicional.
 - Los enlaces antiguos no permitirán operar sobre una versión reemplazada de la cita.
 - No se mostrarán diagnósticos ni información clínica.
+- El escritorio consumirá las capacidades del Hub por su API; la vista local indicará su antigüedad y no actuará como otra autoridad.
 
 ### 17.7 Auditoría
 
@@ -820,10 +847,9 @@ El proceso deberá contemplar:
 
 Componentes mínimos:
 
-- API.
-- PostgreSQL operativo administrado o protegido.
-- Servicio de sincronización.
-- Patient Hub.
+- Proyecto Nightingale API: Python/FastAPI, módulos y workers.
+- PostgreSQL operativo privado, accesible solo por procesos autorizados de Nightingale API.
+- Proyecto Nightingale Patient Hub: web y API propia, sin acceso directo al esquema operativo.
 - Planificador de recordatorios.
 - n8n y sus workers.
 - Redis o Valkey si n8n opera en modo de cola.
@@ -876,12 +902,13 @@ Métricas iniciales:
 
 - Operaciones de sincronización exitosas y fallidas.
 - Tiempo de sincronización.
+- Tiempo de guardado local, respuesta HTTP, duración de transacciones y espera por bloqueos, medidos por separado y sin umbrales fijados todavía.
 - Cantidad de dispositivos con cambios pendientes.
 - Conflictos por tipo.
 - Trabajos de recordatorio pendientes.
 - Reintentos y fallos definitivos.
 - Entregas y respuestas de WhatsApp.
-- Tiempo de respuesta de la API.
+- Tiempo de intercambio con PostgreSQL y de las API de apoyo.
 - Errores del Patient Hub.
 - Estado del ETL.
 
@@ -902,8 +929,9 @@ Se alertará cuando:
 |---|---|
 | Interrupción de Internet | El escritorio continúa localmente y acumula cambios |
 | Interrupción eléctrica | Los servicios cloud continúan; una laptop puede operar mientras tenga batería |
-| API no disponible | Se conservan operaciones en Outbox y se reintentan |
-| PostgreSQL temporalmente indisponible | La API rechaza o pausa escrituras; los clientes mantienen cambios pendientes |
+| API del Hub no disponible | Última vista conocida; sus acciones no se declaran completadas. El resto del núcleo nativo continúa |
+| Nightingale API no disponible | Guardado local y Outbox continúan; sin aceptación compartida ni nuevas acciones de citas del Hub hasta recuperar el servicio |
+| PostgreSQL temporalmente indisponible | Rust sigue operando en SQLite y conserva operaciones pendientes para reintento |
 | WhatsApp no disponible | Los recordatorios quedan pendientes y se reintentan |
 | n8n o worker no disponible | Los trabajos permanecen registrados y vuelven a ejecutarse |
 | Mensaje procesado dos veces | La clave idempotente evita el envío duplicado |
@@ -966,7 +994,8 @@ Los objetivos numéricos de tiempo de respuesta y capacidad se definirán antes 
 - SQLite y migraciones.
 - Pacientes, servicios, agenda y citas.
 - Outbox, cursor e idempotencia.
-- API y PostgreSQL operativo.
+- Cliente HTTPS nativo y Nightingale API con contrato de aceptación transaccional.
+- La integración del Hub y demás servicios externos tendrá planes posteriores; no bloquea la base del núcleo local.
 - Varios dispositivos concurrentes.
 
 ### Etapa 2: Patient Hub y recordatorios
@@ -1002,11 +1031,13 @@ Los objetivos numéricos de tiempo de respuesta y capacidad se definirán antes 
 |---|---|
 | Versiones y arquitecturas de distribución | Las tres plataformas ya están confirmadas para desarrollo; falta definir el soporte de instaladores y producción |
 | Duración fija o variable de las consultas | Modelo de disponibilidad y prevención de solapamientos |
-| Lenguaje y framework del backend cloud | Reutilización de lógica, despliegue y capacidad del equipo |
+| Contratos entre los tres proyectos | Versiones, consultas y operaciones del Hub/API; los proyectos y propietarios ya están decididos |
 | Proveedor cloud | Servicios administrados, costos, regiones y operación |
 | Cola inicial | Integración con n8n, reintentos y despliegue |
 | Cifrado de SQLite | Protección local y distribución de claves |
-| Método de autenticación | Sesiones, recuperación de acceso y revocación |
+| Identidad y sesiones de API | Alta, aislamiento y revocación; los últimos permisos locales permanecen sin red; sin credenciales SQL en el escritorio |
+| Política temporal de permisos | Aceptación de operaciones pendientes con versiones y referencias temporales verificables |
+| Contrato de sincronización por API | Transacciones, Change Log y compatibilidad; Nightingale API posee migraciones operativas |
 | Duración y verificación de enlaces del Patient Hub | Seguridad y experiencia del paciente |
 | Horarios exactos de recordatorios | Reglas del planificador |
 | Límite de cancelación y reprogramación | Validaciones del Patient Hub |
@@ -1022,10 +1053,10 @@ Los objetivos numéricos de tiempo de respuesta y capacidad se definirán antes 
 |---|---|
 | ADR-001 | Nightingale será una aplicación de escritorio basada en Tauri |
 | ADR-002 | React, TypeScript y TailwindCSS construirán la interfaz |
-| ADR-003 | Rust controlará la lógica local y el acceso a SQLite |
+| ADR-003 | Rust controla los casos de uso locales y SQLite; su coordinador usa Nightingale API por HTTPS |
 | ADR-004 | Cada dispositivo tendrá una base SQLite propia |
 | ADR-005 | PostgreSQL será la fuente central de verdad |
-| ADR-006 | La sincronización se realizará mediante API, no mediante replicación de archivos |
+| ADR-006 | Sustituida el 2026-10-21: API transaccional para aceptación remota; se conserva operación nativa sin copiar archivos de base |
 | ADR-007 | Se admitirán varios dispositivos concurrentes por cuenta profesional |
 | ADR-008 | La concurrencia utilizará restricciones, idempotencia y versionado optimista |
 | ADR-009 | Las citas creadas sin conexión serán provisionales hasta ser aceptadas por PostgreSQL |
@@ -1036,6 +1067,13 @@ Los objetivos numéricos de tiempo de respuesta y capacidad se definirán antes 
 | ADR-014 | La analítica utilizará ETL y un PostgreSQL separado del flujo operativo |
 | ADR-015 | La inteligencia artificial se mantiene fuera de la primera versión |
 | ADR-016 | El segmento inicial serán médicos y especialistas independientes |
+| ADR-017 | El Hub posee sus capacidades y Rust consume su API sin duplicar reglas o autoridad |
+| ADR-018 | Sin red se conservan los últimos permisos válidos; modificarlos requiere conexión y su reconciliación no confía solo en fechas locales |
+| ADR-019 | Tres proyectos separados: Nightingale, Nightingale Patient Hub y Nightingale API; cloud no es requisito del núcleo local |
+| ADR-020 | El Hub llama a Nightingale API para guardar cambios compartidos de citas |
+| ADR-021 | Recordatorios, n8n y analítica pertenecen a módulos/workers de Nightingale API, fuera de la transacción de sincronización |
+
+Las decisiones vigentes se registran en el [ADR de tres proyectos y API transaccional](decisions/transactional-sync-three-projects.md). El ADR de acceso directo se conserva como historial sustituido.
 
 ## 26. Criterios de aceptación de la arquitectura
 
@@ -1054,11 +1092,15 @@ La arquitectura se considerará adecuadamente implementada cuando:
 - La caída del ETL no afecte la gestión de citas.
 - Las acciones relevantes queden auditadas.
 - Los datos clínicos permanezcan fuera del alcance inicial.
+- Hoy y mañana estén disponibles sin red tras su descarga o creación, también después de reiniciar.
+- La caída de una API de apoyo no bloquee funciones nativas ajenas a ella.
+- El Hub mantenga un único propietario de sus capacidades y su vista local no se presente como una respuesta remota actual.
+- No se puedan cambiar permisos offline ni validar una operación revocada solo por su fecha local.
 
 ## 27. Conclusión
 
-Nightingale utilizará una arquitectura local-first desde la experiencia del usuario y cloud-authoritative desde la consistencia de los datos. Esta combinación responde a las interrupciones eléctricas y de conectividad sin convertir cada dispositivo en una fuente de verdad independiente.
+Rust ejecuta el trabajo operativo del escritorio sobre SQLite. Cada equipo puede consultar y guardar datos locales sin HTTP ni conexión a PostgreSQL. Al reconectar, su coordinador envía operaciones idempotentes a Nightingale API y recibe los cambios compartidos. API verifica permisos, restricciones y versiones y confirma transacciones en PostgreSQL privado.
 
-La aplicación de escritorio conservará capacidad operativa mediante SQLite, mientras PostgreSQL coordinará varios dispositivos, el Patient Hub y los servicios automáticos. La sincronización se mantendrá deliberadamente sencilla mediante Outbox, UUID, idempotencia, cursores y versionado optimista.
+La operación local y la aceptación compartida son distintas: una reserva pendiente no garantiza que otro equipo no haya ocupado ese intervalo. Una revocación desconocida offline se evalúa al reconectar con la versión de permisos y una referencia temporal verificable.
 
-Los recordatorios, la analítica y futuras funciones de inteligencia artificial estarán desacoplados del núcleo de citas. De esta forma, una falla en una integración externa no impedirá que el médico continúe consultando y administrando su agenda.
+El Hub posee su web, API, accesos y política del paciente; el escritorio consume sus capacidades y mantiene una vista derivada. El Hub usa Nightingale API para consultar y modificar citas. Nightingale API también aloja módulos y workers de recordatorios, integración con n8n y analítica. Estos tres proyectos tienen repositorios propios; las funciones locales continúan aunque fallen los servicios cloud.

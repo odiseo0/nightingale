@@ -17,7 +17,13 @@ Trabaja en una rama propia. Si usas Codex, el prefijo previsto es `codex/`. Cons
 - Migraciones: archivos numerados en `src-tauri/migrations/`. No edites una migración ya usada para cambiar su sentido. Añade una nueva y prueba tanto el éxito como el fallo sin pérdida de datos.
 - Pruebas: junto al módulo cuando permitan leer el comportamiento con su prueba. Usa bases temporales; no escribas en la base local de un colaborador.
 
-Crea módulos y límites cuando exista comportamiento que los necesite. Los servicios web, contratos de sincronización y nuevas aplicaciones requieren sus planes; la base no obliga a elegir ahora un lenguaje de servidor.
+Crea módulos y límites cuando exista comportamiento que los necesite. El núcleo Rust opera sobre SQLite sin HTTP; su coordinador sincroniza operaciones completas mediante Nightingale API por HTTPS cuando el plan lo incluya. La API revalida y acepta el estado compartido; no entregues acceso SQL o credenciales PostgreSQL al escritorio. Define los contratos antes de repartir tareas independientes.
+
+El Patient Hub es una excepción: Rust consume su API y conserva una vista local de sus resultados, sin copiar sus reglas o mantener otra autoridad. No presentes una acción del Hub como completada cuando su servicio no la aceptó.
+
+Los últimos permisos válidos siguen en uso sin conexión; no se pueden cambiar permisos offline. La reconciliación de revocaciones exige versiones y referencias temporales verificables, no solo la fecha local.
+
+Nightingale Patient Hub (web y API propia) y Nightingale API (Python/FastAPI, sincronización, transacciones y workers) tendrán repositorios separados de este escritorio. El Hub llama a Nightingale API para consultar y modificar citas. Recordatorios, integración con n8n y analítica pertenecen a módulos y workers de Nightingale API; no se ejecutan dentro de transacciones de sincronización. Sus contratos de consumo pueden estar aquí; no añadas servidores o aplicaciones web. Sigue los [controles de planificación](tasks/README.md#architecture-checks-for-each-plan), el [ADR vigente](docs/decisions/transactional-sync-three-projects.md) y las especificaciones de [API](docs/specifications/nightingale-api.md) y [Hub](docs/specifications/nightingale-patient-hub.md).
 
 ## Antes de pedir revisión
 

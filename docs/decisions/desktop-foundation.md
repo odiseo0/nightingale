@@ -6,6 +6,10 @@
 **Plan:** [P-20261019-01-desktop-foundation](../../tasks/P-20261019-01-desktop-foundation/plan.md)
 **Reemplaza:** ninguna decisión previa. Concreta las rutas conceptuales del PMD §8 y la cobertura de desarrollo del escritorio.
 
+**Vigencia arquitectónica (2026-10-21):** la [decisión de operación nativa y servicios cloud](native-desktop-cloud-boundaries.md) actualiza la propiedad de componentes y los límites entre repositorios. Este ADR conserva las decisiones de herramientas, rutas y plataformas de la base; sus menciones al servidor describen el alcance histórico y no exigen una API central.
+
+**Revisión arquitectónica posterior (2026-10-21):** la [decisión de tres proyectos y API transaccional](transactional-sync-three-projects.md) sustituye la decisión citada arriba. El escritorio mantiene Rust/SQLite local y sincroniza por HTTPS con Nightingale API, sin acceso SQL remoto. Nightingale Patient Hub tiene su propio proyecto y usa Nightingale API para operar sobre citas. Este cambio documental conserva las herramientas, plataformas y evidencia histórica de la base.
+
 ## Contexto
 
 El usuario confirmó Windows, macOS y Linux desde el inicio. La base actual contiene una plantilla Tauri con React y TypeScript en raíz. Los servicios web se abordarán después, cuando los colaboradores tomen sus rutas de trabajo.

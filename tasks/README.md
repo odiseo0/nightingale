@@ -90,3 +90,22 @@ Only the user can move a plan from `Draft` to `Approved`. Keep at most one task 
 When a plan is superseded, keep it and link to the plan that replaces it.
 
 Do not reopen or rewrite a completed or superseded plan. Create a new plan ID and link the related older plan.
+
+## Architecture checks for each plan
+
+Read the current [Master Plan](../docs/master-plan.md) and the [three-project decision](../docs/decisions/transactional-sync-three-projects.md). Closed plans record past work; they do not override the current architecture.
+
+Each new plan must state:
+
+- The component owner, native Rust use case, local SQLite data, and public interface.
+- What works without a network, which data must already be local, and how saved changes survive a restart.
+- How pending operations, conflicts, permissions and versions enter the HTTPS sync contract owned by Nightingale API. The desktop must not have SQL access or PostgreSQL credentials.
+- Each cloud owner and dependency. Patient Hub owns patient access and policy; its backend calls Nightingale API to read or change appointments. Rust consumes the Hub API without copying its rules. Local use cases must not need an HTTP service. Nightingale API owns shared acceptance and its own worker modules.
+- The focused checks for no connection, a failed cloud service, and recovery when these affect the change. State which remote checks are outside this plan.
+- Which contracts and migrations must be fixed before independent tasks can run in parallel. Name the shared files and integration owner.
+
+Keep one owner for each contract source across the three repositories. Nightingale API owns sync contracts and operational database migrations. Patient Hub owns its public contract and private data. Keep cloud servers and web apps out of desktop implementation plans; their initial specifications may live here until an explicit move to their own repositories. External work runs after commit, outside sync transactions.
+
+Offline work uses the last valid permissions. Permission changes need a connection. Plans for identity or sync must define how permission versions and trusted effective dates govern pending operations; a client date alone is not proof of access.
+
+For a base that enables later work, give each task a reason, the components it enables, and its prerequisites. Do not create empty modules only to match a directory tree.

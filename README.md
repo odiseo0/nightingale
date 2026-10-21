@@ -4,6 +4,22 @@ Aplicación de escritorio para gestionar citas y reducir ausencias en consultas 
 
 Todavía no hay gestión de pacientes o citas, sesión, sincronización ni servicios web. No introduzcas datos reales: falta definir el cifrado y las claves.
 
+## Arquitectura objetivo
+
+Rust ejecutará los casos de uso del escritorio sobre SQLite sin depender de HTTP. Su coordinador enviará operaciones completas por HTTPS a Nightingale API cuando exista conexión. Esa API autorizará y revalidará cada operación antes de confirmar su transacción en PostgreSQL privado. El escritorio no tendrá acceso SQL ni credenciales de esa base.
+
+El sistema tendrá tres proyectos con repositorios propios:
+
+| Proyecto | Responsabilidad |
+|---|---|
+| **Nightingale** | Este escritorio: Tauri, React, Rust, SQLite y sincronización local. |
+| **Nightingale Patient Hub** | Web y API propia; enlaces y acciones del paciente sobre citas existentes. Su backend llama a Nightingale API para consultar y modificar citas. |
+| **Nightingale API** | Python/FastAPI, aceptación transaccional, sincronización y PostgreSQL privado; módulos y workers de recordatorios, integración con n8n y analítica. |
+
+Rust consumirá la API del Hub para sus capacidades y conservará una vista local versionada. Los workers ejecutarán trabajo externo después del commit, sin bloquear transacciones de sincronización. n8n seguirá siendo una herramienta externa.
+
+Sin conexión se usarán los últimos permisos válidos; cambiarlos requiere conexión. El [ADR vigente y su diagrama](docs/decisions/transactional-sync-three-projects.md) y las especificaciones breves de [Nightingale API](docs/specifications/nightingale-api.md) y [Patient Hub](docs/specifications/nightingale-patient-hub.md) recogen el diseño. Los otros dos repositorios se crearán aparte. Son objetivos del producto; la base disponible sigue limitada al diagnóstico y los metadatos SQLite descritos arriba.
+
 ## Empezar
 
 1. Instala los [requisitos de tu sistema](docs/operations/development.md#requisitos).

@@ -1,0 +1,227 @@
+{
+  "date": "2026-10-22",
+  "desktop": {
+    "viewport": [
+      1280,
+      720
+    ],
+    "routes": [
+      {
+        "overflow": false,
+        "path": "#/acceso",
+        "title": "Entra a tu consulta"
+      },
+      {
+        "overflow": false,
+        "path": "#/preparacion",
+        "title": "Tu consulta, lista para empezar"
+      },
+      {
+        "overflow": false,
+        "path": "#/agenda",
+        "title": "Hoy, jueves 22"
+      },
+      {
+        "overflow": false,
+        "path": "#/agenda/semana",
+        "title": "La semana"
+      },
+      {
+        "overflow": false,
+        "path": "#/citas",
+        "title": "Todas las citas"
+      },
+      {
+        "overflow": false,
+        "path": "#/cita/a1",
+        "title": "Hoy, jueves 22"
+      },
+      {
+        "overflow": false,
+        "path": "#/cita/nueva",
+        "title": "Nueva cita"
+      },
+      {
+        "overflow": false,
+        "path": "#/cita/a1/reprogramar",
+        "title": "Reprogramar cita"
+      },
+      {
+        "overflow": false,
+        "path": "#/pacientes",
+        "title": "Pacientes"
+      },
+      {
+        "overflow": false,
+        "path": "#/paciente/p1",
+        "title": "Ana María Rodríguez"
+      },
+      {
+        "overflow": false,
+        "path": "#/pacientes/nuevo",
+        "title": "Registrar paciente"
+      },
+      {
+        "overflow": false,
+        "path": "#/solicitudes",
+        "title": "Solicitudes"
+      },
+      {
+        "overflow": false,
+        "path": "#/solicitud/r1",
+        "title": "Solicitud de cambio"
+      },
+      {
+        "overflow": false,
+        "path": "#/lista-espera",
+        "title": "Lista de espera"
+      },
+      {
+        "overflow": false,
+        "path": "#/lista-espera/ofertas",
+        "title": "Lista de espera"
+      },
+      {
+        "overflow": false,
+        "path": "#/comunicaciones",
+        "title": "Comunicaciones"
+      },
+      {
+        "overflow": false,
+        "path": "#/indicadores",
+        "title": "Indicadores"
+      },
+      {
+        "overflow": false,
+        "path": "#/configuracion/cuenta",
+        "title": "Configuración"
+      },
+      {
+        "overflow": false,
+        "path": "#/configuracion/servicios",
+        "title": "Configuración"
+      },
+      {
+        "overflow": false,
+        "path": "#/configuracion/horarios",
+        "title": "Configuración"
+      },
+      {
+        "overflow": false,
+        "path": "#/configuracion/comunicaciones",
+        "title": "Configuración"
+      },
+      {
+        "overflow": false,
+        "path": "#/configuracion/equipo",
+        "title": "Configuración"
+      },
+      {
+        "overflow": false,
+        "path": "#/configuracion/dispositivos",
+        "title": "Configuración"
+      },
+      {
+        "overflow": false,
+        "path": "#/actividad",
+        "title": "Cambios por revisar"
+      },
+      {
+        "overflow": false,
+        "path": "#/conflicto/a3",
+        "title": "Revisar un horario"
+      },
+      {
+        "overflow": false,
+        "path": "#/diagnostico",
+        "title": "Diagnóstico"
+      },
+      {
+        "overflow": false,
+        "path": "#/hub/cita",
+        "title": "Tu próxima cita"
+      },
+      {
+        "overflow": false,
+        "path": "#/hub/confirmada",
+        "title": "Asistencia confirmada"
+      },
+      {
+        "overflow": false,
+        "path": "#/hub/cancelar",
+        "title": "Cancelar tu cita"
+      },
+      {
+        "overflow": false,
+        "path": "#/hub/cancelada",
+        "title": "Tu cita se ha cancelado"
+      },
+      {
+        "overflow": false,
+        "path": "#/hub/cambiar",
+        "title": "¿Necesitas otra fecha?"
+      },
+      {
+        "overflow": false,
+        "path": "#/hub/solicitud",
+        "title": "Solicitud recibida"
+      },
+      {
+        "overflow": false,
+        "path": "#/hub/enlace-vencido",
+        "title": "Este enlace ya no está disponible"
+      },
+      {
+        "overflow": false,
+        "path": "#/hub/no-disponible",
+        "title": "No pudimos comprobar el resultado"
+      }
+    ]
+  },
+  "responsive": [
+    {
+      "viewport": {
+        "width": 800,
+        "height": 600
+      },
+      "checked": 34,
+      "failures": []
+    },
+    {
+      "viewport": {
+        "width": 320,
+        "height": 720
+      },
+      "checked": 34,
+      "failures": []
+    }
+  ],
+  "interactions": [
+    "Crear cita",
+    "Conservar formulario ante solapamiento",
+    "Reprogramar e invalidar confirmación anterior",
+    "Conservar edición al volver desde aviso",
+    "Cancelar con confirmación",
+    "Registrar y buscar paciente",
+    "Registrar paciente desde cita conservando horario",
+    "Solicitar otra fecha desde Hub",
+    "Confirmar asistencia desde Hub",
+    "Aviso sin conexión",
+    "Comparar conflicto"
+  ],
+  "neutralChip": {
+    "text": "#475569",
+    "background": "#F1F5F9"
+  },
+  "normalSyncLabels": false,
+  "limits": [
+    "Datos ficticios; cambios en memoria",
+    "Sin verificación de servicios, Tauri o seguridad",
+    "Sin auditoría completa de accesibilidad"
+  ],
+  "source_sha256": {
+    "index.html": "a177fa327f718940aa6564ab77378212186e159ebd281c7ed9ab4d881b149114",
+    "styles.css": "e7b984572a29ee76830fd7e7b0ce88cddc6a330b66863793ba2ca51add9219c9",
+    "app.js": "71c65d90194cae7e46130944115240432ed3894e4f9920144c2f576bfc314327"
+  }
+}

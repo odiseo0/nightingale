@@ -9,6 +9,8 @@
 **Versión del documento:** 0.5\
 **Fecha:** 21/10/2026
 
+**Revisión documental del 2026-10-23:** permisos vigentes al aceptar, solicitudes separadas de la cita y ofertas con asignación por personal. El usuario aprueba estos dos últimos criterios y podrá revisarlos antes o durante la implementación. Se conservan las rutas del escritorio.
+
 El segmento inicial incluye al profesional y a sus asistentes autorizados. La gestión de clínicas con varios médicos o sedes queda para una evolución posterior, conforme al plan maestro §4.1.
 
 La [decisión de tres proyectos y API transaccional](decisions/transactional-sync-three-projects.md) del 2026-10-21 separa Nightingale (escritorio), Nightingale Patient Hub y Nightingale API. Conserva la operación local y sustituye el acceso directo a la base cloud por aceptación remota mediante API. No declara funciones implementadas.
@@ -144,13 +146,15 @@ La ausencia no se registrará de forma automática por falta de respuesta: deber
 - **Confirmaciones:** el sistema solicitará confirmación mediante recordatorios configurables. La falta de respuesta no cancelará automáticamente la cita.
 - **Cancelaciones:** el paciente podrá cancelar desde el Patient Hub dentro del plazo definido por la clínica. Después de ese plazo, la solicitud podrá requerir intervención del personal.
 - **Reprogramaciones:** una cita solo podrá trasladarse a un horario disponible. El sistema conservará el historial del cambio y liberará el horario anterior.
-- **Lista de espera:** solo se ofrecerán horarios compatibles con el servicio solicitado. El horario se asignará al primer paciente que lo acepte de forma válida, conforme a la regla de prioridad que defina la clínica.
+- **Lista de espera:** solo se ofrecerán horarios compatibles con el servicio solicitado. La respuesta del paciente expresa interés; el personal autorizado solicita la reserva y API verifica la oferta y la disponibilidad al asignar. La respuesta no crea una cita ni garantiza el horario. La prioridad y los plazos siguen pendientes.
 - **Ausencias:** una cita se marcará como ausencia cuando haya pasado la hora y el margen de espera definido, y el personal confirme que el paciente no asistió.
-- **Permisos sin conexión:** no se modificarán roles, membresías o permisos offline. Los cambios pendientes identificarán la versión de permisos utilizada. Las fechas servirán para revisión junto con versiones y referencias temporales verificables; la hora declarada por un equipo no bastará para aceptar una operación ante una revocación.
+- **Permisos sin conexión:** no se modificarán roles, membresías o permisos offline. Los cambios pendientes identificarán la versión de permisos utilizada. Al aceptar, API aplicará los permisos vigentes: si falta permiso, rechazará sin efecto y el escritorio conservará la intención para revisión. Las fechas y versiones sirven como evidencia; no conceden autorización anterior, conforme a D06 del repositorio de API.
 - **Privacidad:** el paciente solo podrá consultar sus propias citas. Cada integrante del personal verá únicamente la información necesaria para su función.
 - **Mensajes:** los recordatorios no deberán incluir diagnósticos, resultados médicos ni otra información clínica sensible.
 
 Los plazos exactos para recordatorios, cancelaciones, márgenes de espera y ofertas de la lista de espera deberán ser configurables y se definirán durante la validación operativa.
+
+P05 y P06, aprobados por el usuario el 2026-10-23, separan la solicitud del estado de cita y el interés por una oferta de su reserva. Pedir reprogramación conserva estado, horario y confirmación hasta una operación autorizada que los cambie; el personal autoriza asignar una oferta. No se amplían las acciones del Hub. El usuario podrá cambiar estos criterios antes o durante la implementación; el ciclo de solicitudes y el canal, prioridad y plazos de ofertas siguen pendientes.
 
 ## 10. Información que gestionará el producto
 
@@ -271,7 +275,7 @@ Las preguntas sobre el segmento inicial, la creación de citas por el paciente y
 6. ¿Qué datos mínimos del paciente serán obligatorios?
 7. ¿Qué información exacta podrá consultar el médico o especialista?
 8. ¿Qué significa “gestión de récipes” dentro de la visión futura del producto?
-9. ¿Qué política verificable determina la aceptación de operaciones pendientes si un permiso cambió o fue revocado durante la desconexión?
+9. ¿Cómo revisa el personal autorizado una intención rechazada por falta de permiso y cómo se coordina una revocación concurrente con la aceptación? La regla de permisos vigentes al aceptar ya está confirmada por D06.
 10. ¿Cómo se concreta el ciclo completo de solicitudes del Hub y su coordinación con los cambios de citas aceptados por Nightingale API, sin perder intenciones ante fallos parciales?
 
 ## 17. Resumen ejecutivo

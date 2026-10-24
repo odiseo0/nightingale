@@ -5,6 +5,8 @@
 **Estado:** Arquitectura revisada por decisión del usuario\
 **Documento relacionado:** Especificación de Requisitos de Software de Nightingale, versión 0.5
 
+**Revisión documental del 2026-10-23:** alineación de acceso, transacciones y recordatorios; criterios P05/P06 aprobados por el usuario y revisables antes o durante la implementación. Se conservan las rutas del escritorio para su traslado al repositorio original.
+
 La [decisión de tres proyectos y sincronización transaccional por API](decisions/transactional-sync-three-projects.md), aceptada el 2026-10-21, sustituye el acceso directo del escritorio a PostgreSQL. Mantiene los casos de uso locales en Rust/SQLite. Esta revisión describe la arquitectura objetivo, no funciones implementadas.
 
 ## 1. Propósito del documento
@@ -223,7 +225,7 @@ También incluye módulos y workers para recordatorios, entregas y webhooks, int
 
 Nightingale Patient Hub es otro proyecto, con web y API propias. Posee enlaces, acceso y reglas del paciente y llama a Nightingale API para consultar y modificar citas. No escribe directamente en PostgreSQL operativo.
 
-Las operaciones locales no necesitan estos servicios. Una caída de API deja cambios pendientes; una caída del Hub afecta sus capacidades. Las sesiones remotas y el desbloqueo local se distinguirán; las políticas concretas de identidad y revocación quedan pendientes.
+Las operaciones locales no necesitan estos servicios. Una caída de API deja cambios pendientes; una caída del Hub afecta sus capacidades. D06, del repositorio de API, confirma OIDC externo para el personal y permisos vigentes al aceptar. Proveedor, sesiones, vínculo de dispositivos, orden concurrente de revocación y recorrido de revisión siguen pendientes; las sesiones remotas y el desbloqueo local se distinguirán.
 
 ### 7.4 PostgreSQL operativo
 
@@ -271,7 +273,7 @@ Se dividirá conceptualmente en:
 - **Cola:** distribuye los trabajos pendientes.
 - **Ejecutor:** prepara y envía la comunicación.
 - **Webhook receptor:** registra entrega, respuesta o error.
-- **Reintentos:** procesa fallos temporales sin duplicar mensajes.
+- **Reintentos:** procesa fallos temporales con resultado conocido o deduplicación del proveedor; concilia resultados desconocidos antes de repetir un envío.
 
 ### 7.7 n8n
 
@@ -468,14 +470,15 @@ Para reducir la complejidad, la primera versión debería utilizar bloques de ho
 
 El estado de negocio de la cita será independiente del estado de sincronización.
 
+P05, aprobado por el usuario el 2026-10-23, separa la solicitud de reprogramación del estado de cita: el Hub registra la solicitud; pedirla no cambia estado, horario ni confirmación. El diagrama aplica este criterio, que el usuario podrá revisar antes o durante la implementación. El ciclo detallado de la solicitud sigue pendiente y no constituye otro estado de Citas.
+
 ```mermaid
 stateDiagram-v2
     [*] --> Programada
     Programada --> Confirmada: paciente confirma
     Programada --> Cancelada: cancelación
-    Programada --> ReprogramacionSolicitada: paciente solicita cambio
-    ReprogramacionSolicitada --> Programada: personal define nuevo horario
-    Confirmada --> ReprogramacionSolicitada: solicita cambio
+    Programada --> Programada: personal reprograma
+    Confirmada --> Programada: personal reprograma e invalida confirmación
     Confirmada --> Cancelada: cancelación
     Confirmada --> Atendida: consulta completada
     Programada --> Atendida: consulta completada
@@ -490,14 +493,13 @@ Estados iniciales propuestos:
 
 - `scheduled`: programada y pendiente de confirmación.
 - `confirmed`: confirmada por el paciente o el personal.
-- `reschedule_requested`: el paciente solicitó un cambio.
 - `cancelled`: cancelada.
 - `completed`: atendida.
 - `no_show`: ausencia sin aviso.
 
 Una reprogramación conservará historial y reiniciará la confirmación cuando cambien la fecha o la hora.
 
-**Pendiente antes de implementar Citas:** definir todas las salidas de `reschedule_requested` y su relación con la solicitud separada de reprogramación. El diagrama no decide qué ocurre si se rechaza o retira la solicitud, ni cómo se conserva la confirmación previa. No añadir transiciones por deducción; resolverlas en el plan de esa ruta.
+**Pendiente antes de implementar la solicitud:** definir su ciclo, duplicados, rechazo, retirada, resolución y conciliación de fallos. Estos hechos pertenecen al Hub; no alteran por sí solos el estado de cita. `reschedule_requested` deja de ser un estado de Citas. Una reprogramación aceptada sí invalida la confirmación anterior junto al cambio de horario en API.
 
 ## 12. Flujos principales
 
@@ -587,8 +589,8 @@ La cancelación prevalecerá sobre modificaciones locales antiguas que aún no h
 2. El Hub valida y registra la solicitud en su almacenamiento privado sin modificar ni reservar un horario.
 3. El médico o asistente recibe una alerta.
 4. El personal selecciona un nuevo horario.
-5. Rust guarda el cambio local pendiente y solicita su aceptación a Nightingale API, que revalida y conserva el historial compartido.
-6. El escritorio comunica la nueva versión al Hub según el contrato para invalidar la confirmación anterior. La capacidad de confirmación sigue teniendo un único propietario en el Hub.
+5. Rust guarda el cambio local pendiente y solicita su aceptación a Nightingale API. API cambia el intervalo, invalida la confirmación anterior y conserva versión, historial, resultado idempotente y cambios en la misma transacción PostgreSQL. Si falla, conserva la reserva anterior.
+6. Después del commit, el escritorio coordina con el Hub la resolución de la solicitud y sus accesos según el contrato. Si falla ese aviso, conserva su estado pendiente y concilia con la misma operación y versión aceptadas; no vuelve a reprogramar para compensar. La cita ya tiene invalidada su confirmación, aunque el Hub aún no haya conciliado su vista. El Hub conserva sus enlaces y reglas del paciente; API posee el estado compartido de confirmación.
 
 ### 12.7 Recordatorio
 
@@ -621,11 +623,11 @@ Rust registra la intención y configura la comunicación desde el escritorio. La
 2. El sistema identifica entradas compatibles por servicio y disponibilidad.
 3. Se selecciona la siguiente entrada según la regla configurada.
 4. Se envía una oferta con tiempo limitado.
-5. La respuesta del paciente queda registrada por el servicio correspondiente; no garantiza la asignación.
-6. Rust procesa la aceptación, valida el intervalo conocido y pide a Nightingale API confirmar la reserva compartida cuando disponga de conexión.
+5. La respuesta del paciente expresa interés o rechazo; el canal y la prueba de esa respuesta se definirán antes de implementarlos. No garantiza la asignación.
+6. El personal autorizado revisa el interés y pide desde Rust a Nightingale API aceptar la reserva compartida. API comprueba oferta, acceso, disponibilidad y versiones al asignar. Sin conexión no hay asignación compartida ni se detiene el vencimiento de la oferta.
 7. Si no responde o rechaza, se ofrece a la siguiente persona.
 
-La regla exacta de prioridad de la lista de espera permanece pendiente.
+P06, aprobado por el usuario el 2026-10-23, confirma interés separado y asignación por personal. No amplía el Hub ni permite adjudicación automática por una respuesta mientras los escritorios estén apagados. Prioridad, canal, vencimiento y demás detalles siguen pendientes. El usuario podrá revisar el criterio antes o durante la implementación.
 
 ## 13. Modelo conceptual de datos
 
@@ -681,6 +683,7 @@ La tabla `reminder_job` será el registro persistente del trabajo. La cola trans
 - `scheduled`
 - `queued`
 - `processing`
+- `outcome_unknown`: el proveedor pudo recibir el envío; exige conciliación antes de repetirlo.
 - `sent`
 - `delivered`
 - `responded`
@@ -697,11 +700,11 @@ Cada recordatorio tendrá una clave única derivada de:
 - Versión de la cita.
 - Fecha programada.
 
-Un reintento no deberá producir dos comunicaciones equivalentes.
+La clave evita trabajos equivalentes duplicados dentro de Nightingale. No demuestra un único envío externo: si el proveedor recibió el mensaje y se perdió su respuesta, el trabajo conserva un resultado desconocido. Solo se repite con deduplicación del proveedor o tras conciliar que no hubo envío; si no puede comprobarse, se deriva a revisión. La [referencia de API](specifications/nightingale-api.md) identifica la fuente de este límite.
 
 ### 15.4 Reintentos
 
-Los errores temporales utilizarán espera incremental. Los errores permanentes, como un número inválido, pasarán a `failed` y generarán una alerta para el personal.
+Los errores temporales con resultado conocido como no enviado, o con deduplicación del proveedor, utilizarán espera incremental. Un timeout que pueda ocultar un envío aceptado no activa un reenvío ciego: primero exige conciliación o revisión. Los errores permanentes, como un número inválido, pasarán a `failed` y generarán una alerta para el personal. Estos estados son conceptuales; T16/T17 definirán el contrato ejecutable.
 
 ### 15.5 n8n y la cola
 
@@ -758,7 +761,7 @@ Los datos analíticos deberán utilizar identificadores seudonimizados cuando no
 - No se compartirán credenciales entre médico y asistente.
 - Los dispositivos se registrarán y podrán revocarse.
 - Los servicios de apoyo verificarán su propio acceso; sus sesiones utilizarán tokens de duración limitada.
-- El mecanismo de alta, credenciales y posible ayuda remota de identidad sigue pendiente. El acceso local no requerirá una llamada HTTP por operación.
+- OIDC externo para el personal ya está confirmado; API conserva permisos y dispositivos. Proveedor, alta, sesiones y vínculo de dispositivos siguen pendientes en el diseño de acceso de API. El acceso local no requerirá una llamada HTTP por operación.
 - El almacenamiento local de secretos utilizará mecanismos seguros del sistema operativo.
 
 ### 17.2 Autorización
@@ -775,7 +778,7 @@ Sin conexión, Rust conservará la última versión válida de los permisos y no
 
 Los cambios locales registrarán la versión de permisos utilizada y su fecha; las modificaciones remotas tendrán versión y fecha de efecto verificables. Al reconectar se revisarán cambios y revocaciones antes de aceptar el intercambio.
 
-La hora del equipo no demuestra por sí sola que una operación preceda una revocación. El plan de identidad/sincronización deberá definir una política verificable de aceptación temporal. Las operaciones que no pueda validar se conservarán para rechazo o revisión, sin aceptarlas por una fecha declarada ni perderlas en silencio. Véase plan maestro §9.1.
+API aplica los permisos vigentes al aceptar una operación pendiente. Si falta permiso, rechaza sin efecto y el escritorio conserva la intención para revisión. La hora del equipo no concede autorización anterior. El diseño de acceso de API debe cerrar el orden concurrente de aceptación/revocación y el recorrido de revisión, sin cambiar esta regla confirmada por D06. Véase plan maestro §9.1.
 
 ### 17.3 Seguridad de Tauri
 
@@ -934,7 +937,7 @@ Se alertará cuando:
 | PostgreSQL temporalmente indisponible | Rust sigue operando en SQLite y conserva operaciones pendientes para reintento |
 | WhatsApp no disponible | Los recordatorios quedan pendientes y se reintentan |
 | n8n o worker no disponible | Los trabajos permanecen registrados y vuelven a ejecutarse |
-| Mensaje procesado dos veces | La clave idempotente evita el envío duplicado |
+| Trabajo procesado dos veces | La clave evita trabajos duplicados; un resultado de envío desconocido exige conciliación o deduplicación del proveedor antes de reenviar |
 | Conflicto entre dispositivos | PostgreSQL conserva el primer cambio válido y devuelve el estado actual |
 | Daño del dispositivo | Se reconstruyen los datos sincronizados desde PostgreSQL |
 | Daño antes de sincronizar | Los cambios exclusivamente locales pueden perderse |
@@ -1035,8 +1038,8 @@ Los objetivos numéricos de tiempo de respuesta y capacidad se definirán antes 
 | Proveedor cloud | Servicios administrados, costos, regiones y operación |
 | Cola inicial | Integración con n8n, reintentos y despliegue |
 | Cifrado de SQLite | Protección local y distribución de claves |
-| Identidad y sesiones de API | Alta, aislamiento y revocación; los últimos permisos locales permanecen sin red; sin credenciales SQL en el escritorio |
-| Política temporal de permisos | Aceptación de operaciones pendientes con versiones y referencias temporales verificables |
+| Proveedor OIDC y sesiones de API | OIDC externo ya confirmado; faltan proveedor, alta, sesiones y vínculo de dispositivos; sin credenciales SQL en el escritorio |
+| Orden de aceptación/revocación y revisión | Permisos vigentes al aceptar ya confirmados; falta precisar la carrera y el recorrido de intenciones rechazadas |
 | Contrato de sincronización por API | Transacciones, Change Log y compatibilidad; Nightingale API posee migraciones operativas |
 | Duración y verificación de enlaces del Patient Hub | Seguridad y experiencia del paciente |
 | Horarios exactos de recordatorios | Reglas del planificador |
@@ -1101,6 +1104,6 @@ La arquitectura se considerará adecuadamente implementada cuando:
 
 Rust ejecuta el trabajo operativo del escritorio sobre SQLite. Cada equipo puede consultar y guardar datos locales sin HTTP ni conexión a PostgreSQL. Al reconectar, su coordinador envía operaciones idempotentes a Nightingale API y recibe los cambios compartidos. API verifica permisos, restricciones y versiones y confirma transacciones en PostgreSQL privado.
 
-La operación local y la aceptación compartida son distintas: una reserva pendiente no garantiza que otro equipo no haya ocupado ese intervalo. Una revocación desconocida offline se evalúa al reconectar con la versión de permisos y una referencia temporal verificable.
+La operación local y la aceptación compartida son distintas: una reserva pendiente no garantiza que otro equipo no haya ocupado ese intervalo. Al reconectar, API aplica permisos vigentes al aceptar; si falta permiso, rechaza sin efecto y el escritorio conserva la intención para revisión. Las fechas y versiones aportan evidencia, no autorización anterior.
 
 El Hub posee su web, API, accesos y política del paciente; el escritorio consume sus capacidades y mantiene una vista derivada. El Hub usa Nightingale API para consultar y modificar citas. Nightingale API también aloja módulos y workers de recordatorios, integración con n8n y analítica. Estos tres proyectos tienen repositorios propios; las funciones locales continúan aunque fallen los servicios cloud.

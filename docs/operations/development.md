@@ -2,13 +2,15 @@
 
 Esta guía cubre la base local de Nightingale. No requiere servicios web, PostgreSQL, n8n, Docker ni configuración privada. La base SQLite contiene solo metadatos del esquema. Las funciones de negocio siguen pendientes.
 
+**Revisión documental del 2026-10-23:** alineación de permisos, sin cambiar las rutas del escritorio ni repetir sus comprobaciones de ejecución.
+
 ## Límites de esta base y de las integraciones futuras
 
 La [arquitectura vigente](../decisions/transactional-sync-three-projects.md) asigna la operación local a Rust/SQLite y la aceptación remota a Nightingale API por HTTPS. El escritorio no tiene acceso SQL o credenciales PostgreSQL. Nightingale Patient Hub tiene web y API propias y usa Nightingale API para consultar y modificar citas. Ambos tendrán repositorios separados del escritorio.
 
 Esta base aún no implementa sincronización, cliente del Hub o identidad. Sus comandos actuales no requieren servicios cloud. Al planificar la integración, cada colaborador usará un entorno API aislado con su base remota de desarrollo; las credenciales PostgreSQL pertenecen al servidor API y a la administración autorizada, no al cliente de escritorio. No se exigirá Docker. Recordatorios, integración con n8n y analítica pertenecen a módulos/workers de Nightingale API. La instancia n8n de desarrollo seguirá siendo remota y su trabajo no bloqueará transacciones de sincronización.
 
-No cambies permisos sin conexión ni aceptes una operación pendiente por su fecha local. La política de revocación y las referencias temporales verificables deben definirse antes de implementar identidad/sincronización.
+No cambies permisos sin conexión ni aceptes una operación pendiente por su fecha local. D06, del repositorio de API, confirma OIDC externo y permisos vigentes al aceptar: si falta permiso, API rechaza sin efecto y el escritorio conserva la intención para revisión. Proveedor, sesiones, vínculo de dispositivos, orden concurrente de aceptación/revocación y recorrido de revisión siguen pendientes en el diseño de acceso de API.
 
 ## Requisitos
 

@@ -117,3 +117,9 @@ Este es un plan de revisión de diseño en estado Draft. No contiene tareas de i
 **Estimated scope:** M
 
 **Evidence:** 34 rutas y capturas en `design-prototype/`; ver `README.md` y `verification.json` de esa carpeta. Navegación a 1280×720, 800×600 y 320×720 sin desbordamiento del documento. Los recorridos principales y los estados excepcionales se verificaron en la vista previa local; sin llamadas a servicios ni integración en Tauri. Se detectaron y corrigieron un hueco que no se actualizaba, desbordamientos en anchos pequeños y mensajes que no correspondían a citas nuevas.
+
+## Cierre del plan (2026-10-29)
+
+- [x] El usuario decidió cerrar el plan como `Completed` sin ejecutar T01–T04 ni C01/C02, que conservan su estado histórico `Todo` arriba.
+- [x] T05 (prototipo en `design-prototype/`) permanece como la única tarea ejecutada.
+- [x] `plan.md` registra la nota de cierre; el cierre no aprueba el diseño ni autoriza implementación en Tauri.

@@ -6,6 +6,7 @@
 **Documento relacionado:** Especificación de Requisitos de Software de Nightingale, versión 0.5
 
 **Revisión documental del 2026-10-23:** alineación de acceso, transacciones y recordatorios; criterios P05/P06 aprobados por el usuario y revisables antes o durante la implementación. Se conservan las rutas del escritorio para su traslado al repositorio original.
+**Revisión documental del 2026-10-29:** registro de Nightingale API como implementada, con su contrato v1 exportado y copiado fijo en `docs/contracts/` del escritorio; el consumo por el cliente Rust sigue pendiente.
 
 La [decisión de tres proyectos y sincronización transaccional por API](decisions/transactional-sync-three-projects.md), aceptada el 2026-10-21, sustituye el acceso directo del escritorio a PostgreSQL. Mantiene los casos de uso locales en Rust/SQLite. Esta revisión describe la arquitectura objetivo, no funciones implementadas.
 
@@ -219,7 +220,7 @@ Se evaluará el modo WAL para permitir lecturas y escrituras concurrentes dentro
 
 ### 7.3 Nightingale API y procesos de apoyo
 
-Nightingale API es un proyecto Python/FastAPI separado. Recibe operaciones completas del escritorio, autoriza cada entrada y revalida versiones, transiciones y reglas compartidas. Confirma efecto, resultado idempotente, auditoría y Change Log en una transacción PostgreSQL. No es un acceso SQL genérico ni un guardado ciego.
+Nightingale API es un proyecto Python/FastAPI separado, implementado en su propio repositorio: recibe operaciones completas del escritorio, autoriza cada entrada y revalida versiones, transiciones y reglas compartidas. Confirma efecto, resultado idempotente, auditoría y Change Log en una transacción PostgreSQL. No es un acceso SQL genérico ni un guardado ciego. Su contrato v1 (revisión `api-v1.1`, corte 2026-10-29) está exportado y se conserva como copia fija en `docs/contracts/`; la integración del consumidor Rust con ese contrato sigue pendiente y no está acreditada de extremo a extremo.
 
 También incluye módulos y workers para recordatorios, entregas y webhooks, integración con n8n y ETL/analítica. Los trabajos se conservan de forma duradera y se ejecutan después del commit. Una caída o entrega repetida no debe perder ni duplicar efectos. n8n es una herramienta externa que usa API interna autenticada.
 
@@ -345,7 +346,7 @@ Nightingale opera de forma nativa sobre SQLite y sincroniza mediante Nightingale
 - La descarga se aplica localmente antes de avanzar el cursor.
 - Los resultados del Hub se consumen por su API y se reconcilian con las mismas versiones, sin duplicar efectos ni propietarios.
 
-El contrato deberá definir acceso, permisos, compatibilidad HTTP, orden confirmado del Change Log y recuperación. La API administra su esquema sin exponerlo a los clientes. No equivale a compartir archivos ni a una replicación automática fila por fila.
+El contrato define acceso, permisos, compatibilidad HTTP, orden confirmado del Change Log y recuperación; esas formas están fijadas en el contrato v1 (revisión `api-v1.1`), implementado en el repositorio de Nightingale API y copiado como consulta fija en `docs/contracts/` del escritorio. La API administra su esquema sin exponerlo a los clientes. No equivale a compartir archivos ni a una replicación automática fila por fila.
 
 ### 9.2 Tablas locales de control
 
@@ -464,7 +465,7 @@ Una cita creada sin conexión se mostrará localmente como provisional hasta que
 
 Si otro dispositivo ocupó el intervalo, PostgreSQL rechazará la escritura compartida y Rust mostrará el conflicto sin borrar la intención local.
 
-Para reducir la complejidad, la primera versión debería utilizar bloques de horario definidos. La decisión sobre citas de duración fija o servicios que ocupen varios bloques permanece pendiente.
+Para reducir la complejidad, la primera versión debería utilizar bloques de horario definidos. La decisión sobre citas de duración fija o servicios que ocupen varios bloques permanece pendiente. El contrato v1 ya fija la forma de la cita: intervalos de inicio y fin con duración de referencia del servicio de 1–1440 minutos, sin asumir duraciones iguales.
 
 ## 11. Estados de una cita
 
@@ -670,7 +671,7 @@ Se separan los contratos nativos de los HTTP externos. Una interfaz pública de 
 | n8n hacia servicio de recordatorios | Obtención de trabajos y registro de resultados autenticados |
 | Analítica | Entrega de datos preparados por los servicios externos |
 
-Nightingale API expondrá operaciones de alto nivel, no SQL ni escritura libre sobre tablas. Posee su fuente contractual y las migraciones operativas; el Hub posee su contrato público. Las formas HTTP exactas se acordarán antes de implementar clientes. Las especificaciones iniciales son [API](specifications/nightingale-api.md) y [Patient Hub](specifications/nightingale-patient-hub.md).
+Nightingale API expondrá operaciones de alto nivel, no SQL ni escritura libre sobre tablas. Posee su fuente contractual y las migraciones operativas; el Hub posee su contrato público. Las formas HTTP están acordadas y exportadas: el contrato v1 (revisión `api-v1.1`, corte 2026-10-29) se conserva como copia fija en `docs/contracts/` y es la referencia para implementar los clientes. Las especificaciones iniciales son [API](specifications/nightingale-api.md) y [Patient Hub](specifications/nightingale-patient-hub.md).
 
 ## 15. Diseño de recordatorios y cola
 
@@ -997,7 +998,7 @@ Los objetivos numéricos de tiempo de respuesta y capacidad se definirán antes 
 - SQLite y migraciones.
 - Pacientes, servicios, agenda y citas.
 - Outbox, cursor e idempotencia.
-- Cliente HTTPS nativo y Nightingale API con contrato de aceptación transaccional.
+- Cliente HTTPS nativo y Nightingale API con contrato de aceptación transaccional. La API está implementada en su repositorio con su contrato v1 exportado (copia fija en `docs/contracts/`); el cliente nativo del escritorio sigue pendiente.
 - La integración del Hub y demás servicios externos tendrá planes posteriores; no bloquea la base del núcleo local.
 - Varios dispositivos concurrentes.
 
@@ -1040,7 +1041,7 @@ Los objetivos numéricos de tiempo de respuesta y capacidad se definirán antes 
 | Cifrado de SQLite | Protección local y distribución de claves |
 | Proveedor OIDC y sesiones de API | OIDC externo ya confirmado; faltan proveedor, alta, sesiones y vínculo de dispositivos; sin credenciales SQL en el escritorio |
 | Orden de aceptación/revocación y revisión | Permisos vigentes al aceptar ya confirmados; falta precisar la carrera y el recorrido de intenciones rechazadas |
-| Contrato de sincronización por API | Transacciones, Change Log y compatibilidad; Nightingale API posee migraciones operativas |
+| Contrato de sincronización por API | Transacciones, Change Log y compatibilidad; Nightingale API posee migraciones operativas. **Formas HTTP cerradas:** el contrato v1 está implementado y exportado, con copia fija en `docs/contracts/`; falta el consumo del escritorio. |
 | Duración y verificación de enlaces del Patient Hub | Seguridad y experiencia del paciente |
 | Horarios exactos de recordatorios | Reglas del planificador |
 | Límite de cancelación y reprogramación | Validaciones del Patient Hub |

@@ -1,8 +1,8 @@
 # P-20261022-01-screen-flows: Pantallas y flujos del producto
 
-**Status:** Draft
+**Status:** Completed
 **Created:** 2026-10-22
-**Updated:** 2026-10-22
+**Updated:** 2026-10-29
 **Task list:** [todo.md](todo.md)
 
 ## Overview
@@ -301,3 +301,7 @@ La muestra pasó comprobación de sintaxis JavaScript y no contiene llamadas de 
 Se verificaron las 34 rutas en navegador a 1280×720, 800×600 y 320×720 sin desbordamiento horizontal del documento. Se probaron creación, solapamiento, reprogramación, protección de edición, cancelación, registro/búsqueda de pacientes, alta desde cita con conservación del horario, confirmación/solicitud del Hub y escenarios de desconexión/conflicto. Se inspeccionaron las capturas de Agenda, detalle, editor y Hub. `node --check design-prototype/app.js`, enlaces, recursos, espacios y `git diff --check` pasan. La vista previa usa HTTP en 127.0.0.1 y sirve solo la carpeta del prototipo.
 
 La evidencia de esta entrega sustituye las limitaciones de inspección de la primera muestra, sin atribuirle retrospectivamente pruebas. La revisión con el usuario, personal médico, lector de pantalla y los servicios reales siguen fuera de estos resultados. Los checkpoints T01–T04/C01/C02 no se cierran por generar el prototipo. La aplicación, sus dependencias, las especificaciones y los planes anteriores no cambian.
+
+### Cierre del plan (2026-10-29)
+
+El usuario decidió dar por completado este plan sin ejecutar las tareas de validación de recorridos T01–T04 ni sus checkpoints C01/C02: quedan cerradas por decisión expresa, conservando su estado histórico como `Todo` en `todo.md`. La única tarea ejecutada es T05 (prototipo visual independiente en `design-prototype/`). El cierre no convierte la propuesta en diseño aprobado ni autoriza la implementación de las pantallas en Tauri. Se cierra junto con la alineación documental del contrato API v1 (ver [P-20261029-01-docs-api-alignment](../P-20261029-01-docs-api-alignment/plan.md)).

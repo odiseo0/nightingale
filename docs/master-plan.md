@@ -6,6 +6,7 @@
 **Ámbito:** Estructura y reglas para el desarrollo del sistema  
 
 **Revisión documental del 2026-10-23:** alineación de acceso, transacciones y recordatorios; criterios P05/P06 aprobados por el usuario y revisables antes o durante la implementación. Se conservan las rutas del escritorio para su traslado al repositorio original.
+**Revisión documental del 2026-10-29:** registro de Nightingale API como implementada y de la copia fija de su contrato v1 en `docs/contracts/`; sin implementación del consumo del escritorio.
 
 ## 1. Función de este documento
 
@@ -53,6 +54,8 @@ Este plan evita repetir información que ya está definida en otros documentos.
 La [decisión de tres proyectos y sincronización transaccional por API](decisions/transactional-sync-three-projects.md), aceptada el 2026-10-21, sustituye el acceso directo del escritorio a PostgreSQL. Mantiene los casos de uso locales en Rust/SQLite. Esta revisión describe la arquitectura objetivo, no funciones implementadas.
 
 La [referencia de Nightingale API](specifications/nightingale-api.md) identifica su fuente en el repositorio de API; la [especificación inicial del Patient Hub](specifications/nightingale-patient-hub.md) sigue como referencia hasta su traslado explícito. Cada proyecto posee sus contratos; las rutas del escritorio se conservan.
+
+Nightingale API está implementada en su repositorio y exporta su contrato ejecutable (OpenAPI, esquemas JSON, capacidades y manifiesto). Este repositorio conserva una copia fija de consulta en [`docs/contracts/`](contracts/api-v1/nightingale-api.md), revisión `api-v1.1` con corte del 2026-10-29; es el estado vigente del API para cualquier trabajo del escritorio que interactúe con él. La implementación del API no acredita el consumo: la integración del cliente Rust y su recuperación de extremo a extremo siguen pendientes en este repositorio.
 
 Reglas de precedencia:
 
@@ -168,8 +171,8 @@ No se incorporarán CRDT, bloqueos distribuidos ni event sourcing completo en el
 | Proveedor cloud | Abierto; AWS y DigitalOcean son candidatos |
 | Broker o cola final | Abierto |
 | Cifrado de SQLite | Abierto |
-| Identidad y acceso | OIDC externo y permisos vigentes al aceptar confirmados; faltan proveedor, alta, sesiones, vínculo de dispositivos y orden de revocación; uso local de los últimos permisos válidos |
-| Duración fija o variable de citas | Abierta |
+| Identidad y acceso | OIDC externo y permisos vigentes al aceptar confirmados; faltan proveedor, alta, sesiones, vínculo de dispositivos y orden de revocación; uso local de los últimos permisos válidos. El contrato v1 ya fija la forma implementada del flujo de dispositivos (canje OIDC por token opaco y registro de instalación con `RegisterAccountDevice`); ver `docs/contracts/`. |
+| Duración fija o variable de citas | Abierta. El contrato v1 fija intervalos de inicio y fin con duración de referencia del servicio (1–1440 minutos); la decisión de duración fija o variable para la interfaz sigue abierta. |
 | Proveedor oficial de WhatsApp | Abierto |
 | Frecuencia del ETL | Abierta |
 | RPO, RTO y retención | Abiertos |
@@ -412,7 +415,7 @@ Los servicios cloud conservan sus propias herramientas, dependencias y despliegu
 
 Los contratos externos tendrán una fuente versionada con propietario explícito y una política de compatibilidad entre repositorios. El plan de cada integración decidirá dónde vive esa fuente y cómo se actualiza su copia de consumo; no se mantendrán dos fuentes editables independientes.
 
-El código generado no se editará manualmente. El contrato de sincronización remota no sustituye los casos de uso locales por llamadas HTTP. API y Hub poseen sus contratos; Rust consume versiones compatibles.
+El código generado no se editará manualmente. El contrato de sincronización remota no sustituye los casos de uso locales por llamadas HTTP. API y Hub poseen sus contratos; Rust consume versiones compatibles. La copia de consumo del contrato API v1 vive en `docs/contracts/` y es fija: se actualiza copiando una nueva exportación completa desde `nightingale-api`, nunca editándola localmente.
 
 ## 9. Catálogo de componentes
 
@@ -1961,7 +1964,7 @@ No se aceptarán excepciones implícitas basadas únicamente en urgencia o conve
 
 Este plan conserva abiertos los puntos que requieren evaluación específica:
 
-1. Contrato HTTP transaccional de sincronización, orden confirmado del Change Log y compatibilidad; la propiedad de migraciones operativas corresponde a Nightingale API.
+1. Contrato HTTP transaccional de sincronización, orden confirmado del Change Log y compatibilidad; la propiedad de migraciones operativas corresponde a Nightingale API. **Cerrado en el repositorio de API:** el contrato v1 (revisión `api-v1.1`) define esas formas y este repositorio conserva su copia fija en `docs/contracts/`; falta el consumo del escritorio, no la definición del contrato.
 2. Contratos HTTP de los servicios de apoyo, propietario de su fuente y frontera exacta Citas/Patient Hub.
 3. Proveedor cloud.
 4. Versiones y arquitecturas de distribución soportadas; Windows, macOS y Linux ya están confirmados para la base de desarrollo.

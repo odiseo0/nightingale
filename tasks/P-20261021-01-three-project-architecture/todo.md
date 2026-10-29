@@ -67,4 +67,4 @@
 
 - [x] Verificación documental completa y alcance del cambio comprobado; Mermaid revisado estructuralmente, sin render visual.
 - [x] Diagrama y especificaciones disponibles para revisión.
-- [ ] Revisión del usuario completada.
+- [x] Revisión del usuario completada (2026-10-29): el usuario aceptó el alcance y pidió cerrar el plan como `Completed` durante P-20261029-01-docs-api-alignment.

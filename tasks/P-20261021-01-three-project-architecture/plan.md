@@ -1,8 +1,8 @@
 # P-20261021-01-three-project-architecture: Documentar los tres proyectos
 
-**Status:** In progress
+**Status:** Completed
 **Created:** 2026-10-21
-**Updated:** 2026-10-21
+**Updated:** 2026-10-29
 **Task list:** [todo.md](todo.md)
 
 ## Overview
@@ -61,3 +61,5 @@ Ninguna que bloquee esta revisión. Las decisiones de implementación quedan enu
 ## Evidence
 
 Entrega documental preparada el 2026-10-21. Verificación puntual: 15 archivos Markdown, 62 enlaces/destinos y anclas locales, nueve bloques Mermaid revisados estructuralmente; el diagrama general coincide en DAT y ADR. No se ha ejecutado un render visual de Mermaid. `git diff --check` pasa. La revisión Git confirma sin cambios respecto a HEAD el código, manifiestos, lockfiles y plan de la base, rutas que estaban limpias al inicio. Las demás ediciones previas del usuario se conservaron como base del trabajo. T01–T03 están terminadas; C01 sigue pendiente solo de revisión del usuario, sin declarar pruebas de producto o servicios nuevos.
+
+**Cierre (2026-10-29):** el usuario revisó y aceptó el alcance documental, completó C01 y pidió cerrar el plan como `Completed` junto con la alineación documental del contrato API v1 (ver [P-20261029-01-docs-api-alignment](../P-20261029-01-docs-api-alignment/plan.md)). El cierre no declara implementación de producto ni servicios.

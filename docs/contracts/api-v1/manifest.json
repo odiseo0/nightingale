@@ -1,0 +1,14 @@
+{
+  "files": {
+    "accepted-operations.schema.json": "1a80185cffe10c5177d37be5be396427fedc38a893d3637179fa418dd2a31493",
+    "capabilities.json": "e7466d9ee7977626bd1705a163ee3a58d229ce7d9516ce3dd3abf501f053b5d5",
+    "openapi.json": "a35f7e2fd1dfc7848cc504e81c5eb6fa98fd0998d83805f5e9e3877f29cdaaeb",
+    "public-models.schema.json": "1fb0bf65989f68c50a5bbd54910d68aad99aa770b5a2b48b9e18a8daff9e4eeb",
+    "sse.schema.json": "3e3ca8276a9f76045b549fe0fe0a9a1a1cc8ce2fe902031488c40cc9c017e2d4"
+  },
+  "generated": true,
+  "modelRevision": "api-v1.1",
+  "origin": "scripts/export_contracts.py",
+  "paths": 46,
+  "schemas": 70
+}

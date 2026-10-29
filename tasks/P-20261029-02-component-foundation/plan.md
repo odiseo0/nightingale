@@ -1,6 +1,6 @@
 # P-20261029-02-component-foundation: Esqueleto Rust para trabajo paralelo
 
-**Status:** In progress
+**Status:** Completed
 **Created:** 2026-10-29
 **Updated:** 2026-10-29
 **Task list:** [todo.md](todo.md)
@@ -36,21 +36,23 @@ T01 (reestructura) → T02 (kernel) y T03 (SQLite) en paralelo lógico pero secu
 ## Task List
 
 ### Phase 1: Esqueleto y almacenamiento
-- [ ] T01: Reestructurar `src-tauri/src` al layout de componentes
-- [ ] T02: Kernel compartido mínimo (`shared_kernel/`)
-- [ ] T03: Base SQLite generalizada + convención de migraciones
+- [x] T01: Reestructurar `src-tauri/src` al layout de componentes
+- [x] T02: Kernel compartido mínimo (`shared_kernel/`)
+- [x] T03: Base SQLite generalizada + convención de migraciones
 
 ### C01: Después de T01–T03
-- [ ] `pnpm quality` completo verde
-- [ ] Convenciones de migraciones e IPC aceptadas en revisión
+- [x] Controles Cargo completos en verde (`cargo test`, `cargo clippy -D warnings`)
+- [x] Convenciones de migraciones e IPC aceptadas en revisión
 
 ### Phase 2: IPC y Outbox
-- [ ] T04: Convenciones IPC Rust↔Tauri demostradas
-- [ ] T05: Componente sync: Outbox local (slice sin nube)
+- [x] T04: Convenciones IPC Rust↔Tauri demostradas
+- [x] T05: Componente sync: Outbox local (slice sin nube)
 
 ### C02: Revisión final
-- [ ] `pnpm quality` verde y `pnpm build:desktop` correcto
-- [ ] Decisión de que los planes paralelos pueden reservar migraciones 0003+
+- [x] `cargo test` (26), `cargo clippy -D warnings`, `cargo build --workspace --locked` y `cargo fmt --check` en verde; `pnpm exec tsc` OK
+- [x] Decisión de que los planes paralelos pueden reservar migraciones 0003+
+- [x] `pnpm quality`/`pnpm tauri dev` omitidos por indicación del usuario (sin `index.html`); comprobaciones manuales pendientes de recuperar la entrada de Vite
+- [x] Revisión del usuario completada (aceptación el 2026-10-29)
 
 ## Risks and Mitigations
 

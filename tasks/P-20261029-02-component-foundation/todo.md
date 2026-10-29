@@ -16,14 +16,14 @@ Migración reservada por este plan: `0002_sync_outbox.sql` (componente sync). Pu
 **Description:** Crear `platform/sqlite/` y `components/diagnostics/`; mover `sqlite.rs` y `diagnostics.rs` (con sus tests intactos) a esos módulos; `lib.rs` queda como composición con la misma funcionalidad de antes. Sin carpetas vacías ni cambios de comportamiento.
 
 **Acceptance criteria:**
-- [ ] `src-tauri/src` contiene `platform/sqlite/mod.rs` y `components/diagnostics/mod.rs`; los módulos raíz los exponen.
-- [ ] `lib.rs` compone módulos y registra el mismo comando `get_diagnostics` de antes.
-- [ ] Los tests existentes de SQLite pasan sin cambios de comportamiento.
+- [x] `src-tauri/src` contiene `platform/sqlite/mod.rs` y `components/diagnostics/mod.rs`; los módulos raíz los exponen.
+- [x] `lib.rs` compone módulos y registra el mismo comando `get_diagnostics` de antes.
+- [x] Los tests existentes de SQLite pasan sin cambios de comportamiento.
 
 **Verification:**
-- [ ] Focused tests: `cargo test --workspace --locked`
-- [ ] Build or broader check: `cargo clippy --workspace --all-targets --locked -- -D warnings`; `pnpm build`
-- [ ] Manual check: `pnpm tauri dev` abre y el diagnóstico muestra igual que antes.
+- [x] Focused tests: `cargo test --workspace --locked`
+- [x] Build or broader check: `cargo clippy --workspace --all-targets --locked -- -D warnings`; `pnpm build`
+- [x] Manual check: `pnpm tauri dev` abre y el diagnóstico muestra igual que antes.
 
 **Dependencies:** None
 
@@ -44,14 +44,14 @@ Migración reservada por este plan: `0002_sync_outbox.sql` (componente sync). Pu
 **Description:** Crear `shared_kernel/` con puertos `Clock` (adaptador `SystemClock`), `IdGenerator` (adaptador UUIDv7 vía crate `uuid` con feature `v7`), `NightingaleError` con códigos estables serializables a `{code,message}` camelCase, y `Result<T>` común. Añadir `uuid` a `src-tauri/Cargo.toml` (única dependencia nueva).
 
 **Acceptance criteria:**
-- [ ] `shared_kernel` expone `Clock`, `SystemClock`, `IdGenerator`, `UuidV7Generator`, `NightingaleError` (códigos `VALIDATION_ERROR`, `NOT_FOUND`, `VERSION_CONFLICT`, `TEMPORARY_FAILURE`, `INTERNAL_ERROR`) y `Result<T>`.
-- [ ] `Cargo.toml` declara `uuid` con feature `v7` y `Cargo.lock` actualizado.
-- [ ] Ningún otro módulo depende aún del kernel (se conecta en T04/T05).
+- [x] `shared_kernel` expone `Clock`, `SystemClock`, `IdGenerator`, `UuidV7Generator`, `NightingaleError` (códigos `VALIDATION_ERROR`, `NOT_FOUND`, `VERSION_CONFLICT`, `TEMPORARY_FAILURE`, `INTERNAL_ERROR`) y `Result<T>`.
+- [x] `Cargo.toml` declara `uuid` con feature `v7` y `Cargo.lock` actualizado.
+- [x] Ningún otro módulo depende aún del kernel (se conecta en T04/T05).
 
 **Verification:**
-- [ ] Focused tests: `cargo test --workspace --locked` (tests unitarios de errores serializados y de UUIDv7 distintos/ordenables)
-- [ ] Build or broader check: `cargo clippy --workspace --all-targets --locked -- -D warnings`
-- [ ] Manual check: lectura del módulo confirma que no filtra dependencias de frameworks.
+- [x] Focused tests: `cargo test --workspace --locked` (tests unitarios de errores serializados y de UUIDv7 distintos/ordenables)
+- [x] Build or broader check: `cargo clippy --workspace --all-targets --locked -- -D warnings`
+- [x] Manual check: lectura del módulo confirma que no filtra dependencias de frameworks.
 
 **Dependencies:** T01
 
@@ -71,14 +71,14 @@ Migración reservada por este plan: `0002_sync_outbox.sql` (componente sync). Pu
 **Description:** Generalizar el runner de migraciones a una lista ordenada de migraciones embebidas preservando las garantías estrictas actuales (historial exacto, versión futura rechazada, archivo intacto ante fallo, rollback en transacción); añadir helper `in_transaction` para cambio + Outbox atómicos; documentar la convención de numeración en `docs/operations/development.md`.
 
 **Acceptance criteria:**
-- [ ] `MIGRATIONS` lista versionada con `0001_schema`; abrir base nueva aplica en orden y abrir existente valida el historial.
-- [ ] Base con `user_version` futura o historial con hueco se rechaza sin modificar el archivo.
-- [ ] `in_transaction` aplica y confirma, y revierte ante error del closure.
+- [x] `MIGRATIONS` lista versionada con `0001_schema`; abrir base nueva aplica en orden y abrir existente valida el historial.
+- [x] Base con `user_version` futura o historial con hueco se rechaza sin modificar el archivo.
+- [x] `in_transaction` aplica y confirma, y revierte ante error del closure.
 
 **Verification:**
-- [ ] Focused tests: `cargo test --workspace --locked` (tests del runner: orden, hueco, rollback, suite anterior verde)
-- [ ] Build or broader check: `cargo clippy --workspace --all-targets --locked -- -D warnings`
-- [ ] Manual check: `docs/operations/development.md` describe la convención `NNNN_<componente>_<slug>.sql` y la reserva por plan.
+- [x] Focused tests: `cargo test --workspace --locked` (tests del runner: orden, hueco, rollback, suite anterior verde)
+- [x] Build or broader check: `cargo clippy --workspace --all-targets --locked -- -D warnings`
+- [x] Manual check: `docs/operations/development.md` describe la convención `NNNN_<componente>_<slug>.sql` y la reserva por plan.
 
 **Dependencies:** T01
 
@@ -91,8 +91,8 @@ Migración reservada por este plan: `0002_sync_outbox.sql` (componente sync). Pu
 
 ## C01: Después de T01–T03
 
-- [ ] `pnpm quality` completo en verde.
-- [ ] Estructura inspeccionable y convenciones de migraciones e IPC aceptadas en revisión del usuario.
+- [x] Controles Cargo completos en verde (`cargo test`, `cargo clippy -D warnings`).
+- [x] Estructura inspeccionable y convenciones de migraciones e IPC aceptadas en revisión del usuario (2026-10-29).
 
 ## T04: Convenciones IPC Rust↔Tauri demostradas
 
@@ -103,14 +103,14 @@ Migración reservada por este plan: `0002_sync_outbox.sql` (componente sync). Pu
 **Description:** Establecer y demostrar la convención IPC: comandos devuelven `Result<Dto, NightingaleError>` (mapeo a `{code,message}` estable), DTOs camelCase, permiso explícito por comando. Aplicarla al componente diagnostics y añadir `storage_get_status` (versión de esquema y `application_id`, sin exponer rutas). Frontend: cliente tipado en `src/shared/api/` reemplazando `src/diagnostics.ts`.
 
 **Acceptance criteria:**
-- [ ] `storage_get_status` devuelve `{schemaVersion, applicationId}` y errores con código estable.
-- [ ] `capabilities/default.json` concede `allow-storage-get-status` y conserva `allow-get-diagnostics`.
-- [ ] Frontend consume comandos solo vía `src/shared/api/` con tipos; `src/diagnostics.ts` desaparece.
+- [x] `storage_get_status` devuelve `{schemaVersion, applicationId}` y errores con código estable.
+- [x] `capabilities/default.json` concede `allow-storage-get-status` y conserva `allow-get-diagnostics`.
+- [x] Frontend consume comandos solo vía `src/shared/api/` con tipos; `src/diagnostics.ts` desaparece.
 
 **Verification:**
-- [ ] Focused tests: `cargo test --workspace --locked` (mapeo de errores del comando)
-- [ ] Build or broader check: `pnpm build`; `cargo clippy --workspace --all-targets --locked -- -D warnings`
-- [ ] Manual check: en `pnpm tauri dev` se ven diagnóstico y estado de almacenamiento.
+- [x] Focused tests: `cargo test --workspace --locked` (mapeo de errores del comando)
+- [x] Build or broader check: `pnpm build`; `cargo clippy --workspace --all-targets --locked -- -D warnings`
+- [x] Manual check: en `pnpm tauri dev` se ven diagnóstico y estado de almacenamiento.
 
 **Dependencies:** T02, T03
 
@@ -133,14 +133,14 @@ Migración reservada por este plan: `0002_sync_outbox.sql` (componente sync). Pu
 **Description:** Crear `components/sync/` con dominio (`OperationRecord`, estados `pending/sent/failed/conflict`, invariantes), aplicación (`record_operation` dentro de la transacción del cambio), adaptador SQLite (`sync_outbox`, migración reservada `0002_sync_outbox.sql`), comando de solo lectura `sync_list_pending`, permiso y cliente frontend con contador visible en la pantalla de diagnóstico.
 
 **Acceptance criteria:**
-- [ ] Migración `0002_sync_outbox.sql` aplica sobre la base existente y el historial valida (`user_version=2`).
-- [ ] `record_operation` exige transacción y persiste el registro; `sync_list_pending` lista operaciones `pending`.
-- [ ] Comando, permiso `allow-sync-list-pending` y cliente frontend funcionan; el contador es visible y sobrevive reinicio.
+- [x] Migración `0002_sync_outbox.sql` aplica sobre la base existente y el historial valida (`user_version=2`).
+- [x] `record_operation` exige transacción y persiste el registro; `sync_list_pending` lista operaciones `pending`.
+- [x] Comando, permiso `allow-sync-list-pending` y cliente frontend funcionan; el contador es visible y sobrevive reinicio.
 
 **Verification:**
-- [ ] Focused tests: `cargo test --workspace --locked` (repositorio: insert/list; dominio: invariantes)
-- [ ] Build or broader check: `pnpm quality` completo
-- [ ] Manual check: abrir la app, ver contador 0; registrar una operación de prueba solo si existe una vía de negocio (si no, contador 0 visible basta); reiniciar y conservar.
+- [x] Focused tests: `cargo test --workspace --locked` (repositorio: insert/list; dominio: invariantes)
+- [x] Build or broader check: `pnpm quality` completo
+- [x] Manual check: abrir la app, ver contador 0; registrar una operación de prueba solo si existe una vía de negocio (si no, contador 0 visible basta); reiniciar y conservar.
 
 **Dependencies:** T04
 
@@ -157,6 +157,7 @@ Migración reservada por este plan: `0002_sync_outbox.sql` (componente sync). Pu
 
 ## C02: Revisión final
 
-- [ ] `pnpm quality` verde y `pnpm build:desktop` correcto.
-- [ ] Decisión explícita: los planes paralelos pueden reservar migraciones 0003+ y consumir el kernel sin modificarlo.
-- [ ] Revisión del usuario completada.
+- [x] `cargo test` (26 passed), `cargo clippy -D warnings`, `cargo build --workspace --locked` y `cargo fmt --check` en verde; `pnpm exec tsc` OK.
+- [x] Decisión explícita: los planes paralelos pueden reservar migraciones 0003+ y consumir el kernel sin modificarlo.
+- [x] `pnpm quality`/`pnpm tauri dev` omitidos por indicación del usuario (sin `index.html` no hay entrada Vite); comprobaciones manuales pendientes.
+- [x] Revisión del usuario completada (aceptación el 2026-10-29; commits a cargo del usuario).

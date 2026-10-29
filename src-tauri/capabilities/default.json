@@ -4,6 +4,8 @@
   "description": "Capability for the main window",
   "windows": ["main"],
   "permissions": [
-    "allow-get-diagnostics"
+    "allow-get-diagnostics",
+    "allow-storage-get-status",
+    "allow-sync-list-pending"
   ]
 }

@@ -104,6 +104,10 @@ Este comando ejecuta `tauri build --debug --no-bundle`: compila los recursos loc
 
 ## Datos locales
 
+### Convención de migraciones
+
+Cada migración vive en `src-tauri/migrations/` como `NNNN_<componente>_<slug>.sql`, con `NNNN` secuencial y sin huecos. El runner exige que cada archivo fije `PRAGMA user_version` con su propio número; un historial inválido o una versión futura se rechazan sin modificar el archivo. Antes de ejecutar un plan que añade una migración, reserva su número en el `todo.md` del plan para evitar colisiones entre trabajos paralelos. Las migraciones se aplican en orden dentro de una sola transacción.
+
 Rust obtiene la carpeta mediante `app.path().app_data_dir()` de Tauri y crea `nightingale.sqlite` dentro. Con los valores por defecto del sistema:
 
 | Sistema | Carpeta de la base |

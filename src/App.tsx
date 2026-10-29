@@ -1,10 +1,17 @@
 import { useState } from "react";
-import { getDiagnostics, type Diagnostics } from "./diagnostics";
+import { getDiagnostics, type Diagnostics } from "./shared/api/diagnostics";
+import { getStorageStatus, type StorageStatus } from "./shared/api/storage";
+import { getPendingOperations, type PendingOperations } from "./shared/api/sync";
 import "./App.css";
 
 type DiagnosticState =
   | { status: "idle" | "loading" }
-  | { status: "ready"; data: Diagnostics }
+  | {
+      status: "ready";
+      data: Diagnostics;
+      storage: StorageStatus;
+      pending: PendingOperations;
+    }
   | { status: "error" };
 
 function App() {
@@ -14,8 +21,12 @@ function App() {
     setDiagnostic({ status: "loading" });
 
     try {
-      const data = await getDiagnostics();
-      setDiagnostic({ status: "ready", data });
+      const [data, storage, pending] = await Promise.all([
+        getDiagnostics(),
+        getStorageStatus(),
+        getPendingOperations(),
+      ]);
+      setDiagnostic({ status: "ready", data, storage, pending });
     } catch {
       setDiagnostic({ status: "error" });
     }
@@ -67,6 +78,18 @@ function App() {
             <div>
               <dt className="text-sm text-gray-600">Arquitectura</dt>
               <dd className="font-mono">{diagnostic.data.architecture}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-600">Versión del esquema local</dt>
+              <dd className="font-mono">{diagnostic.storage.schemaVersion}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-600">Identificador de aplicación</dt>
+              <dd className="font-mono">{diagnostic.storage.applicationId}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-600">Operaciones pendientes de sincronizar</dt>
+              <dd className="font-mono">{diagnostic.pending.total}</dd>
             </div>
           </dl>
         )}

@@ -1,5 +1,6 @@
-mod diagnostics;
-mod sqlite;
+pub mod components;
+pub mod platform;
+pub mod shared_kernel;
 
 use tauri::Manager;
 
@@ -12,7 +13,7 @@ pub fn run() {
                 let directory = app.path().app_data_dir()?;
                 std::fs::create_dir_all(&directory)?;
 
-                sqlite::open(&directory.join("nightingale.sqlite"))
+                platform::sqlite::open(&directory.join("nightingale.sqlite"))
             };
             let connection = initialize().map_err(|_| {
                 std::io::Error::other(
@@ -23,7 +24,11 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![diagnostics::get_diagnostics])
+        .invoke_handler(tauri::generate_handler![
+            components::diagnostics::get_diagnostics,
+            components::storage::storage_get_status,
+            components::sync::adapters::inbound::sync_list_pending,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -10,20 +10,22 @@ Trabaja en una rama propia. Si usas Codex, el prefijo previsto es `codex/`. Cons
 
 ## Colocar el código
 
-- Interfaz y estados de vista: `src/`. Añade el cliente IPC tipado junto al caso que lo usa; no pases SQL, secretos o acceso general al sistema de archivos.
+- Interfaz y estados de vista: `src/`. Añade el cliente IPC tipado en `src/shared/api/`; no pases SQL, secretos o acceso general al sistema de archivos.
 - Entrada y composición del escritorio: `src-tauri/src/lib.rs`. Mantén aquí la conexión entre Tauri y los módulos; evita acumular reglas del producto.
-- Reglas del dominio: módulos Rust sin dependencias de Tauri o SQLite cuando exista un caso de uso aprobado. Prueba sus entradas y salidas.
-- Acceso a datos: adaptadores Rust que sirven a ese caso. Hoy `sqlite.rs` abre y valida el esquema; no define pacientes, citas u Outbox.
-- Migraciones: archivos numerados en `src-tauri/migrations/`. No edites una migración ya usada para cambiar su sentido. Añade una nueva y prueba tanto el éxito como el fallo sin pérdida de datos.
-- Pruebas: junto al módulo cuando permitan leer el comportamiento con su prueba. Usa bases temporales; no escribas en la base local de un colaborador.
+- Contratos compartidos mínimos: `src-tauri/src/shared_kernel/`. No añadas entidades, repositorios o clientes HTTP al kernel.
+- Infraestructura sin reglas de producto: `src-tauri/src/platform/`. La apertura y migraciones SQLite viven en `platform/sqlite/`.
+- Casos de uso: `src-tauri/src/components/<componente>/`, separando dominio, aplicación y adaptadores solo cuando exista comportamiento que los necesite. Prueba entradas, salidas y persistencia con bases temporales.
+- Migraciones: archivos numerados en `src-tauri/migrations/`. No edites una migración ya usada para cambiar su sentido. Reserva el número en el `todo.md` del plan y prueba éxito y fallo sin pérdida de datos.
 
-Crea módulos y límites cuando exista comportamiento que los necesite. El núcleo Rust opera sobre SQLite sin HTTP; su coordinador sincroniza operaciones completas mediante Nightingale API por HTTPS cuando el plan lo incluya. La API revalida y acepta el estado compartido; no entregues acceso SQL o credenciales PostgreSQL al escritorio. Define los contratos antes de repartir tareas independientes.
+Cada componente es dueño de sus tablas; los demás consumen sus puertos y no ejecutan SQL sobre ellas. El núcleo Rust opera sobre SQLite sin HTTP; el coordinador sincroniza operaciones completas mediante Nightingale API por HTTPS. La API revalida y acepta el estado compartido; no entregues acceso SQL o credenciales PostgreSQL al escritorio. El [ADR del motor transversal](docs/decisions/desktop-core-engine.md) fija propietarios, estados y recuperación.
+
+Antes de repartir trabajo paralelo, congela DTO, acciones, tablas, proyectores, comandos y reservas de migración en el plan. El integrador nombrado registra los puntos calientes: `lib.rs`, `build.rs`, `components/mod.rs`, `platform/sqlite/mod.rs`, manifiestos/lockfiles y `capabilities/default.json`. No edites esos puntos por deducción mientras otro colaborador los integra.
 
 El Patient Hub es una excepción: Rust consume su API y conserva una vista local de sus resultados, sin copiar sus reglas o mantener otra autoridad. No presentes una acción del Hub como completada cuando su servicio no la aceptó.
 
 Los últimos permisos válidos siguen en uso sin conexión; no se pueden cambiar permisos offline. La reconciliación de revocaciones exige versiones y referencias temporales verificables, no solo la fecha local.
 
-Nightingale Patient Hub (web y API propia) y Nightingale API (Python/FastAPI, sincronización, transacciones y workers) tendrán repositorios separados de este escritorio. El Hub llama a Nightingale API para consultar y modificar citas. Recordatorios, integración con n8n y analítica pertenecen a módulos y workers de Nightingale API; no se ejecutan dentro de transacciones de sincronización. Sus contratos de consumo pueden estar aquí; no añadas servidores o aplicaciones web. Sigue los [controles de planificación](tasks/README.md#architecture-checks-for-each-plan), el [ADR vigente](docs/decisions/transactional-sync-three-projects.md) y las especificaciones de [API](docs/specifications/nightingale-api.md) y [Hub](docs/specifications/nightingale-patient-hub.md).
+Nightingale Patient Hub (web y API propia) y Nightingale API (Python/FastAPI, sincronización, transacciones y workers) tienen repositorios separados de este escritorio. El Hub llama a Nightingale API para consultar y modificar citas. Recordatorios, integración con n8n y analítica pertenecen a módulos y workers de Nightingale API; no se ejecutan dentro de transacciones de sincronización. Sus contratos de consumo pueden estar aquí; no añadas servidores o aplicaciones web. Sigue los [controles de planificación](tasks/README.md#architecture-checks-for-each-plan), el [ADR de tres proyectos](docs/decisions/transactional-sync-three-projects.md) y las especificaciones de [API](docs/specifications/nightingale-api.md) y [Hub](docs/specifications/nightingale-patient-hub.md).
 
 ## Antes de pedir revisión
 

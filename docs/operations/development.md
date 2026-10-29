@@ -12,6 +12,14 @@ Esta base aún no implementa sincronización, cliente del Hub o identidad. Sus c
 
 No cambies permisos sin conexión ni aceptes una operación pendiente por su fecha local. D06, del repositorio de API, confirma OIDC externo y permisos vigentes al aceptar: si falta permiso, API rechaza sin efecto y el escritorio conserva la intención para revisión. Proveedor, sesiones, vínculo de dispositivos, orden concurrente de aceptación/revocación y recorrido de revisión siguen pendientes en el diseño de acceso de API.
 
+## Motor transversal y colaboración
+
+El plan `P-20261029-03-core-engine` y su [ADR](../decisions/desktop-core-engine.md) definen los componentes `identity`, `devices`, `platform` y `sync`, la propiedad de sus tablas y las migraciones reservadas `0003`/`0004`. Hasta que esas tareas se implementen, la aplicación sigue sin identidad ni sincronización remota; una decisión documental no acredita el recorrido.
+
+Para el trabajo local del motor, `NIGHTINGALE_API_BASE_URL` selecciona explícitamente la API de desarrollo. No existe un destino remoto por defecto. El emisor, cliente público y audiencia OIDC se obtienen de `/v1/auth/config`; no se duplican en variables ni se guardan credenciales en `.env`. Release exige HTTPS y solo desarrollo/pruebas admiten HTTP loopback.
+
+Cada componente modifica únicamente sus tablas y expone puertos para los demás. Antes de abrir tracks paralelos, fija en el plan DTO, acciones, proyectores, comandos, propietarios y migraciones. El integrador registra composición y permisos en los puntos calientes enumerados en `CONTRIBUTING.md`. Los artefactos de `docs/contracts/api-v1/` se sustituyen como una exportación completa del repositorio de API, nunca mediante ediciones locales.
+
 ## Requisitos
 
 | Sistema de referencia | Arquitectura | Requisitos nativos |

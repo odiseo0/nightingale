@@ -1,6 +1,6 @@
 # ADR: Motor transversal del escritorio
 
-**Estado:** Propuesta cerrada en T01; pendiente de revisión del usuario en C01.  
+**Estado:** Aprobado por el usuario en C01 el 2026-10-29.
 **Fecha:** 2026-10-29  
 **Plan:** [P-20261029-03-core-engine](../../tasks/P-20261029-03-core-engine/plan.md)  
 **Contrato remoto:** Nightingale API v1, revisión fija `api-v1.1`.
@@ -139,7 +139,7 @@ Los cambios de `shared_kernel` requieren justificación en el plan. Los artefact
 
 - Los siguientes tracks no necesitan diseñar autenticación, reintentos, cursores o capturas, pero sí sus propios proyectores y reglas.
 - Los registros heredados ambiguos quedan preservados y bloqueados para envío hasta revisión, no descartados ni corregidos por suposición.
-- Linux necesita un Secret Service disponible en la sesión; la prueba real de los tres almacenes queda en T04, no se acredita por esta selección.
+- Linux necesita un Secret Service disponible en la sesión. La prueba real pasó en Windows durante T04. El 2026-10-29 el usuario autorizó continuar con las pruebas reales de macOS y Linux pendientes como límite explícito de C02; esta selección no acredita esos sistemas.
 - Esta base es para datos sintéticos. Cifrado SQLite, distribución de claves, instaladores y publicación siguen fuera del plan.
 
 ## Fuentes oficiales consultadas

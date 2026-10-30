@@ -8,6 +8,7 @@ pub enum ErrorCode {
     ValidationError,
     NotFound,
     VersionConflict,
+    IdempotencyConflict,
     TemporaryFailure,
     InternalError,
 }
@@ -18,6 +19,14 @@ pub struct NightingaleError {
     pub code: ErrorCode,
     pub message: String,
 }
+
+impl std::fmt::Display for NightingaleError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for NightingaleError {}
 
 pub type Result<T> = std::result::Result<T, NightingaleError>;
 
@@ -32,6 +41,10 @@ impl NightingaleError {
 
     pub fn version_conflict(message: impl Into<String>) -> Self {
         Self::new(ErrorCode::VersionConflict, message)
+    }
+
+    pub fn idempotency_conflict(message: impl Into<String>) -> Self {
+        Self::new(ErrorCode::IdempotencyConflict, message)
     }
 
     pub fn temporary(message: impl Into<String>) -> Self {

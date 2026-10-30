@@ -20,6 +20,70 @@ Para el trabajo local del motor, `NIGHTINGALE_API_BASE_URL` selecciona explícit
 
 Cada componente modifica únicamente sus tablas y expone puertos para los demás. Antes de abrir tracks paralelos, fija en el plan DTO, acciones, proyectores, comandos, propietarios y migraciones. El integrador registra composición y permisos en los puntos calientes enumerados en `CONTRIBUTING.md`. Los artefactos de `docs/contracts/api-v1/` se sustituyen como una exportación completa del repositorio de API, nunca mediante ediciones locales.
 
+### Configuración y credenciales del motor (T04)
+
+`platform::config::ApiConfig::from_environment` lee únicamente `NIGHTINGALE_API_BASE_URL`, cuando un caso remoto necesita la configuración. No carga `.env`, no tiene URL por defecto y no exige esa variable para abrir SQLite o ejecutar los casos locales. La configuración rechaza usuario/contraseña, query, fragmento y protocolos distintos de HTTPS. Solo los builds de desarrollo admiten HTTP en `localhost` o una IP loopback. Versión del cliente y plataforma proceden del build y del SO; el descubrimiento OIDC corresponde al flujo de acceso posterior.
+
+Ejemplo ficticio para una API local ya iniciada, en la misma terminal del escritorio:
+
+```powershell
+$env:NIGHTINGALE_API_BASE_URL = 'http://127.0.0.1:8000/'
+```
+
+`platform::secrets::SecretStore` es el único puerto para credenciales. `NativeSecretStore` usa `keyring 4.2.0` con `v1`: Windows Credential Manager, macOS Keychain o Secret Service en Linux. La clave separa URL de API, perfil local estable, pareja OIDC `issuer`/`subject`, cuenta y dispositivo cuando existen, y tipo de token. El llamante debe conservar el mismo perfil entre reinicios. OIDC puede guardar su sesión antes de que API asigne el dispositivo; la credencial opaca tiene otra clave. Los valores `Secret` no admiten formato de depuración ni serialización; los errores del SO se sustituyen por un error estable sin copiar sus datos.
+
+Las pruebas normales usan un almacén en memoria. La prueba nativa escribe, lee, reemplaza y borra una entrada ficticia con un nombre único; no enumera ni toca otras credenciales. Ejecútala en la sesión nativa de cada SO, con el almacén disponible:
+
+```sh
+cargo test --workspace --locked native_store_round_trip_rotation_and_delete -- --ignored
+```
+
+En Windows, el aislamiento del ejecutor puede impedir el acceso al almacén; la prueba debe correr en la sesión del usuario. Esta prueba pasó en Windows el 2026-10-29. macOS y Linux todavía requieren evidencia propia; compilar o usar el fake no prueba esos almacenes.
+
+Referencias: [URL de reqwest 0.12.28](https://docs.rs/reqwest/0.12.28/reqwest/struct.Url.html), [keyring 4.2.0 v1](https://docs.rs/keyring/4.2.0/keyring/v1/index.html), [Entry](https://docs.rs/keyring/4.2.0/keyring/v1/struct.Entry.html) y [errores del almacén](https://docs.rs/keyring/4.2.0/keyring/v1/enum.Error.html).
+
+### Transporte y acceso OIDC (T05/T06)
+
+`ApiTransport` usa reqwest 0.12.28 con un máximo de 10 s al conectar y 30 s por petición completa. No sigue redirecciones ni reintenta por sí solo. Limita peticiones a 1 MiB y respuestas a 8 MiB, incluso con transferencia por chunks. Los adaptadores de identidad y sincronización tienen rutas y DTO concretos; no reciben conexiones SQLite. Los errores conservan HTTP, código y correlación, sin copiar URL, mensajes remotos, detalles o errores crudos de red. Un HTTP 200 de lote conserva el resultado individual y `originalResult` de los duplicados.
+
+`identity::oidc::OidcProvider` descubre el proveedor anunciado por API y usa openidconnect 4.0.1: Authorization Code, cliente público sin secreto, PKCE S256, state y nonce nuevos. La recepción escucha solo `127.0.0.1` en un puerto libre, acepta el camino `/oidc/callback` y termina por cancelación o a los cinco minutos. El proveedor debe aceptar esa redirección con puerto efímero para el cliente de desarrollo. El transporte comprueba HTTPS o loopback de desarrollo también en discovery, JWKS y token, con los mismos límites de cuerpo.
+
+Antes de devolver una sesión, el adaptador valida firma, emisor, audiencia del ID token, vencimiento, nonce y `at_hash` cuando existe. Usa el access token para API; nunca lo sustituye por el ID token. La API valida la audiencia de ese access token durante la emisión de la credencial de dispositivo. La renovación necesita que el proveedor haya emitido refresh token; si no lo emite, hace falta otro acceso. El nonce de un ID token renovado puede faltar; si aparece, debe coincidir con el original. La identidad no puede cambiar durante la renovación.
+
+`OidcSession::persist` guarda las credenciales mediante el puerto seguro; el refresh token y su nonce original forman un bloque secreto. Si falla una escritura, intenta restaurar las entradas previas y devuelve `StorageUnavailable`; el llamante no debe aceptar el nuevo estado como guardado. No existe una transacción común entre entradas del almacén del SO. Cancelar antes de guardar deja intacta la sesión previa. `logout` solo borra claves locales explícitas; no llama a endpoints de revocación. T07 une esta sesión con acceso de cuenta y registro del dispositivo, según el apartado siguiente.
+
+Las pruebas automáticas usan un navegador simulado y un proveedor loopback con firma RSA de prueba. La siguiente prueba abre el navegador externo y requiere API/OIDC y una cuenta de desarrollo. No guarda ni imprime sus tokens; todavía no se ha ejecutado:
+
+```sh
+cargo test --workspace --locked manual_oidc_login_in_external_browser -- --ignored
+```
+
+En el ejecutor aislado de Windows, las pruebas HTTP/OIDC pueden fallar al conectar con loopback. Se deben ejecutar fuera del aislamiento; no se desactiva TLS ni se omiten pruebas para resolver ese fallo.
+
+Referencias: [reqwest ClientBuilder 0.12.28](https://docs.rs/reqwest/0.12.28/reqwest/struct.ClientBuilder.html), [lectura por chunks](https://docs.rs/reqwest/0.12.28/reqwest/struct.Response.html#method.chunk), [openidconnect 4.0.1](https://docs.rs/openidconnect/4.0.1/openidconnect/#getting-started-authorization-code-grant-w-pkce), [validación de ID token](https://docs.rs/openidconnect/4.0.1/openidconnect/struct.IdToken.html#method.claims), [cliente HTTP async](https://docs.rs/openidconnect/4.0.1/openidconnect/trait.AsyncHttpClient.html), [renovación OIDC](https://openid.net/specs/openid-connect-core-1_0.html#RefreshTokenResponse) y [apertura con Opener 2.7.2](https://docs.rs/tauri-plugin-opener/2.7.2/tauri_plugin_opener/fn.open_url.html). Las firmas de API se contrastaron también con las fuentes instaladas de esas versiones.
+
+### Activación de cuenta y revisión de C02 (T07)
+
+`identity::application::AccountActivation::activate` recibe una sesión OIDC, el ID de la cuenta elegida y los puertos de reloj/IDs. Reutiliza la credencial de API de ese perfil, o la pide una sola vez si no existe. La credencial global no se duplica por cuenta: su clave incluye entorno, perfil, identidad y dispositivo de API. Otro registro del almacén seguro localiza el dispositivo actual y conserva el estado de emisión, sin contener el token. Los cambios de dispositivo no cambian los IDs ni el alcance de operaciones anteriores.
+
+Antes del POST de emisión se guarda un marcador. Si se pierde la respuesta o falla el guardado del secreto, un reinicio no emite otra credencial de forma automática: devuelve `RecoveryRequired`. Cerrar sesión de forma explícita puede retirar ese estado local; el dispositivo remoto sigue bajo control de API y requiere revisión si quedó sin credencial. Durante un alta, otra alta o salida del mismo perfil devuelve `Busy`. Esa protección funciona en este proceso; la coordinación completa de sincronización pertenece a T13.
+
+El caso consulta `/me`, verifica su usuario y pareja OIDC, recorre las páginas de `/accounts` hasta encontrar la cuenta y consulta `/access`. Solo `registration_required` permite el registro propio, con el `deviceId` autenticado, versión esperada cero, payload vacío y sin dependencias. El Outbox conserva el registro antes de enviarlo. Cada intento guarda `unknown` antes de HTTP; una respuesta perdida mantiene ID, contenido y huella. Un duplicado conserva su resultado original, incluso si fue rechazo. Tras aceptación, se vuelve a pedir `/access`; el resultado del POST no sustituye los permisos actuales.
+
+Rust conserva rol, estado, `permissionEpoch` y `allowedActions` por cuenta/usuario/dispositivo. `cached_access` no hace HTTP. `allows_offline` exige acceso activo, acción permitida y una acción del catálogo que no figure como online-only en la copia de `capabilities.json`. No se duplican listas de acciones por rol. `revoked` o `inactive` impiden trabajo con esos permisos. Una denegación HTTP 401/403 deshabilita los permisos locales afectados hasta otra consulta válida; no borra Outbox. Ninguna petición mantiene el mutex o una transacción SQLite. El cierre local retira credenciales y selección de identidad; no revoca en servidor ni borra intenciones.
+
+La implementación y las pruebas locales de T06/T07 están listas; el usuario dejó los recorridos reales para su revisión de C02. Para probar alta y cierre local, usa una cuenta y API/OIDC de desarrollo y ejecuta desde una terminal nativa:
+
+```powershell
+$env:NIGHTINGALE_API_BASE_URL = 'http://127.0.0.1:8000/'
+$env:NIGHTINGALE_TEST_ACCOUNT_ID = '<UUIDv7 de la cuenta de desarrollo>'
+cargo test --workspace --locked manual_c02_activation_and_local_logout -- --ignored --nocapture
+```
+
+El ID de cuenta es una entrada exclusiva de esta prueba, no configuración general del escritorio. La prueba abre el navegador, usa un perfil único y SQLite temporal, guarda el token de API en el almacén del SO y lo borra al cerrar sesión. Solo imprime el ID del dispositivo creado. API conserva ese dispositivo para la revisión de revocación; la prueba no lo revoca. C02 debe revisar también una denegación/revocación con API de desarrollo. Las pruebas reales de macOS Keychain y Linux Secret Service siguen pendientes por la excepción aprobada. No se ha añadido UI ni IPC de acceso: pertenecen a T15.
+
+Fuentes: [transacciones de rusqlite 0.40.2](https://docs.rs/rusqlite/0.40.2/rusqlite/struct.Connection.html#method.transaction_with_behavior), [keyring 4.2.0 v1](https://docs.rs/keyring/4.2.0/keyring/v1/index.html), [enum local con etiqueta en Serde](https://serde.rs/enum-representations.html#internally-tagged) y el [contrato API importado](../contracts/api-v1/nightingale-api.md#6-acceso-y-permisos).
+
 ## Requisitos
 
 | Sistema de referencia | Arquitectura | Requisitos nativos |

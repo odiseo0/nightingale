@@ -5,12 +5,17 @@ use rusqlite::{Connection, Transaction};
 use serde_json::Value;
 use uuid::Uuid;
 
-use super::domain::NewOperation;
+use super::domain::{CONTRACT_VERSION, NewOperation, OperationEnvelope};
+use crate::shared_kernel::id::{OperationContext, OperationId};
 
 /// Operation ready to persist, with its generated identity.
 #[derive(Debug, Clone)]
 pub struct PendingOperation {
     pub operation_id: Uuid,
+    pub contract_version: i64,
+    pub context: Option<OperationContext>,
+    pub depends_on: Vec<OperationId>,
+    pub semantic_fingerprint: Option<String>,
     pub action: String,
     pub entity_type: String,
     pub entity_key: Value,
@@ -20,11 +25,87 @@ pub struct PendingOperation {
     pub created_at_millis: i64,
 }
 
+impl PendingOperation {
+    pub fn envelope(&self) -> Result<OperationEnvelope> {
+        if self.context.is_none() {
+            return Err(crate::shared_kernel::NightingaleError::validation(
+                "la operación heredada requiere asignación explícita de contexto",
+            ));
+        }
+
+        Ok(OperationEnvelope {
+            operation_id: OperationId::try_from(self.operation_id.to_string())?,
+            contract_version: self.contract_version,
+            action: self.action.clone(),
+            entity_key: self.entity_key.clone(),
+            expected_version: self.expected_version,
+            payload: self.payload.clone(),
+            depends_on: self.depends_on.clone(),
+            occurred_at_local: self.occurred_at_local.clone(),
+        })
+    }
+}
+
 /// Outbound port implemented by storage adapters.
 pub trait OperationStore {
     fn append(&self, transaction: &Transaction, operation: &PendingOperation) -> Result<()>;
 
     fn list_pending(&self, connection: &Connection, limit: i64) -> Result<Vec<PendingOperation>>;
+}
+
+pub trait CursorStore {
+    fn save_cursor(
+        &self,
+        tx: &Transaction,
+        scope: &OperationContext,
+        cursor: &super::domain::StoredCursor,
+    ) -> Result<()>;
+    fn cursor(
+        &self,
+        connection: &Connection,
+        scope: &OperationContext,
+    ) -> Result<Option<super::domain::StoredCursor>>;
+}
+
+pub trait InboxStore {
+    /// Returns false if the group or operation was already recorded in this scope.
+    fn record_group(
+        &self,
+        tx: &Transaction,
+        scope: &OperationContext,
+        group: &OperationId,
+        operation: &OperationId,
+    ) -> Result<bool>;
+    fn contains_group(
+        &self,
+        connection: &Connection,
+        scope: &OperationContext,
+        group: &OperationId,
+        operation: &OperationId,
+    ) -> Result<bool>;
+}
+
+pub trait RemoteProjectionStore {
+    fn upsert(
+        &self,
+        tx: &Transaction,
+        scope: &OperationContext,
+        item: &super::domain::RemoteItem,
+    ) -> Result<()>;
+    fn item(
+        &self,
+        connection: &Connection,
+        scope: &OperationContext,
+        entity_type: &str,
+        key: &Value,
+    ) -> Result<Option<super::domain::RemoteItem>>;
+    fn remove(
+        &self,
+        tx: &Transaction,
+        scope: &OperationContext,
+        entity_type: &str,
+        key: &Value,
+    ) -> Result<()>;
 }
 
 /// Records a user operation in the outbox. Must run inside the same SQLite
@@ -47,8 +128,12 @@ pub fn record_operation(
             crate::shared_kernel::NightingaleError::internal("reloj del sistema inválido")
         })?
         .as_millis() as i64;
-    let operation = PendingOperation {
+    let mut operation = PendingOperation {
         operation_id: id_generator.new_id(),
+        contract_version: CONTRACT_VERSION,
+        context: Some(input.context),
+        depends_on: input.depends_on,
+        semantic_fingerprint: None,
         action: input.action,
         entity_type: input.entity_type,
         entity_key: input.entity_key,
@@ -57,6 +142,7 @@ pub fn record_operation(
         occurred_at_local: input.occurred_at_local,
         created_at_millis,
     };
+    operation.semantic_fingerprint = Some(operation.envelope()?.semantic_fingerprint()?);
 
     store.append(transaction, &operation)?;
 
@@ -106,6 +192,8 @@ mod tests {
 
     fn operation() -> NewOperation {
         NewOperation {
+            context: context(),
+            depends_on: vec![],
             action: "RegisterPatient".to_owned(),
             entity_type: "patient_profile".to_owned(),
             entity_key: json!("019f0000-0000-7000-8000-000000000101"),
@@ -113,6 +201,16 @@ mod tests {
             payload: json!({ "fullName": "Paciente de prueba" }),
             occurred_at_local: None,
         }
+    }
+
+    fn context() -> OperationContext {
+        serde_json::from_value(json!({
+            "accountId":"019a1234-0000-7000-8000-000000000001",
+            "userId":"019a1234-0000-7000-8000-000000000002",
+            "deviceId":"019a1234-0000-7000-8000-000000000003",
+            "permissionEpoch":1
+        }))
+        .unwrap()
     }
 
     #[test]

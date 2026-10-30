@@ -24,6 +24,16 @@ const MIGRATIONS: &[Migration] = &[
         name: "0002_sync_outbox",
         sql: include_str!("../../../migrations/0002_sync_outbox.sql"),
     },
+    Migration {
+        version: 3,
+        name: "0003_identity_access",
+        sql: include_str!("../../../migrations/0003_identity_access.sql"),
+    },
+    Migration {
+        version: 4,
+        name: "0004_sync_control",
+        sql: include_str!("../../../migrations/0004_sync_control.sql"),
+    },
 ];
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
@@ -32,6 +42,11 @@ pub fn open(path: &Path) -> Result<Connection> {
     let mut connection = Connection::open(path)?;
     migrate(&mut connection, MIGRATIONS)?;
     connection.pragma_update(None, "foreign_keys", true)?;
+    // A prior process can stop after sending but before saving the result.
+    connection.execute(
+        "UPDATE sync_outbox SET status = 'unknown', lease_until = NULL WHERE status = 'in_flight'",
+        [],
+    )?;
 
     Ok(connection)
 }
@@ -74,6 +89,7 @@ fn migrate(connection: &mut Connection, migrations: &[Migration<'_>]) -> Result<
 
             migrations
         }
+
         (version, APPLICATION_ID) if version >= 1 && (version as usize) <= migrations.len() => {
             let applied: Vec<(i64, String)> = transaction
                 .prepare("SELECT version, name FROM schema_migrations ORDER BY version")?
@@ -373,5 +389,165 @@ mod tests {
         let fixture = Fixture::new();
         assert!(open(&fixture.0).is_err());
         assert!(fixture.0.is_dir());
+    }
+
+    fn legacy_rows(connection: &Connection) -> Vec<Vec<rusqlite::types::Value>> {
+        connection.prepare("SELECT operation_id, contract_version, action, entity_type, entity_key, expected_version, payload, occurred_at_local, attempts, last_error, created_at FROM sync_outbox ORDER BY operation_id")
+            .unwrap().query_map([], |row| (0..11).map(|index| row.get(index)).collect()).unwrap()
+            .collect::<rusqlite::Result<_>>().unwrap()
+    }
+
+    fn seed_0002(path: &Path) -> Connection {
+        let mut connection = Connection::open(path).unwrap();
+        migrate(&mut connection, &MIGRATIONS[..2]).unwrap();
+
+        for (index, status) in ["pending", "sent", "failed", "conflict"].iter().enumerate() {
+            connection.execute("INSERT INTO sync_outbox VALUES (?1,1,'RegisterPatient','patient_profile',?2,0,?3,?4,?5,3,'prior error',42)", rusqlite::params![
+                format!("019a1234-0000-7000-8000-00000000000{}", index + 1),
+                r#""019a1234-0000-7000-8000-000000000009""#,
+                r#"{"fullName":"Synthetic","omitted":null}"#,
+                "2026-10-29T10:00:00-04:00", status]).unwrap();
+        }
+
+        connection
+    }
+
+    #[test]
+    fn upgrades_0002_without_losing_or_assigning_operations() {
+        use crate::components::sync::application::OperationStore;
+        let fixture = Fixture::new();
+        let path = fixture.database();
+        let connection = seed_0002(&path);
+        let before = legacy_rows(&connection);
+        drop(connection);
+        let connection = open(&path).unwrap();
+        assert_eq!(legacy_rows(&connection), before);
+        let statuses: Vec<String> = connection
+            .prepare("SELECT status FROM sync_outbox ORDER BY operation_id")
+            .unwrap()
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .collect::<rusqlite::Result<_>>()
+            .unwrap();
+        assert_eq!(statuses, ["pending", "unknown", "retryable", "conflict"]);
+        let unassigned: i64 = connection.query_row("SELECT count(*) FROM sync_outbox WHERE account_id IS NULL AND user_id IS NULL AND device_id IS NULL AND permission_epoch IS NULL AND semantic_fingerprint IS NULL AND depends_on = '[]'", [], |row| row.get(0)).unwrap();
+        assert_eq!(unassigned, 4);
+        let pending = crate::components::sync::adapters::outbound::SqliteOperationStore
+            .list_pending(&connection, 10)
+            .unwrap();
+        assert_eq!(pending.len(), 1);
+        assert!(pending[0].context.is_none());
+        assert!(pending[0].semantic_fingerprint.is_none());
+        assert!(pending[0].envelope().is_err());
+        let tables: Vec<String> = connection
+            .prepare("SELECT name FROM sqlite_schema WHERE type = 'table'")
+            .unwrap()
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .collect::<rusqlite::Result<_>>()
+            .unwrap();
+        for expected in [
+            "identity_context",
+            "device_installation",
+            "identity_account_access",
+            "sync_inbox",
+            "sync_cursor",
+            "sync_remote_items",
+            "sync_snapshot_recovery",
+            "sync_snapshot_items",
+        ] {
+            assert!(tables.iter().any(|table| table == expected));
+        }
+        for table in tables {
+            let columns: Vec<String> = connection
+                .prepare("SELECT name FROM pragma_table_info(?1)")
+                .unwrap()
+                .query_map([table], |row| row.get(0))
+                .unwrap()
+                .collect::<rusqlite::Result<_>>()
+                .unwrap();
+            assert!(!columns.iter().any(|name| name.contains("token")
+                || name.contains("secret")
+                || name.contains("credential")));
+        }
+        assert_eq!(
+            connection
+                .query_row("PRAGMA integrity_check", [], |row| row.get::<_, String>(0))
+                .unwrap(),
+            "ok"
+        );
+        drop(connection);
+        let bytes = fs::read(&path).unwrap();
+        let connection = open(&path).unwrap();
+        assert_eq!(connection.total_changes(), 0);
+        assert_eq!(legacy_rows(&connection), before);
+        drop(connection);
+        assert_eq!(fs::read(&path).unwrap(), bytes);
+    }
+
+    #[test]
+    fn failed_0004_restores_0002_file_history_and_outbox() {
+        let fixture = Fixture::new();
+        let path = fixture.database();
+        let connection = seed_0002(&path);
+        let before = legacy_rows(&connection);
+        drop(connection);
+        let bytes = fs::read(&path).unwrap();
+        let mut connection = Connection::open(&path).unwrap();
+        let broken_sql = format!("{}\nINVALID SQL;", MIGRATIONS[3].sql);
+        let mut migrations = MIGRATIONS.to_vec();
+        migrations[3].sql = &broken_sql;
+        assert!(migrate(&mut connection, &migrations).is_err());
+        assert_eq!(legacy_rows(&connection), before);
+        assert_eq!(
+            connection
+                .pragma_query_value::<i64, _>(None, "user_version", |row| row.get(0))
+                .unwrap(),
+            2
+        );
+        assert_eq!(
+            connection
+                .query_row("SELECT count(*) FROM schema_migrations", [], |row| row
+                    .get::<_, i64>(0))
+                .unwrap(),
+            2
+        );
+        assert_eq!(
+            connection
+                .query_row(
+                    "SELECT count(*) FROM sqlite_schema WHERE name = 'identity_context'",
+                    [],
+                    |row| row.get::<_, i64>(0)
+                )
+                .unwrap(),
+            0
+        );
+        drop(connection);
+        assert_eq!(fs::read(&path).unwrap(), bytes);
+        assert!(open(&path).is_ok());
+    }
+
+    #[test]
+    fn reopening_recovers_in_flight_without_changing_intention() {
+        let fixture = Fixture::new();
+        let path = fixture.database();
+        drop(seed_0002(&path));
+        let connection = open(&path).unwrap();
+        connection.execute("UPDATE sync_outbox SET status = 'in_flight', lease_until = 100 WHERE status = 'pending'", []).unwrap();
+        let before = legacy_rows(&connection);
+        drop(connection);
+        let connection = open(&path).unwrap();
+        assert_eq!(legacy_rows(&connection), before);
+        assert_eq!(connection.query_row("SELECT count(*) FROM sync_outbox WHERE status = 'in_flight' OR lease_until IS NOT NULL", [], |row| row.get::<_, i64>(0)).unwrap(), 0);
+        assert_eq!(
+            connection
+                .query_row(
+                    "SELECT count(*) FROM sync_outbox WHERE status = 'unknown'",
+                    [],
+                    |row| row.get::<_, i64>(0)
+                )
+                .unwrap(),
+            2
+        );
     }
 }

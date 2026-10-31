@@ -56,7 +56,7 @@ pub struct DeviceTokenIssued {
     pub token_type: TokenType,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ActivityStatus {
     Active,
@@ -69,7 +69,7 @@ pub struct Page<T> {
     pub total: u64,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountSummary {
     pub id: AccountId,
@@ -101,9 +101,9 @@ pub struct AccountAccessResponse {
     pub allowed_actions: Vec<String>,
 }
 
-pub struct IdentityApi<'a>(pub &'a APITransport);
+pub struct IdentityAPI<'a>(pub &'a APITransport);
 
-impl IdentityApi<'_> {
+impl IdentityAPI<'_> {
     pub async fn auth_config(&self) -> APIResult<APIResponse<AuthConfig>> {
         self.0
             .request(Method::GET, "v1/auth/config", None, None)

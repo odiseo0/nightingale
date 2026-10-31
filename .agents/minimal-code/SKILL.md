@@ -7,21 +7,53 @@ description: Make the smallest correct code change after tracing the real flow. 
 
 Understand the problem before reducing the solution. Read the request and the code it touches. Trace the real flow from input to shared logic, callers, side effects, and output. Then stop at the first rung that fully solves the problem. The goal is not fewer lines — it's code that is easier to read, understand, modify, and debug.
 
-## The ladder
+## 1. Think Before Coding
 
-1. Does this need to exist? If not, do not build it.
-2. Does the codebase already have a helper, utility, component, command, or pattern? Reuse it.
-3. Does the standard library solve it? Use that.
-4. Does the native platform solve it? Use that.
-5. Does an installed dependency solve it? Use that without adding another dependency.
-6. Can the remaining change be one clear line? Use one line.
-7. Only then, write the minimum new code that works.
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
 
-Use the first option that is correct for the required edge cases. When two options need the same amount of code, choose the safer one. Less code does not justify a weak algorithm or lost error handling.
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+## 2. Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+1. No features beyond what was asked: Does this need to exist? If not, do not build it. 
+2. No abstractions for single-use code.
+3. No "flexibility" or "configurability" that wasn't requested.
+4. No error handling for impossible scenarios.
+5. Does the codebase already have a helper, utility, component, command, or pattern? Reuse it.
+6. Does the standard library solve it? Use that.
+7. Does the native platform solve it? Use that.
+8. Does an installed dependency solve it? Use that without adding another dependency.
+9. Can the remaining change be one clear line? Use one line.
+10. If you write 200 lines and it could be 50, rewrite it.
+11. Always write the minimum new code that works.
+
+Less code does not justify a weak algorithm or lost error handling. Always choose the safer (in terms of security) option.
 
 If a simpler existing option might replace a complex request, ask: "Do you need X, or does Y cover it?" Ask only when that choice changes user-visible behavior or scope.
 
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
 When the chosen rung uses a framework or library API, also follow `$docs-first-framework-code`.
+
+## 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
 
 ## Find the real change point
 

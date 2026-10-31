@@ -26,6 +26,26 @@ pub trait AccessStore {
 
 pub struct SqliteAccessStore;
 
+impl SqliteAccessStore {
+    /// Last valid installation selected by this local profile, without HTTP.
+    pub fn selected_access(&self, c: &Connection) -> Result<Option<AccountAccess>> {
+        let Some(context) = self.context(c)? else {
+            return Ok(None);
+        };
+        let Some(account) = context.selected_account_id else {
+            return Ok(None);
+        };
+        let device=c.query_row("SELECT device_id FROM identity_account_access WHERE account_id=?1 AND user_id=?2 ORDER BY checked_at DESC,rowid DESC LIMIT 1",params![account.as_str(),context.user_id.as_str()],|r|r.get::<_,String>(0)).optional().map_err(storage_error)?;
+
+        match device {
+            Some(device) => {
+                self.access(c, &account, &context.user_id, &DeviceId::try_from(device)?)
+            }
+            None => Ok(None),
+        }
+    }
+}
+
 fn storage_error(error: impl std::fmt::Display) -> NightingaleError {
     NightingaleError::internal(error.to_string())
 }
@@ -64,6 +84,7 @@ impl AccessStore for SqliteAccessStore {
         let context = &access.context;
         let role = serde_json::to_value(&access.role).map_err(storage_error)?;
         let status = serde_json::to_value(&access.status).map_err(storage_error)?;
+
         // Keep the last response, including revoked/inactive, to prevent stale offline access.
         // https://www.sqlite.org/lang_upsert.html
         tx.execute("INSERT INTO identity_account_access (account_id,user_id,device_id,role,status,permission_epoch,allowed_actions,checked_at)

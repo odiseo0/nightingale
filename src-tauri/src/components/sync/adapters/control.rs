@@ -7,6 +7,13 @@ use serde_json::Value;
 
 pub struct SqliteSyncControlStore;
 
+impl SqliteSyncControlStore {
+    pub fn snapshot_pending(&self, c: &Connection, scope: &OperationContext) -> Result<bool> {
+        c.query_row("SELECT EXISTS(SELECT 1 FROM sync_snapshot_recovery WHERE account_id=?1 AND user_id=?2 AND device_id=?3)",
+            params![scope.account_id.as_str(),scope.user_id.as_str(),scope.device_id.as_str()],|r|r.get(0)).map_err(storage_error)
+    }
+}
+
 fn storage_error(error: impl std::fmt::Display) -> NightingaleError {
     NightingaleError::internal(error.to_string())
 }

@@ -1,0 +1,342 @@
+{
+  "groupId": "019a1234-0000-7000-8000-000000000100",
+  "operationId": "019a1234-0000-7000-8000-000000000101",
+  "acceptedAt": "2026-10-30T12:00:00Z",
+  "changes": [
+    {
+      "entityType": "account",
+      "entityKey": "019a1234-0000-7000-8000-000000000001",
+      "entityVersion": 1,
+      "changeKind": "upsert",
+      "state": {
+        "createdAt": null,
+        "displayName": "Synthetic",
+        "id": "019a1234-0000-7000-8000-000000000001",
+        "kind": "independent",
+        "locationAddress": "Synthetic",
+        "locationCity": "Synthetic",
+        "locationCountry": "VE",
+        "locationName": "Synthetic",
+        "locationState": "Synthetic",
+        "noShowGraceMinutes": 1,
+        "ownerUserId": "019a1234-0000-7000-8000-000000000010",
+        "status": "active",
+        "timeZone": "America/Caracas",
+        "updatedAt": null,
+        "version": 1
+      }
+    },
+    {
+      "entityType": "account_device",
+      "entityKey": "019a1234-0000-7000-8000-000000000010",
+      "entityVersion": 1,
+      "changeKind": "upsert",
+      "state": {
+        "clientVersion": "Synthetic",
+        "deviceId": "019a1234-0000-7000-8000-000000000010",
+        "displayName": "Synthetic",
+        "lastSeenAt": null,
+        "localSchemaVersion": 1,
+        "status": "active",
+        "version": 1
+      }
+    },
+    {
+      "entityType": "membership",
+      "entityKey": "019a1234-0000-7000-8000-000000000010",
+      "entityVersion": 1,
+      "changeKind": "upsert",
+      "state": {
+        "createdAt": null,
+        "displayName": "Synthetic",
+        "role": "owner",
+        "status": "active",
+        "updatedAt": null,
+        "userId": "019a1234-0000-7000-8000-000000000010",
+        "version": 1
+      }
+    },
+    {
+      "entityType": "invitation",
+      "entityKey": "019a1234-0000-7000-8000-000000000010",
+      "entityVersion": 1,
+      "changeKind": "upsert",
+      "state": {
+        "acceptedAt": null,
+        "accountId": "019a1234-0000-7000-8000-000000000001",
+        "createdAt": null,
+        "createdByUserId": "019a1234-0000-7000-8000-000000000010",
+        "expiresAt": "2026-10-30T12:00:00Z",
+        "id": "019a1234-0000-7000-8000-000000000010",
+        "inviteeUserId": "019a1234-0000-7000-8000-000000000010",
+        "status": "pending",
+        "updatedAt": null,
+        "version": 1
+      }
+    },
+    {
+      "entityType": "professional",
+      "entityKey": "019a1234-0000-7000-8000-000000000010",
+      "entityVersion": 1,
+      "changeKind": "upsert",
+      "state": {
+        "createdAt": null,
+        "id": "019a1234-0000-7000-8000-000000000010",
+        "publicName": "Synthetic",
+        "status": "active",
+        "updatedAt": null,
+        "userId": "019a1234-0000-7000-8000-000000000010",
+        "version": 1
+      }
+    },
+    {
+      "entityType": "patient_profile",
+      "entityKey": "019a1234-0000-7000-8000-000000000010",
+      "entityVersion": 1,
+      "changeKind": "upsert",
+      "state": {
+        "accountId": "019a1234-0000-7000-8000-000000000001",
+        "birthDate": null,
+        "completionStatus": "draft",
+        "createdAt": null,
+        "fullName": null,
+        "identificationBasis": null,
+        "patientId": "019a1234-0000-7000-8000-000000000010",
+        "phone": null,
+        "phoneCode": null,
+        "status": "active",
+        "updatedAt": null,
+        "version": 1
+      }
+    },
+    {
+      "entityType": "patient_identifier",
+      "entityKey": "019a1234-0000-7000-8000-000000000010",
+      "entityVersion": 1,
+      "changeKind": "upsert",
+      "state": {
+        "createdAt": null,
+        "documentNumber": "Synthetic",
+        "documentType": "national_id",
+        "id": "019a1234-0000-7000-8000-000000000010",
+        "issuingCountry": "VE",
+        "patientId": "019a1234-0000-7000-8000-000000000010",
+        "updatedAt": null,
+        "verificationStatus": "declared",
+        "version": 1
+      }
+    },
+    {
+      "entityType": "contact_person",
+      "entityKey": "019a1234-0000-7000-8000-000000000010",
+      "entityVersion": 1,
+      "changeKind": "upsert",
+      "state": {
+        "accountId": "019a1234-0000-7000-8000-000000000001",
+        "createdAt": null,
+        "documentNumber": null,
+        "documentType": null,
+        "fullName": "Synthetic",
+        "id": "019a1234-0000-7000-8000-000000000010",
+        "issuingCountry": null,
+        "phone": null,
+        "phoneCode": null,
+        "status": "active",
+        "updatedAt": null,
+        "version": 1
+      }
+    },
+    {
+      "entityType": "patient_contact",
+      "entityKey": {
+        "patientId": "019a1234-0000-7000-8000-000000000010",
+        "contactPersonId": "019a1234-0000-7000-8000-000000000010"
+      },
+      "entityVersion": 1,
+      "changeKind": "upsert",
+      "state": {
+        "accountId": "019a1234-0000-7000-8000-000000000001",
+        "contactPersonId": "019a1234-0000-7000-8000-000000000010",
+        "createdAt": null,
+        "isResponsibleContact": false,
+        "patientId": "019a1234-0000-7000-8000-000000000010",
+        "relationshipKind": "mother",
+        "representationStatus": "unverified",
+        "status": "active",
+        "updatedAt": null,
+        "validFrom": "2026-10-30T12:00:00Z",
+        "validUntil": null,
+        "verifiedAt": null,
+        "verifiedByUserId": null,
+        "version": 1
+      }
+    },
+    {
+      "entityType": "service",
+      "entityKey": "019a1234-0000-7000-8000-000000000010",
+      "entityVersion": 1,
+      "changeKind": "upsert",
+      "state": {
+        "createdAt": null,
+        "defaultDurationMinutes": 30,
+        "id": "019a1234-0000-7000-8000-000000000010",
+        "name": "Synthetic",
+        "professionalId": "019a1234-0000-7000-8000-000000000010",
+        "status": "active",
+        "updatedAt": null,
+        "version": 1
+      }
+    },
+    {
+      "entityType": "service_offer",
+      "entityKey": {
+        "professionalId": "019a1234-0000-7000-8000-000000000010",
+        "serviceId": "019a1234-0000-7000-8000-000000000010"
+      },
+      "entityVersion": 1,
+      "changeKind": "upsert",
+      "state": {
+        "accountId": "019a1234-0000-7000-8000-000000000001",
+        "createdAt": null,
+        "defaultDurationMinutes": 30,
+        "durationMinutesOverride": null,
+        "effectiveDurationMinutes": 30,
+        "name": "Synthetic",
+        "professionalId": "019a1234-0000-7000-8000-000000000010",
+        "serviceId": "019a1234-0000-7000-8000-000000000010",
+        "serviceStatus": "active",
+        "serviceVersion": 1,
+        "status": "active",
+        "updatedAt": null,
+        "version": 1
+      }
+    },
+    {
+      "entityType": "schedule_rule",
+      "entityKey": "019a1234-0000-7000-8000-000000000010",
+      "entityVersion": 1,
+      "changeKind": "upsert",
+      "state": {
+        "accountId": "019a1234-0000-7000-8000-000000000001",
+        "createdAt": null,
+        "id": "019a1234-0000-7000-8000-000000000010",
+        "isoWeekday": 1,
+        "localEndMinute": 1020,
+        "localStartMinute": 480,
+        "professionalId": "019a1234-0000-7000-8000-000000000010",
+        "status": "active",
+        "updatedAt": null,
+        "validFrom": "2026-10-30",
+        "validUntil": null,
+        "version": 1
+      }
+    },
+    {
+      "entityType": "schedule_exception",
+      "entityKey": "019a1234-0000-7000-8000-000000000010",
+      "entityVersion": 1,
+      "changeKind": "upsert",
+      "state": {
+        "accountId": "019a1234-0000-7000-8000-000000000001",
+        "createdAt": null,
+        "id": "019a1234-0000-7000-8000-000000000010",
+        "kind": "closed",
+        "localDate": "2026-10-30",
+        "localEndMinute": null,
+        "localStartMinute": null,
+        "professionalId": "019a1234-0000-7000-8000-000000000010",
+        "status": "active",
+        "updatedAt": null,
+        "version": 1
+      }
+    },
+    {
+      "entityType": "schedule_block",
+      "entityKey": "019a1234-0000-7000-8000-000000000010",
+      "entityVersion": 1,
+      "changeKind": "upsert",
+      "state": {
+        "accountId": null,
+        "createdAt": null,
+        "endsAt": "2026-10-30T14:30:00Z",
+        "id": "019a1234-0000-7000-8000-000000000010",
+        "professionalId": "019a1234-0000-7000-8000-000000000010",
+        "reasonCode": null,
+        "startsAt": "2026-10-30T14:00:00Z",
+        "status": "active",
+        "updatedAt": null,
+        "version": 1
+      }
+    },
+    {
+      "entityType": "appointment",
+      "entityKey": "019a1234-0000-7000-8000-000000000010",
+      "entityVersion": 1,
+      "changeKind": "upsert",
+      "state": {
+        "accountId": "019a1234-0000-7000-8000-000000000001",
+        "confirmedAt": null,
+        "createdAt": null,
+        "endsAt": "2026-10-30T14:30:00Z",
+        "id": "019a1234-0000-7000-8000-000000000010",
+        "locationAddressSnapshot": "Synthetic",
+        "locationCitySnapshot": "Synthetic",
+        "locationCountrySnapshot": "VE",
+        "locationNameSnapshot": "Synthetic",
+        "locationStateSnapshot": "Synthetic",
+        "offeredDurationMinutesSnapshot": 30,
+        "patientId": "019a1234-0000-7000-8000-000000000010",
+        "professionalId": "019a1234-0000-7000-8000-000000000010",
+        "professionalNameSnapshot": "Synthetic",
+        "responsibleContactId": null,
+        "serviceId": "019a1234-0000-7000-8000-000000000010",
+        "serviceNameSnapshot": "Synthetic",
+        "startsAt": "2026-10-30T14:00:00Z",
+        "status": "scheduled",
+        "timeZoneSnapshot": "America/Caracas",
+        "updatedAt": null,
+        "version": 1
+      }
+    },
+    {
+      "entityType": "appointment_history",
+      "entityKey": "019a1234-0000-7000-8000-000000000010",
+      "entityVersion": 1,
+      "changeKind": "upsert",
+      "state": {
+        "accountId": "019a1234-0000-7000-8000-000000000001",
+        "appointmentId": "019a1234-0000-7000-8000-000000000010",
+        "endsAt": "2026-10-30T14:30:00Z",
+        "items": [
+          {
+            "startsAt": "2026-10-30T14:00:00Z",
+            "endsAt": "2026-10-30T14:30:00Z",
+            "responsibleContactId": null,
+            "status": "scheduled",
+            "confirmedAt": null,
+            "version": 1,
+            "serviceNameSnapshot": "Synthetic",
+            "offeredDurationMinutesSnapshot": 30,
+            "professionalNameSnapshot": "Synthetic",
+            "locationNameSnapshot": "Synthetic",
+            "locationAddressSnapshot": "Synthetic",
+            "locationCountrySnapshot": "VE",
+            "locationStateSnapshot": "Synthetic",
+            "locationCitySnapshot": "Synthetic",
+            "timeZoneSnapshot": "America/Caracas",
+            "appointmentId": "019a1234-0000-7000-8000-000000000010",
+            "accountId": "019a1234-0000-7000-8000-000000000001",
+            "action": "created",
+            "actorKind": "staff",
+            "actorUserId": "019a1234-0000-7000-8000-000000000002",
+            "actorContactPersonId": null,
+            "changeReason": null,
+            "changedAt": "2026-10-30T12:00:00Z"
+          }
+        ],
+        "startsAt": "2026-10-30T14:00:00Z",
+        "version": 1
+      }
+    }
+  ]
+}

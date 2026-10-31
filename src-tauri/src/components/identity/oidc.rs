@@ -55,6 +55,10 @@ impl Browser for SystemBrowser {
 pub struct LoginCancellation(Arc<AtomicBool>);
 
 impl LoginCancellation {
+    pub fn is_cancelled(&self) -> bool {
+        self.0.load(Ordering::Relaxed)
+    }
+
     pub fn cancel(&self) {
         self.0.store(true, Ordering::Relaxed);
     }
@@ -86,12 +90,15 @@ impl OidcSession {
     pub fn issuer(&self) -> &str {
         &self.issuer
     }
+
     pub fn subject(&self) -> &str {
         &self.subject
     }
+
     pub fn access_token(&self) -> &Secret {
         &self.access
     }
+
     pub fn expires_at(&self) -> Option<SystemTime> {
         self.expires_at
     }
@@ -112,6 +119,7 @@ impl OidcSession {
             .map_err(|_| OidcFailure::StorageUnavailable)?;
         let result = (|| {
             store.write(&access_key, &self.access)?;
+
             match &self.refresh {
                 Some(refresh) => {
                     // Only the secure-store boundary may encode a secret bundle.
@@ -278,6 +286,7 @@ impl OidcProvider {
             )
             .set_pkce_challenge(challenge)
             .url();
+
         browser.open(url.as_str())?;
 
         Ok(LoginAttempt {

@@ -1,19 +1,16 @@
 use super::*;
 use crate::platform::http::APITransport;
 use crate::platform::secrets::{CredentialKey, CredentialKind, Secret, testing::MemorySecretStore};
+use crate::platform::test_api::TestApi;
 use crate::shared_kernel::{SystemClock, UuidV7Generator};
 use serde_json::Value;
 use std::{
     fs,
-    io::{Read, Write},
-    net::TcpListener,
     path::PathBuf,
     sync::{
         Arc,
         atomic::{AtomicBool, AtomicUsize, Ordering},
     },
-    thread,
-    time::{Duration, Instant},
 };
 
 const ACCOUNT: &str = "019a1234-0000-7000-8000-000000000001";
@@ -114,90 +111,6 @@ impl AuditStore {
             .iter()
             .filter(|key| **key == Self::token_key(config))
             .count()
-    }
-}
-
-struct TestApi {
-    url: String,
-    handle: thread::JoinHandle<Vec<String>>,
-}
-
-impl TestApi {
-    fn new(count: usize, mut reply: impl FnMut(&str) -> (u16, Value) + Send + 'static) -> Self {
-        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-        listener.set_nonblocking(true).unwrap();
-        let url = format!("http://{}/", listener.local_addr().unwrap());
-        let handle = thread::spawn(move || {
-            let mut requests = Vec::new();
-
-            for _ in 0..count {
-                let deadline = Instant::now() + Duration::from_secs(5);
-                let mut stream = loop {
-                    match listener.accept() {
-                        Ok((stream, _)) => break stream,
-                        Err(error)
-                            if error.kind() == std::io::ErrorKind::WouldBlock
-                                && Instant::now() < deadline =>
-                        {
-                            thread::sleep(Duration::from_millis(5))
-                        }
-                        Err(_) => panic!("falta una petición al servidor de prueba"),
-                    }
-                };
-                stream.set_nonblocking(false).unwrap();
-                stream
-                    .set_read_timeout(Some(Duration::from_secs(2)))
-                    .unwrap();
-                stream
-                    .set_write_timeout(Some(Duration::from_secs(2)))
-                    .unwrap();
-
-                let mut bytes = Vec::new();
-
-                loop {
-                    let mut buffer = [0; 4096];
-                    let length = stream.read(&mut buffer).unwrap();
-                    assert!(length > 0 && bytes.len() + length < 1024 * 1024);
-                    bytes.extend_from_slice(&buffer[..length]);
-
-                    if let Some(end) = bytes.windows(4).position(|part| part == b"\r\n\r\n") {
-                        let header = String::from_utf8_lossy(&bytes[..end]).to_ascii_lowercase();
-                        let body_length = header
-                            .lines()
-                            .find_map(|line| {
-                                line.strip_prefix("content-length:")
-                                    .and_then(|value| value.trim().parse::<usize>().ok())
-                            })
-                            .unwrap_or(0);
-
-                        if bytes.len() >= end + 4 + body_length {
-                            break;
-                        }
-                    }
-                }
-
-                let request = String::from_utf8(bytes).unwrap();
-                let (status, body) = reply(&request);
-
-                if status != 0 {
-                    let body = body.to_string();
-                    let response = format!(
-                        "HTTP/1.1 {status} Test\r\nConnection: close\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{body}",
-                        body.len()
-                    );
-                    stream.write_all(response.as_bytes()).unwrap();
-                }
-                requests.push(request);
-            }
-
-            requests
-        });
-
-        Self { url, handle }
-    }
-
-    fn finish(self) -> Vec<String> {
-        self.handle.join().unwrap()
     }
 }
 
@@ -318,6 +231,7 @@ fn activation_registers_only_self_reuses_secret_and_survives_reopen() {
                         .contains(&format!("authorization: bearer {OIDC_TOKEN}"))
                 );
                 assert_eq!(body(request)["localSchemaVersion"], 4);
+
                 return (201, issue());
             }
             assert!(
@@ -413,6 +327,7 @@ fn activation_registers_only_self_reuses_secret_and_survives_reopen() {
         assert_intention(&database, &expected);
         drop(database);
         let bytes = fs::read(&db.0).unwrap();
+
         for secret in [API_TOKEN, OIDC_TOKEN] {
             assert!(
                 !bytes
@@ -875,7 +790,7 @@ fn manual_c02_activation_and_local_logout() {
         .unwrap();
         let http =
             APITransport::new(APIConfig::parse(config.base_url().as_str()).unwrap()).unwrap();
-        let auth = IdentityApi(&http).auth_config().await.unwrap().value;
+        let auth = IdentityAPI(&http).auth_config().await.unwrap().value;
         let provider = OidcProvider::discover(&auth, &http).await.unwrap();
         let attempt = provider.begin(&SystemBrowser).unwrap();
         let session = provider

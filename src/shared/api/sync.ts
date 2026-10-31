@@ -4,9 +4,7 @@ export interface PendingOperation {
   operationId: string;
   action: string;
   entityType: string;
-  entityKey: unknown;
   expectedVersion: number;
-  payload: Record<string, unknown>;
   occurredAtLocal: string | null;
   createdAtMillis: number;
 }

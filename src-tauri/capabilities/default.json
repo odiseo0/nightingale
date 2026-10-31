@@ -6,6 +6,14 @@
   "permissions": [
     "allow-get-diagnostics",
     "allow-storage-get-status",
-    "allow-sync-list-pending"
+    "allow-sync-list-pending",
+    "allow-identity-get-status",
+    "allow-identity-begin-login",
+    "allow-identity-complete-login",
+    "allow-identity-cancel-login",
+    "allow-identity-list-accounts",
+    "allow-identity-activate-account",
+    "allow-identity-logout",
+    "allow-sync-now"
   ]
 }

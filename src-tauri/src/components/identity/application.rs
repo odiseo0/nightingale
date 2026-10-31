@@ -1,5 +1,5 @@
 use super::{
-    api::{AccountAccessResponse, ActivityStatus, DeviceRegistration, IdentityApi},
+    api::{AccountAccessResponse, ActivityStatus, DeviceRegistration, IdentityAPI},
     domain::{AccessStatus, AccountAccess, IdentityContext},
     oidc::{OidcSession, logout},
     repository::{AccessStore, SqliteAccessStore},
@@ -11,7 +11,7 @@ use crate::components::{
     },
     sync::{
         adapters::{
-            api::{OriginalStatus, ResultStatus, SyncApi},
+            api::{OriginalStatus, ResultStatus, SyncAPI},
             outbound::SqliteOperationStore,
         },
         application::record_operation,
@@ -140,7 +140,7 @@ impl<S: SecretStore> AccountActivation<'_, S> {
             .ensure(self.http, session.access_token(), &registration)
             .await
             .map_err(ActivationFailure::Credential)?;
-        let api = IdentityApi(self.http);
+        let api = IdentityAPI(self.http);
         let me = api
             .me(&credential.token)
             .await
@@ -313,7 +313,7 @@ impl<S: SecretStore> AccountActivation<'_, S> {
                 .map_err(|_| NightingaleError::internal("transacción de registro fallida"))
         })?;
 
-        let result = SyncApi(self.http)
+        let result = SyncAPI(self.http)
             .send_operations(&credential.token, account, &[envelope])
             .await
             .map_err(|error| self.remote_error(error, &credential, account))?
@@ -395,7 +395,7 @@ impl<S: SecretStore> AccountActivation<'_, S> {
         account: &AccountId,
         clock: &impl Clock,
     ) -> ActivationResult<AccountAccess> {
-        let response: AccountAccessResponse = IdentityApi(self.http)
+        let response: AccountAccessResponse = IdentityAPI(self.http)
             .access(&credential.token, account)
             .await
             .map_err(|error| self.remote_error(error, credential, account))?

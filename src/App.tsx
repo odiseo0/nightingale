@@ -3,6 +3,7 @@ import { getDiagnostics, type Diagnostics } from "./shared/api/diagnostics";
 import { getStorageStatus, type StorageStatus } from "./shared/api/storage";
 import { getPendingOperations, type PendingOperations } from "./shared/api/sync";
 import "./App.css";
+import CorePanel from "./CorePanel";
 
 type DiagnosticState =
   | { status: "idle" | "loading" }
@@ -95,13 +96,13 @@ function App() {
         )}
       </section>
 
+      <CorePanel />
       <section aria-labelledby="scope-heading" className="space-y-2 border-t border-gray-200 pt-6">
         <h2 id="scope-heading" className="text-xl font-semibold">
           Funciones pendientes
         </h2>
         <p>
-          La gestión de pacientes, citas, sesiones y sincronización aún no está
-          implementada. Los servicios web tendrán sus propios planes.
+          La gestión de pacientes, servicios, agenda y citas tendrá sus propios planes.
         </p>
       </section>
     </main>

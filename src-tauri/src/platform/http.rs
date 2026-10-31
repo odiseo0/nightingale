@@ -34,7 +34,7 @@ pub enum APICode {
     Unknown,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RemoteError {
     pub code: APICode,
@@ -67,6 +67,7 @@ pub struct APIResponse<T> {
 /// Shared HTTPS adapter. It owns no SQLite connection or transaction.
 pub struct APITransport {
     client: Client,
+    stream_client: Client,
     config: APIConfig,
     response_limit: usize,
 }
@@ -88,6 +89,7 @@ impl<'c> openidconnect::AsyncHttpClient<'c> for APITransport {
         Box::pin(async move {
             let failure =
                 || crate::shared_kernel::NightingaleError::temporary("fallo de transporte OIDC");
+
             APIConfig::parse(&request.uri().to_string()).map_err(|_| failure())?;
 
             if request.body().len() > 1024 * 1024 {
@@ -129,7 +131,7 @@ impl APITransport {
         Self::with_timeout(config, Duration::from_secs(30))
     }
 
-    fn with_timeout(config: APIConfig, timeout: Duration) -> APIResult<Self> {
+    pub(crate) fn with_timeout(config: APIConfig, timeout: Duration) -> APIResult<Self> {
         // Do not forward credentials through redirects or retry token issuance.
         // https://docs.rs/reqwest/0.12.28/reqwest/struct.ClientBuilder.html
         let client = Client::builder()
@@ -143,9 +145,72 @@ impl APITransport {
 
         Ok(Self {
             client,
+            stream_client: Client::builder()
+                .redirect(reqwest::redirect::Policy::none())
+                .retry(reqwest::retry::never())
+                .connect_timeout(Duration::from_secs(10))
+                .read_timeout(Duration::from_secs(45))
+                .user_agent(concat!("nightingale/", env!("CARGO_PKG_VERSION")))
+                .build()
+                .map_err(|_| APIFailure::local(APICode::TemporaryFailure))?,
             config,
             response_limit: 8 * 1024 * 1024,
         })
+    }
+
+    pub(crate) async fn events(
+        &self,
+        token: &Secret,
+        account: &crate::shared_kernel::id::AccountId,
+        cursor: &str,
+    ) -> APIResult<reqwest::Response> {
+        let url = self
+            .config
+            .base_url()
+            .join(&format!("v1/accounts/{}/sync/events", account.as_str()))
+            .map_err(|_| APIFailure::local(APICode::ValidationError))?;
+        let mut bearer = header::HeaderValue::from_str(&format!("Bearer {}", token.expose()))
+            .map_err(|_| APIFailure::local(APICode::ValidationError))?;
+
+        bearer.set_sensitive(true);
+
+        // No total timeout: heartbeat bounds the idle read, not stream lifetime.
+        // https://docs.rs/reqwest/0.12.28/reqwest/struct.ClientBuilder.html#method.read_timeout
+        let response = self
+            .stream_client
+            .get(url)
+            .query(&[("cursor", cursor)])
+            .header(header::AUTHORIZATION, bearer)
+            .header(header::ACCEPT, "text/event-stream")
+            .send()
+            .await
+            .map_err(|_| APIFailure::local(APICode::TemporaryFailure))?;
+        let status = response.status().as_u16();
+
+        if status != 200 {
+            return Err(APIFailure {
+                status: Some(status),
+                code: match status {
+                    401 => APICode::AuthenticationRequired,
+                    403 => APICode::PermissionDenied,
+                    410 => APICode::CursorExpired,
+                    429 => APICode::ConnectionLimit,
+                    _ => APICode::TemporaryFailure,
+                },
+                correlation_id: None,
+            });
+        }
+
+        if response
+            .headers()
+            .get(header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .is_none_or(|v| v.split(';').next().unwrap_or("").trim() != "text/event-stream")
+        {
+            return Err(APIFailure::local(APICode::InvalidResponse));
+        }
+
+        Ok(response)
     }
 
     pub(crate) async fn request<T: DeserializeOwned>(
@@ -154,6 +219,54 @@ impl APITransport {
         path: &str,
         token: Option<&Secret>,
         body: Option<Vec<u8>>,
+    ) -> APIResult<APIResponse<T>> {
+        self.request_with_query(method, path, token, body, &[])
+            .await
+    }
+
+    pub(crate) async fn request_with_query<T: DeserializeOwned>(
+        &self,
+        method: Method,
+        path: &str,
+        token: Option<&Secret>,
+        body: Option<Vec<u8>>,
+        query: &[(&str, &str)],
+    ) -> APIResult<APIResponse<T>> {
+        let started = std::time::Instant::now();
+        let result = self.request_inner(method, path, token, body, query).await;
+
+        use super::observability::{Event, Kind, Outcome, emit};
+
+        let mut event = Event::new(
+            Kind::Http,
+            if result.is_ok() {
+                Outcome::Success
+            } else {
+                Outcome::Failed
+            },
+            started.elapsed(),
+        );
+
+        match &result {
+            Ok(response) => event.correlation_id = response.correlation_id.clone(),
+            Err(error) => {
+                event.correlation_id = error.correlation_id.clone();
+                event.code = Some(error.code);
+            }
+        }
+
+        emit(&event);
+
+        result
+    }
+
+    async fn request_inner<T: DeserializeOwned>(
+        &self,
+        method: Method,
+        path: &str,
+        token: Option<&Secret>,
+        body: Option<Vec<u8>>,
+        query: &[(&str, &str)],
     ) -> APIResult<APIResponse<T>> {
         let invalid = || APIFailure::local(APICode::ValidationError);
 
@@ -174,6 +287,9 @@ impl APITransport {
         let mut request = self
             .client
             .request(method, url)
+            // Encode opaque cursors as one value, including +, & and =.
+            // https://docs.rs/reqwest/0.12.28/reqwest/struct.RequestBuilder.html#method.query
+            .query(query)
             .header(header::ACCEPT, "application/json");
 
         if let Some(token) = token {
@@ -256,7 +372,13 @@ impl APITransport {
             });
         }
 
-        let value = serde_json::from_slice(&bytes).map_err(|_| fail(APICode::InvalidResponse))?;
+        // Snapshot release returns 204. Its empty body represents unit/null.
+        let value = serde_json::from_slice(if status == reqwest::StatusCode::NO_CONTENT {
+            b"null"
+        } else {
+            &bytes
+        })
+        .map_err(|_| fail(APICode::InvalidResponse))?;
 
         Ok(APIResponse {
             value,
@@ -385,8 +507,8 @@ pub(crate) mod testing {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::components::identity::api::{DeviceRegistration, IdentityApi};
-    use crate::components::sync::adapters::api::{ResultStatus, SyncApi};
+    use crate::components::identity::api::{DeviceRegistration, IdentityAPI};
+    use crate::components::sync::adapters::api::{ResultStatus, SyncAPI};
     use crate::components::sync::domain::OperationEnvelope;
     use crate::shared_kernel::id::AccountId;
     use serde_json::{Value, json};
@@ -403,7 +525,7 @@ mod tests {
         tauri::async_runtime::block_on(async {
             let server = Server::new(200,json!({"issuer":"https://issuer.example", "publicClientId":"desktop", "audience":"api"}).to_string(), &format!("X-Correlation-ID: {CORRELATION}\r\n"));
             let client = transport(&server);
-            let response = IdentityApi(&client).auth_config().await.unwrap();
+            let response = IdentityAPI(&client).auth_config().await.unwrap();
             assert_eq!(response.value.public_client_id, "desktop");
             assert_eq!(response.correlation_id.unwrap().as_str(), CORRELATION);
             let request = server.finish();
@@ -418,7 +540,7 @@ mod tests {
                 client_version: "0.1.0".into(),
                 local_schema_version: 4,
             };
-            let response = IdentityApi(&client)
+            let response = IdentityAPI(&client)
                 .issue_device_token(&token, &registration)
                 .await
                 .unwrap();
@@ -457,7 +579,7 @@ mod tests {
             ] {
                 let server = Server::new(status,json!({"code":code,"message":"https://secret.example/token synthetic-secret", "correlationId":CORRELATION,"details":[{"loc":["synthetic-secret"],"code":"synthetic-secret"}]}).to_string(),"");
                 let client = transport(&server);
-                let error = IdentityApi(&client).auth_config().await.err().unwrap();
+                let error = IdentityAPI(&client).auth_config().await.err().unwrap();
                 assert_eq!(error.status, Some(status));
                 assert_eq!(error.code, expected);
                 assert_eq!(error.correlation_id.as_ref().unwrap().as_str(), CORRELATION);
@@ -495,11 +617,13 @@ mod tests {
                 let server = Server::new(status, body.into(), headers);
                 let mut client = transport(&server);
                 client.response_limit = 16;
+
                 // Keep the HTML body inside this case's configured bound.
                 if status == 404 {
                     client.response_limit = 128;
                 }
-                let error = IdentityApi(&client).auth_config().await.err().unwrap();
+
+                let error = IdentityAPI(&client).auth_config().await.err().unwrap();
                 assert_eq!(error.code, expected);
                 assert!(!format!("{error:?}").contains("secret"));
                 server.finish();
@@ -516,7 +640,7 @@ mod tests {
                 Duration::from_millis(100),
             )
             .unwrap();
-            let error = IdentityApi(&client).auth_config().await.err().unwrap();
+            let error = IdentityAPI(&client).auth_config().await.err().unwrap();
             assert_eq!(error.code, APICode::TemporaryFailure);
             assert!(!format!("{error:?}").contains("127.0.0.1"));
             server.finish();
@@ -526,7 +650,7 @@ mod tests {
             let client =
                 APITransport::new(APIConfig::parse(&format!("http://{address}/")).unwrap())
                     .unwrap();
-            let error = IdentityApi(&client)
+            let error = IdentityAPI(&client)
                 .me(&Secret::new("synthetic-secret".into()).unwrap())
                 .await
                 .err()
@@ -556,7 +680,7 @@ mod tests {
                 let server = Server::new(200,json!({"results":[{"operationId":operation.operation_id,"status":status,"entityVersion":null,"state":null,"error":null,"originalResult":if status == "duplicate" {original} else {Value::Null}}],"correlationId":CORRELATION}).to_string(),"");
                 let client = transport(&server);
                 let account = AccountId::try_from(CORRELATION.to_owned()).unwrap();
-                let response = SyncApi(&client)
+                let response = SyncAPI(&client)
                     .send_operations(
                         &Secret::new("synthetic-device".into()).unwrap(),
                         &account,
@@ -600,7 +724,7 @@ mod tests {
             let token = Secret::new("synthetic-device".into()).unwrap();
             for operations in [vec![], vec![operation(); 101], vec![operation(); 2]] {
                 assert_eq!(
-                    SyncApi(&client)
+                    SyncAPI(&client)
                         .send_operations(&token, &account, &operations)
                         .await
                         .err()
@@ -616,7 +740,7 @@ mod tests {
             );
             let client = transport(&server);
             assert_eq!(
-                SyncApi(&client)
+                SyncAPI(&client)
                     .send_operations(&token, &account, &[operation()])
                     .await
                     .err()
@@ -636,7 +760,7 @@ mod tests {
             let server = Server::new(200,json!({"userId":CORRELATION,"displayName":"Test user","status":"active","oidcIssuer":"https://issuer.example","oidcSubject":"test-user","accounts":{"items":[],"total":0}}).to_string(),"");
             let client = transport(&server);
             assert_eq!(
-                IdentityApi(&client)
+                IdentityAPI(&client)
                     .me(&token)
                     .await
                     .unwrap()
@@ -648,7 +772,7 @@ mod tests {
             assert!(server.finish().starts_with("GET /v1/me "));
             let server = Server::new(200,json!({"items":[{"id":CORRELATION,"displayName":"Test practice","status":"active","role":"owner"}],"total":101}).to_string(),"");
             let client = transport(&server);
-            let page = IdentityApi(&client)
+            let page = IdentityAPI(&client)
                 .accounts(&token, 2, 100)
                 .await
                 .unwrap()
@@ -662,7 +786,7 @@ mod tests {
             );
             let server = Server::new(200,json!({"accountId":CORRELATION,"userId":CORRELATION,"deviceId":CORRELATION,"role":"owner","status":"registration_required","permissionEpoch":3,"allowedActions":["RegisterAccountDevice"]}).to_string(),"");
             let client = transport(&server);
-            let access = IdentityApi(&client)
+            let access = IdentityAPI(&client)
                 .access(&token, &account)
                 .await
                 .unwrap()
@@ -680,7 +804,7 @@ mod tests {
             let server = Server::new(200,json!({"operationId":CORRELATION,"status":"accepted","entityVersion":1,"state":{},"error":null}).to_string(),"");
             let client = transport(&server);
             let operation = OperationId::try_from(CORRELATION.to_owned()).unwrap();
-            let result = SyncApi(&client)
+            let result = SyncAPI(&client)
                 .operation_result(&token, &account, &operation)
                 .await
                 .unwrap()

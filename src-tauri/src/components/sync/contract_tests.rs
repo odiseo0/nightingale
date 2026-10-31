@@ -1,0 +1,332 @@
+use super::{adapters::remote_models::RemoteState, domain::OperationEnvelope, remote::ChangeGroup};
+use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
+
+fn contract() -> Value {
+    serde_json::from_str(include_str!(
+        "../../../../docs/contracts/api-v1/openapi.json"
+    ))
+    .unwrap()
+}
+
+// Test-only structural checks for the schema forms used in these fixtures.
+// Business validation, IANA zones and full date arithmetic belong to API.
+fn check(root: &Value, schema: &Value, value: &Value, path: &str) -> Result<(), String> {
+    let fail = || Err(format!("contract mismatch at {path}"));
+
+    if let Some(reference) = schema["$ref"].as_str() {
+        return check(
+            root,
+            root.pointer(reference.trim_start_matches('#'))
+                .ok_or_else(|| format!("unresolved {reference}"))?,
+            value,
+            path,
+        );
+    }
+
+    if let Some(all) = schema["allOf"].as_array() {
+        for part in all {
+            check(root, part, value, path)?;
+        }
+    }
+
+    for keyword in ["anyOf", "oneOf"] {
+        if let Some(parts) = schema[keyword].as_array() {
+            let matches = parts
+                .iter()
+                .filter(|part| check(root, part, value, path).is_ok())
+                .count();
+
+            if matches == 0 || (keyword == "oneOf" && matches != 1) {
+                return fail();
+            }
+        }
+    }
+
+    if schema.get("const").is_some_and(|v| v != value)
+        || schema["enum"]
+            .as_array()
+            .is_some_and(|options| !options.contains(value))
+    {
+        return fail();
+    }
+
+    if let Some(kind) = schema["type"].as_str() {
+        let valid = match kind {
+            "object" => value.is_object(),
+            "array" => value.is_array(),
+            "string" => value.is_string(),
+            "integer" => value.is_i64() || value.is_u64(),
+            "number" => value.is_number(),
+            "boolean" => value.is_boolean(),
+            "null" => value.is_null(),
+            _ => false,
+        };
+
+        if !valid {
+            return fail();
+        }
+    }
+    if let Some(object) = value.as_object() {
+        if let Some(required) = schema["required"].as_array() {
+            for field in required {
+                if !object.contains_key(field.as_str().unwrap()) {
+                    return Err(format!("missing {path}.{}", field.as_str().unwrap()));
+                }
+            }
+        }
+
+        for (key, item) in object {
+            if let Some(property) = schema["properties"].get(key) {
+                check(root, property, item, &format!("{path}.{key}"))?;
+            } else if schema["additionalProperties"] == false {
+                return fail();
+            } else if schema["additionalProperties"].is_object() {
+                check(
+                    root,
+                    &schema["additionalProperties"],
+                    item,
+                    &format!("{path}.{key}"),
+                )?;
+            }
+        }
+    }
+
+    if let Some(items) = value.as_array() {
+        for (index, item) in items.iter().enumerate() {
+            if let Some(schema) = schema.get("items") {
+                check(root, schema, item, &format!("{path}[{index}]"))?;
+            }
+        }
+
+        if schema["minItems"]
+            .as_u64()
+            .is_some_and(|n| (items.len() as u64) < n)
+            || schema["maxItems"]
+                .as_u64()
+                .is_some_and(|n| (items.len() as u64) > n)
+        {
+            return fail();
+        }
+    }
+
+    if let Some(text) = value.as_str() {
+        if schema["minLength"]
+            .as_u64()
+            .is_some_and(|n| (text.chars().count() as u64) < n)
+            || schema["maxLength"]
+                .as_u64()
+                .is_some_and(|n| (text.chars().count() as u64) > n)
+        {
+            return fail();
+        }
+
+        if schema["format"] == "uuid7" && crate::shared_kernel::id::canonical_uuid_v7(text).is_err()
+        {
+            return fail();
+        }
+    }
+
+    if let Some(n) = value.as_f64()
+        && (schema["minimum"].as_f64().is_some_and(|min| n < min)
+            || schema["maximum"].as_f64().is_some_and(|max| n > max))
+    {
+        return fail();
+    }
+
+    Ok(())
+}
+
+#[test]
+fn fixed_bundle_hashes_references_and_consumed_routes_match() {
+    let manifest: Value = serde_json::from_str(include_str!(
+        "../../../../docs/contracts/api-v1/manifest.json"
+    ))
+    .unwrap();
+    let directory =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../docs/contracts/api-v1");
+
+    for (name, hash) in manifest["files"].as_object().unwrap() {
+        let bytes = std::fs::read(directory.join(name)).unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(bytes)),
+            hash.as_str().unwrap(),
+            "contract file {name}"
+        );
+    }
+
+    let root = contract();
+    assert_eq!(
+        root["paths"].as_object().unwrap().len() as u64,
+        manifest["paths"].as_u64().unwrap()
+    );
+    assert_eq!(
+        root["components"]["schemas"].as_object().unwrap().len() as u64,
+        manifest["schemas"].as_u64().unwrap()
+    );
+
+    fn refs(root: &Value, value: &Value) {
+        match value {
+            Value::Object(object) => {
+                if let Some(reference) = object.get("$ref").and_then(Value::as_str) {
+                    assert!(
+                        root.pointer(reference.trim_start_matches('#')).is_some(),
+                        "{reference}"
+                    );
+                }
+
+                for child in object.values() {
+                    refs(root, child);
+                }
+            }
+            Value::Array(items) => {
+                for child in items {
+                    refs(root, child)
+                }
+            }
+            _ => {}
+        }
+    }
+    refs(&root, &root);
+
+    for (method, path) in [
+        ("get", "/v1/accounts/{account_id}/sync/changes"),
+        ("get", "/v1/accounts/{account_id}/sync/events"),
+        ("post", "/v1/accounts/{account_id}/sync/operations"),
+        (
+            "get",
+            "/v1/accounts/{account_id}/sync/operations/{operation_id}",
+        ),
+        ("post", "/v1/accounts/{account_id}/sync/snapshots"),
+        (
+            "get",
+            "/v1/accounts/{account_id}/sync/snapshots/{snapshot_id}/items",
+        ),
+        (
+            "delete",
+            "/v1/accounts/{account_id}/sync/snapshots/{snapshot_id}",
+        ),
+    ] {
+        assert!(root["paths"][path][method].is_object(), "{method} {path}");
+    }
+}
+
+#[test]
+fn all_projection_shapes_required_nullable_fields_and_closed_models_match_fixed_schema() {
+    let root = contract();
+    let fixture: Value = serde_json::from_str(include_str!("fixtures/remote-group.json")).unwrap();
+    check(
+        &root,
+        &root["components"]["schemas"]["ChangeGroup"],
+        &fixture,
+        "group",
+    )
+    .unwrap();
+    let group: ChangeGroup = serde_json::from_value(fixture.clone()).unwrap();
+    assert_eq!(serde_json::to_value(group).unwrap(), fixture);
+    let models = [
+        "AccountResponse",
+        "AccountDeviceResponse",
+        "MemberResponse",
+        "InvitationResponse",
+        "ProfessionalResponse",
+        "PatientProfileResponse",
+        "PatientIdentifierResponse",
+        "ContactResponse",
+        "RelationshipResponse",
+        "ServiceResponse",
+        "ServiceOfferResponse",
+        "ScheduleRuleResponse",
+        "ScheduleExceptionResponse",
+        "ScheduleBlockResponse",
+        "AppointmentResponse",
+        "AppointmentHistoryProjection",
+    ];
+
+    for (item, name) in fixture["changes"].as_array().unwrap().iter().zip(models) {
+        let schema = &root["components"]["schemas"][name];
+        let state = &item["state"];
+        check(&root, schema, state, name).unwrap();
+        let envelope = |state: Value| json!({"entityType":item["entityType"],"state":state});
+        assert!(
+            serde_json::from_value::<RemoteState>(envelope(state.clone())).is_ok(),
+            "{name}"
+        );
+
+        for required in schema["required"].as_array().unwrap() {
+            let field = required.as_str().unwrap();
+            let mut missing = state.clone();
+            missing.as_object_mut().unwrap().remove(field);
+            assert!(
+                serde_json::from_value::<RemoteState>(envelope(missing)).is_err(),
+                "{name}.{field} must remain required"
+            );
+        }
+
+        if schema["additionalProperties"] == false {
+            let mut extra = state.clone();
+            extra["unexpected"] = json!(true);
+            assert!(
+                serde_json::from_value::<RemoteState>(envelope(extra)).is_err(),
+                "{name} extra field"
+            );
+        }
+    }
+
+    let mut bad = fixture.clone();
+    bad["changes"][0]["entityVersion"] = json!(0);
+    assert!(
+        check(
+            &root,
+            &root["components"]["schemas"]["ChangeGroup"],
+            &bad,
+            "bad-version"
+        )
+        .is_err()
+    );
+}
+
+#[test]
+fn operation_payload_absence_null_extra_and_sse_examples_match_fixed_artifacts() {
+    let root = contract();
+    let operations: Value = serde_json::from_str(include_str!(
+        "../../../../docs/contracts/api-v1/accepted-operations.schema.json"
+    ))
+    .unwrap();
+    let mut operation = json!({"operationId":"019a1234-0000-7000-8000-000000000100","contractVersion":1,"action":"RegisterPatient","entityKey":"019a1234-0000-7000-8000-000000000010","expectedVersion":0,"payload":{"fullName":"Synthetic"},"dependsOn":[]});
+    check(&operations, &operations, &operation, "operation").unwrap();
+    let dto: OperationEnvelope = serde_json::from_value(operation.clone()).unwrap();
+    assert_eq!(serde_json::to_value(dto).unwrap(), operation);
+    operation["cloudSecret"] = json!("forbidden");
+    assert!(serde_json::from_value::<OperationEnvelope>(operation.clone()).is_err());
+    operation.as_object_mut().unwrap().remove("cloudSecret");
+    operation["payload"] = Value::Null;
+    assert!(check(&operations, &operations, &operation, "null-payload").is_err());
+    let original = json!({"operationId":"019a1234-0000-7000-8000-000000000100","status":"accepted","entityVersion":1,"state":null,"error":null});
+    check(
+        &root,
+        &root["components"]["schemas"]["OperationRecord"],
+        &original,
+        "receipt",
+    )
+    .unwrap();
+
+    for field in ["entityVersion", "state", "error"] {
+        let mut missing = original.clone();
+        missing.as_object_mut().unwrap().remove(field);
+        assert!(serde_json::from_value::<super::adapters::api::OperationRecord>(missing).is_err());
+    }
+
+    let sse: Value = serde_json::from_str(include_str!(
+        "../../../../docs/contracts/api-v1/sse.schema.json"
+    ))
+    .unwrap();
+
+    for event in [
+        json!({"event":"changes_available","data":{"accountId":"019a1234-0000-7000-8000-000000000001","cursor":"opaque"}}),
+        json!({"event":"heartbeat","data":{"serverTime":"2026-10-30T12:00:00Z"}}),
+        json!({"event":"access_revoked"}),
+    ] {
+        check(&sse, &sse, &event, "sse").unwrap();
+    }
+}

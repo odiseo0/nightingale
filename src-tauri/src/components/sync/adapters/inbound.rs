@@ -12,9 +12,7 @@ pub struct PendingOperationDto {
     pub operation_id: String,
     pub action: String,
     pub entity_type: String,
-    pub entity_key: serde_json::Value,
     pub expected_version: i64,
-    pub payload: serde_json::Value,
     pub occurred_at_local: Option<String>,
     pub created_at_millis: i64,
 }
@@ -46,9 +44,7 @@ pub fn sync_list_pending(
                 operation_id: operation.operation_id.to_string(),
                 action: operation.action,
                 entity_type: operation.entity_type,
-                entity_key: operation.entity_key,
                 expected_version: operation.expected_version,
-                payload: operation.payload,
                 occurred_at_local: operation.occurred_at_local,
                 created_at_millis: operation.created_at_millis,
             })
@@ -68,9 +64,7 @@ mod tests {
                 operation_id: "019f0000-0000-7000-8000-000000000001".to_owned(),
                 action: "RegisterPatient".to_owned(),
                 entity_type: "patient_profile".to_owned(),
-                entity_key: serde_json::json!("019f0000-0000-7000-8000-000000000101"),
                 expected_version: 0,
-                payload: serde_json::json!({ "fullName": "Paciente de prueba" }),
                 occurred_at_local: None,
                 created_at_millis: 1_800_000_000_000,
             }],
@@ -87,9 +81,7 @@ mod tests {
             value["operations"][0]["createdAtMillis"],
             1_800_000_000_000i64
         );
-        assert_eq!(
-            value["operations"][0]["payload"]["fullName"],
-            "Paciente de prueba"
-        );
+        assert!(value["operations"][0].get("payload").is_none());
+        assert!(value["operations"][0].get("entityKey").is_none());
     }
 }

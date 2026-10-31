@@ -482,7 +482,7 @@ fn manual_oidc_login_in_external_browser() {
     tauri::async_runtime::block_on(async {
         let config = APIConfig::from_environment().unwrap();
         let http = APITransport::new(config).unwrap();
-        let config = crate::components::identity::api::IdentityApi(&http)
+        let config = crate::components::identity::api::IdentityAPI(&http)
             .auth_config()
             .await
             .unwrap()

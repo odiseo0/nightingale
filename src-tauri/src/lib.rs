@@ -21,6 +21,15 @@ pub fn run() {
                 )
             })?;
             app.manage(std::sync::Mutex::new(connection));
+            app.manage(components::sync::coordinator::SyncCoordinator::default());
+            app.manage(components::identity::desktop::DesktopSession::default());
+            let has_identity = {
+                let c = app.state::<std::sync::Mutex<rusqlite::Connection>>();
+                let c = c.lock().map_err(|_|std::io::Error::other("estado local no disponible"))?;
+
+                components::identity::repository::AccessStore::context(&components::identity::repository::SqliteAccessStore,&c)?.is_some()};
+
+            if has_identity && platform::config::APIConfig::from_environment().is_ok(){components::identity::desktop::start_watch(app.handle().clone())?;}
 
             Ok(())
         })
@@ -28,7 +37,16 @@ pub fn run() {
             components::diagnostics::get_diagnostics,
             components::storage::storage_get_status,
             components::sync::adapters::inbound::sync_list_pending,
+            components::identity::desktop::identity_get_status,
+            components::identity::desktop::identity_begin_login,
+            components::identity::desktop::identity_complete_login,
+            components::identity::desktop::identity_cancel_login,
+            components::identity::desktop::identity_list_accounts,
+            components::identity::desktop::identity_activate_account,
+            components::identity::desktop::identity_logout,
+            components::identity::desktop::sync_now,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app,event|{if matches!(event,tauri::RunEvent::Exit){components::identity::desktop::stop_watch(app);}});
 }

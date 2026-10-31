@@ -1,4 +1,4 @@
-use crate::components::identity::api::{DeviceRegistration, IdentityApi};
+use crate::components::identity::api::{DeviceRegistration, IdentityAPI};
 use crate::platform::{
     config::APIConfig,
     http::{APIFailure, APITransport},
@@ -62,7 +62,7 @@ pub struct DeviceCredentials<'a, S> {
 
 impl<S: SecretStore> DeviceCredentials<'_, S> {
     fn guard(&self) -> Result<ActivationGuard, CredentialFailure> {
-        let key = self.key(None, CredentialKind::ApiDeviceState)?;
+        let key = self.key(None, CredentialKind::APIDeviceState)?;
 
         if !ACTIVATING
             .lock()
@@ -74,6 +74,7 @@ impl<S: SecretStore> DeviceCredentials<'_, S> {
 
         Ok(ActivationGuard(key))
     }
+
     fn key(
         &self,
         device: Option<&DeviceId>,
@@ -84,7 +85,7 @@ impl<S: SecretStore> DeviceCredentials<'_, S> {
     }
 
     fn state(&self) -> Result<Option<CredentialState>, CredentialFailure> {
-        let key = self.key(None, CredentialKind::ApiDeviceState)?;
+        let key = self.key(None, CredentialKind::APIDeviceState)?;
         self.secrets
             .read(&key)
             .map_err(|_| CredentialFailure::StorageUnavailable)?
@@ -101,7 +102,7 @@ impl<S: SecretStore> DeviceCredentials<'_, S> {
         let secret = Secret::new(encoded).map_err(|_| CredentialFailure::StorageUnavailable)?;
 
         self.secrets
-            .write(&self.key(None, CredentialKind::ApiDeviceState)?, &secret)
+            .write(&self.key(None, CredentialKind::APIDeviceState)?, &secret)
             .map_err(|_| CredentialFailure::StorageUnavailable)
     }
 
@@ -112,7 +113,7 @@ impl<S: SecretStore> DeviceCredentials<'_, S> {
             Some(CredentialState::Issued { device_id, user_id }) => {
                 let token = self
                     .secrets
-                    .read(&self.key(Some(&device_id), CredentialKind::ApiDevice)?)
+                    .read(&self.key(Some(&device_id), CredentialKind::APIDevice)?)
                     .map_err(|_| CredentialFailure::StorageUnavailable)?
                     .ok_or(CredentialFailure::RecoveryRequired)?;
 
@@ -136,12 +137,14 @@ impl<S: SecretStore> DeviceCredentials<'_, S> {
 
         if let Some(mut credential) = self.load()? {
             credential.activation = Some(guard);
+
             return Ok(credential);
         }
+
         // A lost response cannot recover this one-time secret. Never issue again
         // just because a caller repeats the failed attempt or restarts the app.
         self.save_state(&CredentialState::Issuing)?;
-        let issued = IdentityApi(http)
+        let issued = IdentityAPI(http)
             .issue_device_token(oidc_access, registration)
             .await
             .map_err(CredentialFailure::Remote)?
@@ -152,7 +155,7 @@ impl<S: SecretStore> DeviceCredentials<'_, S> {
         })?;
         self.secrets
             .write(
-                &self.key(Some(&issued.device_id), CredentialKind::ApiDevice)?,
+                &self.key(Some(&issued.device_id), CredentialKind::APIDevice)?,
                 &issued.access_token,
             )
             .map_err(|_| CredentialFailure::StorageUnavailable)?;
@@ -171,12 +174,12 @@ impl<S: SecretStore> DeviceCredentials<'_, S> {
 
         if let Some(CredentialState::Issued { device_id, .. }) = self.state()? {
             self.secrets
-                .delete(&self.key(Some(&device_id), CredentialKind::ApiDevice)?)
+                .delete(&self.key(Some(&device_id), CredentialKind::APIDevice)?)
                 .map_err(|_| CredentialFailure::StorageUnavailable)?;
         }
 
         self.secrets
-            .delete(&self.key(None, CredentialKind::ApiDeviceState)?)
+            .delete(&self.key(None, CredentialKind::APIDeviceState)?)
             .map_err(|_| CredentialFailure::StorageUnavailable)
     }
 }

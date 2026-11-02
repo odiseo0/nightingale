@@ -506,7 +506,7 @@ pub fn start_watch(app: AppHandle) -> Result<()> {
 
             let result = run_cycle(
                 &app,
-            if attempt == 0 {
+                if attempt == 0 {
                     CycleTrigger::Startup
                 } else {
                     CycleTrigger::Reconnect

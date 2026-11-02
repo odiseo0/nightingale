@@ -132,25 +132,36 @@ impl APITransport {
     }
 
     pub(crate) fn with_timeout(config: APIConfig, timeout: Duration) -> APIResult<Self> {
+        let certificate = development_certificate(
+            std::env::var_os("NIGHTINGALE_DEV_CA_CERT").as_deref(),
+            cfg!(debug_assertions),
+        )?;
         // Do not forward credentials through redirects or retry token issuance.
         // https://docs.rs/reqwest/0.12.28/reqwest/struct.ClientBuilder.html
-        let client = Client::builder()
-            .redirect(reqwest::redirect::Policy::none())
-            .retry(reqwest::retry::never())
-            .connect_timeout(Duration::from_secs(10))
+        let builder = || {
+            let mut builder = Client::builder()
+                .redirect(reqwest::redirect::Policy::none())
+                .retry(reqwest::retry::never())
+                .connect_timeout(Duration::from_secs(10))
+                .user_agent(concat!("nightingale/", env!("CARGO_PKG_VERSION")));
+
+            // Trust one explicit development PEM; keep TLS name and date checks.
+            // https://docs.rs/reqwest/0.12.28/reqwest/struct.ClientBuilder.html#method.add_root_certificate
+            if let Some(certificate) = &certificate {
+                builder = builder.add_root_certificate(certificate.clone());
+            }
+
+            builder
+        };
+        let client = builder()
             .timeout(timeout)
-            .user_agent(concat!("nightingale/", env!("CARGO_PKG_VERSION")))
             .build()
             .map_err(|_| APIFailure::local(APICode::TemporaryFailure))?;
 
         Ok(Self {
             client,
-            stream_client: Client::builder()
-                .redirect(reqwest::redirect::Policy::none())
-                .retry(reqwest::retry::never())
-                .connect_timeout(Duration::from_secs(10))
+            stream_client: builder()
                 .read_timeout(Duration::from_secs(45))
-                .user_agent(concat!("nightingale/", env!("CARGO_PKG_VERSION")))
                 .build()
                 .map_err(|_| APIFailure::local(APICode::TemporaryFailure))?,
             config,
@@ -387,6 +398,25 @@ impl APITransport {
     }
 }
 
+fn development_certificate(
+    path: Option<&std::ffi::OsStr>,
+    development: bool,
+) -> APIResult<Option<reqwest::Certificate>> {
+    let Some(path) = path else { return Ok(None) };
+    let invalid = || APIFailure::local(APICode::ValidationError);
+
+    if !development {
+        return Err(invalid());
+    }
+
+    let pem = std::fs::read(path).map_err(|_| invalid())?;
+    let mut certificates = reqwest::Certificate::from_pem_bundle(&pem).map_err(|_| invalid())?;
+    if certificates.len() != 1 {
+        return Err(invalid());
+    }
+    Ok(certificates.pop())
+}
+
 #[cfg(test)]
 pub(crate) mod testing {
     use super::*;
@@ -515,6 +545,24 @@ mod tests {
     use testing::Server;
 
     const CORRELATION: &str = "019a1234-0000-7000-8000-000000000009";
+
+    #[test]
+    fn development_certificate_is_explicit_rejects_release_and_hides_paths() {
+        assert!(development_certificate(None, false).unwrap().is_none());
+        assert!(development_certificate(None, true).unwrap().is_none());
+
+        for development in [false, true] {
+            for path in [
+                "missing-sensitive-path.pem",
+                concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml"),
+            ] {
+                let error = development_certificate(Some(std::ffi::OsStr::new(path)), development)
+                    .unwrap_err();
+                assert_eq!(error.code, APICode::ValidationError);
+                assert!(!format!("{error:?}").contains(path));
+            }
+        }
+    }
 
     fn transport(server: &Server) -> APITransport {
         APITransport::new(APIConfig::parse(server.config.base_url().as_str()).unwrap()).unwrap()

@@ -1,7 +1,9 @@
 # Task List: P-20261029-03-core-engine
 
 **Plan:** [plan.md](plan.md)  
-**Updated:** 2026-10-30
+**Updated:** 2026-11-02
+
+**Cierre aprobado (2026-11-02):** Tras las comprobaciones contra la API local y la entrega del [informe de verificación](verification-2026-11-02.md), el usuario respondió «Sí, aprobar y cerrar el plan» a la aceptación de C02–C06 y T19. C01 ya estaba aprobado. T01–T19 y C01–C06 quedan completos, con la excepción de macOS/Linux y los límites temporales de capturas/journal que recoge el informe. Se conserva el plan independiente de Cuenta/Servicios.
 
 **Continuación hasta la entrega (2026-10-30):** El usuario pidió «Finalicemos con el plan, ya aprobaré los checkpoints luego». Autoriza implementar T14–T19 en orden y continuar con las comprobaciones manuales y revisiones de C02–C06 pendientes. No acredita esas comprobaciones ni aprueba checkpoints. T13 queda implementada con verificación local; la prueba API real permanece pendiente sin bloquear esta continuación. El cierre de implementación se distinguirá de la aceptación del plan.
 
@@ -159,8 +161,8 @@ Verificación final local: `pnpm quality` fuera del aislamiento pasa (build, fmt
 - [x] Refresh y logout no revocan por error el token de dispositivo.
 
 **Verification:**
-- [ ] Pruebas con proveedor OIDC ficticio y navegador externo.
-- [ ] Flujo manual con cuenta de desarrollo.
+- [x] Pruebas con proveedor OIDC ficticio y navegador externo.
+- [x] Flujo manual con cuenta de desarrollo.
 - [x] `pnpm quality`.
 
 **Dependencies:** T05  
@@ -191,7 +193,7 @@ Fuentes de la implementación: [transacciones rusqlite 0.40.2](https://docs.rs/r
 
 **Verification:**
 - [x] Pruebas de alta, acceso y revocación.
-- [ ] Activación manual sobre API de desarrollo.
+- [x] Activación manual sobre API de desarrollo.
 - [x] `pnpm quality`.
 
 **Dependencies:** T06  
@@ -199,15 +201,15 @@ Fuentes de la implementación: [transacciones rusqlite 0.40.2](https://docs.rs/r
 
 ## C02: Instalación autorizada
 
-**Estado:** Listo para revisión manual del usuario; no aprobado. T07 termina con comprobaciones locales correctas. T08 continúa por la autorización expresa indicada abajo.
+**Estado:** Aprobado por el usuario el 2026-11-02. OIDC real, activación y logout con almacén nativo Windows pasan; la matriz real verifica denegación y revocación SSE. Evidencia y límites aceptados en [verification-2026-11-02.md](verification-2026-11-02.md). Se conserva debajo el historial de continuación autorizada.
 
 **Continuación autorizada (2026-10-30):** El usuario indicó «Continuar con T08 y dejar C02 pendiente». Se abre T08 sin marcar esta revisión ni sus comprobaciones manuales como realizadas.
 
-**Límites de verificación:** El usuario autorizó continuar con macOS Keychain y Linux Secret Service pendientes. El 2026-10-29 pidió ejecutar T07 y dejó para su revisión manual de C02 los recorridos reales de navegador, acceso y activación. Esa revisión sigue pendiente; no se afirman pruebas reales con API/OIDC de desarrollo.
+**Límites de verificación:** El usuario autorizó continuar con macOS Keychain y Linux Secret Service pendientes. Los recorridos API/OIDC de Windows se comprobaron el 2026-11-02; el usuario aprobó el checkpoint con esa excepción.
 
-- [ ] Transporte, acceso OIDC/PKCE y activación funcionan con datos de prueba.
-- [ ] No hay secretos en archivos, IPC, SQLite o registros.
-- [ ] El usuario revisa alta, logout y revocación.
+- [x] Transporte, acceso OIDC/PKCE y activación funcionan con datos de prueba.
+- [x] No hay secretos en archivos, IPC, SQLite o registros.
+- [x] El usuario revisa alta, logout y revocación.
 
 ## Fase 3: Envío y reconciliación de operaciones
 
@@ -270,13 +272,15 @@ Fuentes: [transacciones rusqlite 0.40.2](https://docs.rs/rusqlite/0.40.2/rusqlit
 
 ## C03: Outbound fiable
 
-**Estado:** Listo para revisión del usuario; no aprobado. Los dos criterios técnicos siguientes cuentan con demostraciones locales automáticas de T08/T09 y datos sintéticos. No se afirma prueba contra API real ni revisión visual de una UI: diagnóstico/IPC corresponde a T15. C02 mantiene sus pendientes manuales.
+**Comprobación externa (2026-11-02):** Dos perfiles reales recuperan por GET una respuesta confirmada descartada antes del commit local; repetir desde el otro dispositivo devuelve `duplicate` sin nueva versión. El conflicto de versión conserva intención y vista aceptada. La sonda Tauri sobrevive offline/reinicio y termina aceptada con el mismo ID y un intento. Revisión aprobada por el usuario el 2026-11-02; [evidencia](verification-2026-11-02.md).
+
+**Estado:** Aprobado por el usuario el 2026-11-02. Los criterios técnicos cuentan con demostraciones de T08/T09 y la matriz real. La UI Tauri conserva pendiente el trabajo offline y solo lo retira tras aceptación remota.
 
 **Continuación autorizada (2026-10-30):** El usuario autorizó continuar el desarrollo dejando C02 y C03 pendientes hasta disponer del entorno manual. No aprueba esos checkpoints ni acredita sus pruebas. Se abre T10 y se conserva C04 como siguiente punto de revisión. Antes de cambiar código, `pnpm quality` con pnpm 11.17.0 pasó fuera del aislamiento: 79 unitarias, 5 de integración y un doctest; 3 ignoradas. La ejecución dentro del aislamiento falló en pruebas HTTP locales y terminó de forma anormal; no se cuenta como válida.
 
 - [x] Una operación sobrevive timeout, reinicio y duplicado sin doble efecto.
 - [x] Conflictos y rechazos quedan disponibles para revisión.
-- [ ] El usuario revisa la demostración y los estados visibles.
+- [x] El usuario revisa la demostración y los estados visibles.
 
 ## Fase 4: Entrada, cursor y recuperación
 
@@ -356,7 +360,9 @@ Fuentes: [rusqlite 0.40.2, commit/rollback](https://docs.rs/rusqlite/0.40.2/rusq
 
 ## C04: Entrada y recuperación fiables
 
-**Estado:** Listo para revisión del usuario; no aprobado. Los dos criterios técnicos cuentan con evidencia automática local de T10–T12 y datos sintéticos. No se acredita API/OIDC real, prueba de UI ni revisión manual. C02 y C03 siguen pendientes con continuación autorizada el 2026-10-30. T13 se abre solo por la autorización expresa indicada abajo; C04 conserva pendiente la revisión manual.
+**Comprobación externa (2026-11-02):** Dos perfiles vacíos instalan capturas reales y descargan cambios. Un cursor de firma inválida provoca reconstrucción sin borrar el conflicto local; la proyección conserva la versión remota 2. Las matrices locales siguen acreditando rollback y retiradas de vista. Revisión aprobada por el usuario el 2026-11-02; [evidencia](verification-2026-11-02.md).
+
+**Estado:** Aprobado por el usuario el 2026-11-02. Los criterios técnicos cuentan con evidencia de T10–T12 y la matriz real. Se conserva debajo el historial de continuación autorizada.
 
 **Continuación autorizada (2026-10-30):** El usuario eligió «Continuar con T13 dejando C04 pendiente de revisión manual». Se abre T13 sin aprobar C04 ni marcar revisión o pruebas manuales como realizadas. C02 y C03 conservan sus pendientes.
 
@@ -364,7 +370,7 @@ Fuentes: [rusqlite 0.40.2, commit/rollback](https://docs.rs/rusqlite/0.40.2/rusq
 
 - [x] Cursor y captura son atómicos, repetibles y conservan trabajo local.
 - [x] Un perfil vacío reconstruye la proyección sintética y continúa incrementalmente.
-- [ ] El usuario revisa recuperación, retiradas de vista y conflictos.
+- [x] El usuario revisa recuperación, retiradas de vista y conflictos.
 
 ## Fase 5: Coordinador e IPC
 
@@ -393,7 +399,7 @@ Fuentes: [Tauri 2.12.4, runtime](https://docs.rs/tauri/2.12.4/tauri/async_runtim
 
 **Verification:**
 - [x] Pruebas de concurrencia/estado con reloj y puertos falsos.
-- [ ] Ciclo real con API de desarrollo.
+- [x] Ciclo real con API de desarrollo.
 - [x] `pnpm quality`.
 
 **Dependencies:** T09, T12  
@@ -413,7 +419,7 @@ Fuentes: [Tauri 2.12.4, runtime](https://docs.rs/tauri/2.12.4/tauri/async_runtim
 
 **Verification:**
 - [x] Stream ficticio con heartbeat, corte, repetidos, 429 y revoke.
-- [ ] Prueba con API.
+- [x] Prueba con API.
 - [x] `pnpm quality`.
 
 **Dependencies:** T13  
@@ -434,18 +440,22 @@ Fuentes: [Tauri 2.12.4, runtime](https://docs.rs/tauri/2.12.4/tauri/async_runtim
 
 **Verification:**
 - [x] Pruebas Rust de DTO/permisos y `pnpm build`.
-- [ ] Recorrido manual acceso → sincronización → offline → reconexión.
+- [x] Recorrido manual acceso → sincronización → offline → reconexión.
 
 **Dependencies:** T14  
 **Estimated scope:** M
 
 ## C05: Motor utilizable desde el escritorio
 
-**Estado:** No aprobado. El 2026-10-30 se abrió el ejecutable compilado en Windows sin `NIGHTINGALE_API_BASE_URL`: la ventana respondió, el diagnóstico IPC mostró esquema 4, la ausencia de configuración fue visible y el acceso permaneció deshabilitado. Tras cerrar y reabrir, el diagnóstico volvió a responder; la base conservó `user_version=4`, `integrity_check=ok`, Outbox vacío y sin identidad. No se insertaron datos en la base real. Esta comprobación no sustituye el recorrido con operación pendiente, API/OIDC, offline/reconexión ni la revisión del usuario; esos criterios permanecen sin marcar.
+**Comprobación externa (2026-11-02):** Build Tauri Windows con OIDC y cuenta sintética: acceso, selección/activación, captura y sincronización manual correctos. Un proxy loopback temporal controla la conexión. La UI muestra una sonda Rust pendiente, offline y diagnóstico local funcional; cerrar/reabrir conserva esa intención. Reponer conexión confirma el mismo ID con un intento y deja cero pendientes. Logout vuelve a «Sin sesión». SQLite íntegro y sin identidad tras logout; [evidencia](verification-2026-11-02.md). El recorrido técnico queda completo; la aceptación pertenece al usuario.
 
-- [ ] El recorrido manual funciona de extremo a extremo con datos sintéticos.
-- [ ] La UI no afirma aceptación remota prematura.
-- [ ] El usuario revisa el motor antes del endurecimiento final.
+**Estado:** Aprobado por el usuario el 2026-11-02, tras completar el recorrido técnico en Windows.
+
+**Historial (2026-10-30):** Se abrió el ejecutable compilado en Windows sin `NIGHTINGALE_API_BASE_URL`: la ventana respondió, el diagnóstico IPC mostró esquema 4, la ausencia de configuración fue visible y el acceso permaneció deshabilitado. Tras cerrar y reabrir, el diagnóstico volvió a responder; la base conservó `user_version=4`, `integrity_check=ok`, Outbox vacío y sin identidad. No se insertaron datos en la base real durante aquella comprobación.
+
+- [x] El recorrido manual funciona de extremo a extremo con datos sintéticos.
+- [x] La UI no afirma aceptación remota prematura.
+- [x] El usuario revisa el motor antes del endurecimiento final.
 
 ## Fase 6: Pruebas compartidas, operación y entrega al equipo
 
@@ -482,7 +492,7 @@ Fuentes: [Tauri 2.12.4, runtime](https://docs.rs/tauri/2.12.4/tauri/async_runtim
 - [x] Ninguna pérdida silenciosa.
 
 **Verification:**
-- [ ] Pruebas automatizadas locales y repetición contra API de desarrollo.
+- [x] Pruebas automatizadas locales y repetición contra API de desarrollo.
 - [x] Resultados y límites registrados por separado.
 
 **Dependencies:** T16  
@@ -503,13 +513,15 @@ Fuentes: [Tauri 2.12.4, runtime](https://docs.rs/tauri/2.12.4/tauri/async_runtim
 
 **Verification:**
 - [x] Pruebas de formato/redacción.
-- [ ] Inspección manual de logs con errores reales de desarrollo.
+- [x] Inspección manual de logs con errores reales de desarrollo.
 - [x] `pnpm quality`.
 
 **Dependencies:** T17  
 **Estimated scope:** M
 
 ## T19: Formalizar la guía de colaboración y los siguientes tracks
+
+**Revisión (2026-11-02):** El usuario aprobó la guía T19 y la división de los siguientes tracks al aceptar el cierre del plan.
 
 **Status:** Done
 
@@ -524,16 +536,16 @@ Fuentes: [Tauri 2.12.4, runtime](https://docs.rs/tauri/2.12.4/tauri/async_runtim
 **Verification:**
 - [x] Recorrido documental con ejemplo sintético y enlaces.
 - [x] `git diff --check`.
-- [ ] Revisión del usuario.
+- [x] Revisión del usuario.
 
 **Dependencies:** T18  
 **Estimated scope:** M
 
 ## C06: Base core aceptada para desarrollo colaborativo
 
-**Estado:** Implementación y verificación local completas; no aprobado. La revisión del usuario y las pruebas con API/OIDC de desarrollo permanecen pendientes, igual que las revisiones manuales anteriores.
+**Estado:** Aprobado por el usuario el 2026-11-02 junto con C02–C05 y T19. Calidad, build, pruebas optativas reales, matriz de dos perfiles y recorrido Tauri pasan en Windows. El plan queda completado con los límites aceptados de plataformas y pruebas temporales que detalla [verification-2026-11-02.md](verification-2026-11-02.md).
 
 - [x] `pnpm quality`, `pnpm build:desktop` y `git diff --check` pasan sobre la entrega final.
-- [ ] La matriz local y la verificación con API/OIDC de desarrollo tienen evidencia; cualquier entorno no disponible queda pendiente.
+- [x] La matriz local y la verificación con API/OIDC de desarrollo tienen evidencia; cualquier entorno no disponible queda pendiente.
 - [x] Dos perfiles sincronizan datos sintéticos sin duplicados ni pérdida de intenciones.
-- [ ] El usuario revisa la entrega y la división de los siguientes tracks.
+- [x] El usuario revisa la entrega y la división de los siguientes tracks.

@@ -1,10 +1,12 @@
 # P-20261029-03-core-engine: Motor transversal del escritorio
 
-**Status:** In progress  
+**Status:** Completed
 **Created:** 2026-10-29  
-**Updated:** 2026-10-29  
+**Updated:** 2026-11-02
 **Task list:** [todo.md](todo.md)  
 **Plan relacionado:** [P-20261029-02-component-foundation](../P-20261029-02-component-foundation/plan.md), completado; este plan no reabre su historial.
+
+**Cierre (2026-11-02):** El usuario aprobó C02–C06 y la guía T19 con «Sí, aprobar y cerrar el plan», según el [informe de verificación](verification-2026-11-02.md). Se conservan la excepción de macOS/Linux y los límites de las pruebas temporales de capturas/journal. C01 ya estaba aprobado. T01–T19 y C01–C06 quedan completos dentro de ese alcance.
 
 ## Contexto y resultado
 

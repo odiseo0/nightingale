@@ -14,7 +14,7 @@ No cambies permisos sin conexión ni aceptes una operación pendiente por su fec
 
 ## Motor transversal y colaboración
 
-El plan `P-20261029-03-core-engine` y su [ADR](../decisions/desktop-core-engine.md) definen los componentes `identity`, `devices`, `platform` y `sync`, la propiedad de sus tablas y las migraciones `0003`/`0004`. T01–T18 tienen implementación y verificación local; T19 formaliza esta guía. Las pruebas con API/OIDC reales y las revisiones de C02–C06 permanecen separadas y no se dan por realizadas.
+El plan `P-20261029-03-core-engine` y su [ADR](../decisions/desktop-core-engine.md) definen los componentes `identity`, `devices`, `platform` y `sync`, la propiedad de sus tablas y las migraciones `0003`/`0004`. T01–T19 tienen implementación y verificación local. El 2026-11-02 pasaron las pruebas API/OIDC reales y el recorrido Tauri en Windows; el usuario aprobó C02–C06, T19 y el cierre del plan con los límites documentados. La [evidencia de checkpoints](../../tasks/P-20261029-03-core-engine/verification-2026-11-02.md) separa resultados, entorno y límites.
 
 Para el trabajo remoto del motor, `NIGHTINGALE_API_BASE_URL` selecciona explícitamente la API de desarrollo. No existe un destino remoto por defecto. El emisor, cliente público y audiencia OIDC se obtienen de `/v1/auth/config`; no se duplican en variables ni se guardan credenciales en `.env`. Release exige HTTPS y solo desarrollo/pruebas admiten HTTP loopback.
 
@@ -29,6 +29,14 @@ Ejemplo ficticio para una API local ya iniciada, en la misma terminal del escrit
 ```powershell
 $env:NIGHTINGALE_API_BASE_URL = 'http://127.0.0.1:8000/'
 ```
+
+Si el proveedor OIDC de desarrollo usa un certificado propio, indica su PEM público antes de iniciar el escritorio o las pruebas:
+
+```powershell
+$env:NIGHTINGALE_DEV_CA_CERT = '<ruta absoluta al certificado público PEM>'
+```
+
+El transporte añade ese certificado a su confianza TLS para HTTP, OIDC y SSE. Conserva las comprobaciones de nombre, firma y vigencia. Acepta un solo certificado; un archivo ausente o inválido impide crear el transporte con un error sin rutas. Esta opción solo funciona con `debug_assertions`; release la rechaza. No instala certificados en Windows ni configura el navegador externo. No necesita claves privadas. Fuentes de reqwest 0.12.28: [add_root_certificate](https://docs.rs/reqwest/0.12.28/reqwest/struct.ClientBuilder.html#method.add_root_certificate) y [from_pem_bundle](https://docs.rs/reqwest/0.12.28/reqwest/tls/struct.Certificate.html#method.from_pem_bundle).
 
 `platform::secrets::SecretStore` es el único puerto para credenciales. `NativeSecretStore` usa `keyring 4.2.0` con `v1`: Windows Credential Manager, macOS Keychain o Secret Service en Linux. La clave separa URL de API, perfil local estable, pareja OIDC `issuer`/`subject`, cuenta y dispositivo cuando existen, y tipo de token. El llamante debe conservar el mismo perfil entre reinicios. OIDC puede guardar su sesión antes de que API asigne el dispositivo; la credencial opaca tiene otra clave. Los valores `Secret` no admiten formato de depuración ni serialización; los errores del SO se sustituyen por un error estable sin copiar sus datos.
 
@@ -48,11 +56,13 @@ Referencias: [URL de reqwest 0.12.28](https://docs.rs/reqwest/0.12.28/reqwest/st
 
 `identity::oidc::OidcProvider` descubre el proveedor anunciado por API y usa openidconnect 4.0.1: Authorization Code, cliente público sin secreto, PKCE S256, state y nonce nuevos. La recepción escucha solo `127.0.0.1` en un puerto libre, acepta el camino `/oidc/callback` y termina por cancelación o a los cinco minutos. El proveedor debe aceptar esa redirección con puerto efímero para el cliente de desarrollo. El transporte comprueba HTTPS o loopback de desarrollo también en discovery, JWKS y token, con los mismos límites de cuerpo.
 
+En Keycloak 26.8.1, añade `http://127.0.0.1/oidc/callback` a **Valid redirect URIs** del cliente público de desarrollo; conserva cualquier retorno fijo usado por sus otras pruebas. Keycloak comprueba el mismo retorno sin el puerto efímero para interfaces loopback ([implementación oficial](https://github.com/keycloak/keycloak/blob/26.8.1/services/src/main/java/org/keycloak/protocol/oidc/utils/RedirectUtils.java#L121)). Un retorno fijo como `http://127.0.0.1:18765/callback` no coincide con el camino del escritorio. Este ajuste pertenece al entorno OIDC; no requiere fijar el puerto del escritorio ni cambiar el contrato API. El usuario debe resolver los avisos de certificado del navegador externo.
+
 Antes de devolver una sesión, el adaptador valida firma, emisor, audiencia del ID token, vencimiento, nonce y `at_hash` cuando existe. Usa el access token para API; nunca lo sustituye por el ID token. La API valida la audiencia de ese access token durante la emisión de la credencial de dispositivo. La renovación necesita que el proveedor haya emitido refresh token; si no lo emite, hace falta otro acceso. El nonce de un ID token renovado puede faltar; si aparece, debe coincidir con el original. La identidad no puede cambiar durante la renovación.
 
 `OidcSession::persist` guarda las credenciales mediante el puerto seguro; el refresh token y su nonce original forman un bloque secreto. Si falla una escritura, intenta restaurar las entradas previas y devuelve `StorageUnavailable`; el llamante no debe aceptar el nuevo estado como guardado. No existe una transacción común entre entradas del almacén del SO. Cancelar antes de guardar deja intacta la sesión previa. `logout` solo borra claves locales explícitas; no llama a endpoints de revocación. T07 une esta sesión con acceso de cuenta y registro del dispositivo, según el apartado siguiente.
 
-Las pruebas automáticas usan un navegador simulado y un proveedor loopback con firma RSA de prueba. La siguiente prueba abre el navegador externo y requiere API/OIDC y una cuenta de desarrollo. No guarda ni imprime sus tokens; todavía no se ha ejecutado:
+Las pruebas automáticas usan un navegador simulado y un proveedor loopback con firma RSA de prueba. La siguiente prueba abre el navegador externo y requiere API/OIDC y una cuenta de desarrollo. No guarda ni imprime sus tokens; pasó en Windows el 2026-11-02:
 
 ```sh
 cargo test --workspace --locked manual_oidc_login_in_external_browser -- --ignored
@@ -80,7 +90,7 @@ $env:NIGHTINGALE_TEST_ACCOUNT_ID = '<UUIDv7 de la cuenta de desarrollo>'
 cargo test --workspace --locked manual_c02_activation_and_local_logout -- --ignored --nocapture
 ```
 
-El ID de cuenta es una entrada exclusiva de esta prueba, no configuración general del escritorio. La prueba abre el navegador, usa un perfil único y SQLite temporal, guarda el token de API en el almacén del SO y lo borra al cerrar sesión. Solo imprime el ID del dispositivo creado. API conserva ese dispositivo para la revisión de revocación; la prueba no lo revoca. C02 debe revisar también una denegación/revocación con API de desarrollo. Las pruebas reales de macOS Keychain y Linux Secret Service siguen pendientes por la excepción aprobada. El recorrido equivalente mediante IPC/UI se describe en T14/T15.
+El ID de cuenta es una entrada exclusiva de esta prueba, no configuración general del escritorio. La prueba abre el navegador, usa un perfil único y SQLite temporal, guarda el token de API en el almacén del SO y lo borra al cerrar sesión. Solo imprime el ID del dispositivo creado. Pasó en Windows el 2026-11-02. API conserva ese dispositivo para revisión; esta prueba no lo revoca. La matriz C06 verificó por separado la revocación del segundo dispositivo y su denegación posterior. Las pruebas reales de macOS Keychain y Linux Secret Service siguen pendientes por la excepción aprobada. El recorrido equivalente mediante IPC/UI se describe en T14/T15.
 
 Fuentes: [transacciones de rusqlite 0.40.2](https://docs.rs/rusqlite/0.40.2/rusqlite/struct.Connection.html#method.transaction_with_behavior), [keyring 4.2.0 v1](https://docs.rs/keyring/4.2.0/keyring/v1/index.html), [enum local con etiqueta en Serde](https://serde.rs/enum-representations.html#internally-tagged) y el [contrato API importado](../contracts/api-v1/nightingale-api.md#6-acceso-y-permisos).
 
@@ -166,13 +176,13 @@ pnpm quality
 git diff --check
 ```
 
-La prueba real `manual_t13_cycle_with_development_api` permanece ignorada. Requiere una URL de API/OIDC de desarrollo confirmada y una cuenta con datos sintéticos; no se han configurado en esta sesión. Con esas entradas no secretas ya disponibles, se ejecuta desde terminal nativa:
+La prueba real `manual_t13_cycle_with_development_api` permanece ignorada por defecto y pasó en Windows el 2026-11-02. Requiere una URL de API/OIDC de desarrollo confirmada y una cuenta con datos sintéticos. Con esas entradas no secretas disponibles, se ejecuta desde terminal nativa:
 
 ```powershell
 cargo test --workspace --locked manual_t13_cycle_with_development_api -- --ignored --nocapture
 ```
 
-La prueba abre el navegador, activa una instalación con perfil único, ejecuta un ciclo completo sobre SQLite temporal y cierra sesión para retirar sus credenciales locales. El servidor conserva el dispositivo creado para revisión/revocación posterior. No imprime tokens ni solicita contraseñas al agente. Esta verificación externa sigue pendiente y no se sustituye por las pruebas loopback.
+La prueba abre el navegador, activa una instalación con perfil único, ejecuta un ciclo completo sobre SQLite temporal y cierra sesión para retirar sus credenciales locales. El servidor conserva el dispositivo creado para revisión/revocación posterior. No imprime tokens. La verificación externa tiene evidencia propia, distinta de las pruebas loopback.
 
 Fuentes: [runtime de Tauri 2.12.4](https://docs.rs/tauri/2.12.4/tauri/async_runtime/index.html), [mutex de Tokio 1.54.0](https://docs.rs/tokio/1.54.0/tokio/sync/struct.Mutex.html#method.lock) y [transacciones de rusqlite 0.40.2](https://docs.rs/rusqlite/0.40.2/rusqlite/struct.Connection.html#method.transaction_with_behavior). Las páginas versionadas de Tauri/Tokio no respondieron al navegador: se verificaron la reexportación y `Mutex::lock` en sus fuentes oficiales instaladas (`tauri-2.12.4/src/async_runtime.rs`, `tokio-1.54.0/src/sync/mutex.rs`), sin cambiar versiones ni añadir Tokio como dependencia directa.
 
@@ -182,7 +192,7 @@ Fuentes: [runtime de Tauri 2.12.4](https://docs.rs/tauri/2.12.4/tauri/async_runt
 
 Los comandos IPC específicos son `identity_get_status`, `identity_begin_login`, `identity_complete_login`, `identity_cancel_login`, `identity_list_accounts`, `identity_activate_account`, `identity_logout` y `sync_now`. Todos tienen permisos explícitos en `src-tauri/capabilities/default.json`; `build.rs` declara sus comandos. `src/shared/api/identity.ts` y `sync.ts` son la única frontera de React hacia esos casos. `CorePanel` presenta acceso, actividad, espera, resultado y revisiones con DTO camelCase, sin tokens, payloads, estado remoto completo ni SQL. La hora de última sincronización es de esta ejecución; el trabajo durable se lee de SQLite.
 
-El recorrido manual de C05 sigue pendiente de entorno y revisión. Con API/OIDC de desarrollo y `NIGHTINGALE_API_BASE_URL` configurados, se ejecuta `pnpm tauri dev`, se inicia acceso, se elige una cuenta sintética y se comprueban sincronización manual, corte y reconexión. La interfaz no debe afirmar aceptación remota mientras una intención esté pendiente o su resultado sea desconocido. Las pruebas automáticas cubren SSE ficticio, permisos y redacción IPC; no acreditan este recorrido real.
+El recorrido manual de C05 pasó en Windows el 2026-11-02 y el usuario aprobó el checkpoint ese mismo día. Con API/OIDC de desarrollo y `NIGHTINGALE_API_BASE_URL` configurados, se ejecuta `pnpm tauri dev` o el build de escritorio, se inicia acceso, se elige una cuenta sintética y se comprueban sincronización manual, corte y reconexión. La interfaz no debe afirmar aceptación remota mientras una intención esté pendiente o su resultado sea desconocido. La evidencia actual incluye una sonda Rust guardada offline, reapertura, confirmación del mismo ID y logout desde Tauri. Un proxy loopback temporal controló solo la conexión del escritorio; la API original siguió activa.
 
 Comprobación local del 2026-10-30: el ejecutable compilado abrió en Windows sin configuración API, mostró diagnóstico IPC con esquema 4 y acceso deshabilitado, y volvió a responder tras cerrar y reabrir. La base real conservó `user_version=4`, integridad `ok`, Outbox vacío y sin identidad; no se modificó. Esta evidencia no cubre persistencia de una operación pendiente ni el recorrido remoto. Las pruebas automatizadas de reapertura y Outbox siguen siendo la evidencia local para esos casos.
 
@@ -192,7 +202,19 @@ Fuentes: [reqwest 0.12.28, `read_timeout`](https://docs.rs/reqwest/0.12.28/reqwe
 
 Las pruebas de consumidor leen la copia fija `api-v1.1`, comprueban los hashes del manifiesto, referencias, rutas consumidas, envoltorio, estados remotos y SSE. Sus fixtures estructurales detectan deriva sin red externa ni credenciales; no reemplazan la validación completa de negocio, fechas o zonas de API. Nunca se editan los artefactos importados para hacer pasar una prueba.
 
-La matriz local usa dos archivos SQLite, perfiles y almacenes secretos falsos aislados. Activa dos dispositivos y ejerce una operación `RegisterPatient` sintética como sonda, sin implementar el componente Pacientes. Cubre indisponibilidad, commit remoto con respuesta perdida, GET tras reapertura, duplicado, descarga en ambos perfiles, conflicto, revocación, cursor/captura vencidos y SSE caído. Comprueba un solo efecto remoto y conservación de intenciones. La repetición contra API/OIDC de desarrollo queda pendiente.
+La matriz local usa dos archivos SQLite, perfiles y almacenes secretos falsos aislados. Activa dos dispositivos y ejerce una operación `RegisterPatient` sintética como sonda, sin implementar el componente Pacientes. Cubre indisponibilidad, commit remoto con respuesta perdida, GET tras reapertura, duplicado, descarga en ambos perfiles, conflicto, revocación, cursor/captura vencidos y SSE caído. Comprueba un solo efecto remoto y conservación de intenciones. La matriz externa descrita abajo pasó el 2026-11-02; sus fallos controlados y límites se registran por separado.
+
+La prueba optativa siguiente usa los adaptadores Rust reales contra una API local. Requiere el retorno OIDC y, si corresponde, el PEM indicados arriba:
+
+```powershell
+cargo test --workspace --locked manual_c06_two_profiles_with_development_api -- --ignored --nocapture
+```
+
+Abre el navegador una vez, crea dos dispositivos y un paciente ficticio, actualiza ese paciente y revoca solo el segundo dispositivo creado. Usa dos SQLite temporales y almacenes secretos en memoria; no sustituye la comprobación del almacén nativo ni el recorrido Tauri. Si el usuario tiene una sola cuenta propietaria la selecciona; si tiene varias, exige `NIGHTINGALE_TEST_ACCOUNT_ID`. Conserva el paciente y los dispositivos en API para revisión. No borra datos de negocio.
+
+Para el recorrido Tauri con trabajo pendiente, `manual_c05_save_offline_probe` exige `NIGHTINGALE_TEST_DESKTOP_DB` con la ruta absoluta a la base de prueba ya abierta por el escritorio y `NIGHTINGALE_TEST_ACCOUNT_ID`. Comprueba cuenta y permiso offline, guarda una sonda sintética en el Outbox mediante Rust y termina sin HTTP. Crea datos de prueba en esa base: úsala solo en el recorrido autorizado. Corta la conexión antes de ejecutarla, comprueba el contador pendiente, cierra/reabre y reconecta. Después de ejecutar `pnpm quality`, genera `pnpm build:desktop` antes de abrir el ejecutable: Cargo puede construir un binario sin `custom-protocol` para las pruebas de integración. Durante la revisión del build ya abierto, se puede ejecutar la prueba optativa directamente desde el ejecutable de pruebas generado en `target/debug/deps`, sin reconstruir el ejecutable principal.
+
+Verifica guardado/reapertura, conexión rechazada sin detener la API del usuario, respuesta confirmada descartada antes de reconciliar, recuperación por GET tras reapertura, duplicado desde el otro dispositivo, versión en conflicto, reconstrucción por cursor de firma inválida, aviso SSE de revocación y conservación del conflicto. La respuesta descartada modela la pérdida entre HTTP y el commit local; no corta la conexión del servidor tras su commit. El cursor inválido ejerce `CURSOR_EXPIRED`, no espera 90 días. El vencimiento temporal de capturas y la caída del servicio SSE siguen en las matrices automáticas locales, salvo evidencia externa adicional. Al terminar, el logout local elimina los secretos en memoria y se revisan los archivos SQLite en busca de los tokens de esa ejecución; el arnés no escribe tokens en sus mensajes.
 
 ```powershell
 cargo test --workspace --locked components::sync::contract_tests
@@ -201,7 +223,7 @@ cargo test --workspace --locked components::sync::matrix_tests
 
 ### Observabilidad y colaboración (T18/T19)
 
-`platform::observability::Event` escribe JSON en stderr con tipo, resultado, instante, duración, IDs de operación/causación/correlación, código y contadores. La interfaz cerrada no admite mensaje remoto, URL, cursor, SQL, token, payload, clave de entidad ni estado remoto. HTTP, recibos y ciclos emiten esos metadatos; un fallo del escritor no cambia el resultado del caso de uso. La inspección con errores de API real sigue pendiente; las pruebas de whitelist, redacción y destino fallido son locales.
+`platform::observability::Event` escribe JSON en stderr con tipo, resultado, instante, duración, IDs de operación/causación/correlación, código y contadores. La interfaz cerrada no admite mensaje remoto, URL, cursor, SQL, token, payload, clave de entidad ni estado remoto. HTTP, recibos y ciclos emiten esos metadatos; un fallo del escritor no cambia el resultado del caso de uso. El 2026-11-02 se inspeccionaron también errores de API real y desconexión, recibos y ciclos del recorrido Tauri: catorce registros de prueba sin patrones de credenciales. Las pruebas de whitelist, redacción y destino fallido siguen siendo locales.
 
 Las guías de [sync](../../src-tauri/src/components/sync/README.md), [identity](../../src-tauri/src/components/identity/README.md), [devices](../../src-tauri/src/components/devices/README.md), [platform](../../src-tauri/src/platform/README.md) y [shared kernel](../../src-tauri/src/shared_kernel/README.md) resumen propiedad, API, puertos, invariantes y pruebas. Los [contratos de los siguientes tracks](core-next-tracks.md) muestran cómo añadir una operación, proyector, comando y migración desde `0005`, con un ejemplo sintético completo. Esos tracks requieren nuevos planes y no forman parte de esta entrega.
 
@@ -212,7 +234,7 @@ pnpm build:desktop
 git diff --check
 ```
 
-La ejecución local y la compilación acreditan la entrega técnica, no la aceptación de C06. Ese checkpoint también exige evidencia externa, dos perfiles contra desarrollo y revisión del usuario; cualquier entorno no disponible queda explícitamente pendiente.
+C06 quedó aprobado por el usuario el 2026-11-02 tras la verificación local, el build, la matriz real de dos perfiles y el recorrido Tauri. Se conservan los límites documentados de macOS/Linux y pruebas temporales; el cierre no atribuye evidencia a entornos o esperas no ejecutados.
 
 ## Requisitos
 

@@ -74,7 +74,8 @@ impl Database {
 
 impl Drop for Database {
     fn drop(&mut self) {
-        *self.data.lock().unwrap() = Connection::open_in_memory().unwrap();
+        *self.data.lock().unwrap_or_else(|error| error.into_inner()) =
+            Connection::open_in_memory().unwrap();
         std::fs::remove_file(&self.path).unwrap();
     }
 }

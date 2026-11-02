@@ -48,7 +48,7 @@ impl Drop for Watch {
 
 #[derive(Default)]
 pub struct DesktopSession {
-    gate: tauri::async_runtime::Mutex<()>,
+    pub(crate) gate: tauri::async_runtime::Mutex<()>,
     pending: Mutex<Option<Pending>>,
     pending_identity: Mutex<Option<(String, String)>>,
     cancellation: Mutex<LoginCancellation>,
@@ -77,7 +77,7 @@ pub struct DesktopView {
     pub outcome: Option<CycleOutcome>,
 }
 
-fn credential(config: &APIConfig, c: &Mutex<Connection>) -> Result<DeviceCredential> {
+pub(crate) fn credential(config: &APIConfig, c: &Mutex<Connection>) -> Result<DeviceCredential> {
     let context = SqliteAccessStore
         .context(&*c.lock().map_err(|_| locked())?)?
         .ok_or_else(|| NightingaleError::validation("inicie sesión"))?;

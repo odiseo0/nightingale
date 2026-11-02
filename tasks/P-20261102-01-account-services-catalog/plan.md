@@ -1,7 +1,8 @@
 # P-20261102-01-account-services-catalog: Cuenta y catálogo de servicios
 
-**Status:** Draft — pendiente de aprobación del usuario
+**Status:** In progress — C02 presentado el 2026-11-02; ejecución detenida por solicitud del usuario
 **Created:** 2026-11-02
+**Updated:** 2026-11-02
 **Task list:** [todo.md](todo.md)
 **Plan relacionado:** [P-20261029-03-core-engine](../P-20261029-03-core-engine/plan.md) (motor transversal, en progreso; este plan lo consume, no lo reabre). Contratos iniciales: [core-next-tracks.md](../../docs/operations/core-next-tracks.md) §«Cuenta y catálogo de servicios».
 
@@ -35,6 +36,187 @@ Al terminar, el equipo debe poder, desde el escritorio y con datos sintéticos: 
 - [Contrato API v1 fijo](../../docs/contracts/api-v1/nightingale-api.md) (`api-v1.1`): §5.1 (cuenta/profesional), §5.3 (servicio/oferta/agenda), §5.5 (proyecciones), §8 (catálogo de acciones, online-only, resultados), §10 (formatos y límites). Artefactos JSON del bundle **no se editan**.
 - [core-next-tracks.md](../../docs/operations/core-next-tracks.md): sección «Cuenta y catálogo de servicios» y «Recorrido para añadir un caso».
 - [Guía de desarrollo](../../docs/operations/development.md): convenciones de migración, calidad (`pnpm quality`), IPC y colaboración.
+
+## T01 — Contratos para revisión C01 (2026-11-02)
+
+**C01 aprobado:** el usuario revisó los contratos y autorizó continuar («Me parece bien, continua», 2026-11-02). Se mantienen C02–C04 como revisiones previas a la siguiente fase.
+
+### Preparación y alcance confirmado
+
+Se leyeron AGENTS.md, este plan y todo.md, el ADR del motor, el track de cuenta/catálogo en core-next-tracks.md y la guía API §§5.1, 5.3, 5.5, 8 y 10. Se contrastaron PMD §§9.2/9.5, las reglas de tareas, las capacidades y los esquemas del bundle fijo.
+
+El código confirma `record_operation(tx, store, ids, clock, input)` y `SqliteOperationStore`, incluida la consulta de resultados por operación; `AccountAccess::allows_offline` cruza permiso, estado activo y capacidades. Los cuatro modelos de transporte y `RemoteState` existen. Los dos proyectores vacíos siguen en `identity/desktop.rs:434` y `:538`. `apply_group` ya deja pasar versiones iguales y omite versiones estrictamente menores. No se necesita cambiar esa regla de sync.
+
+El usuario autorizó incluir `src-tauri/src/platform/sqlite/mod.rs`: su lista fija debe registrar 0005 y 0006. También autorizó corregir el recuento a **14 comandos: 6 de cuenta y 8 de catálogo**. Hay 10 acciones remotas: 3 de cuenta y 7 de catálogo. Las otras cuatro entradas son lecturas o preferencias locales. La autorización de ejecución no sustituye la revisión C01.
+
+Estos contratos son la propuesta completa de T01; se congelan al aprobar C01. No hay código de producto en T01. No se usa la skill de planificación para rehacer el plan ya aprobado. `minimal-code` y `docs-first-framework-code` se aplicarán antes de los cambios de código que correspondan.
+
+### Tipos y reglas comunes de IPC
+
+Las siguientes formas describen JSON de IPC, no tipos de transporte de API. `Id` es string UUIDv7 canónico; `Version` es entero positivo; `Status` es `active | inactive`; `Duration` es entero 1–1440. `?` significa campo ausente permitido; `| null` significa nulo explícito permitido. Se rechazan campos extra. Los comandos con entrada reciben `{ request: <DTO> }`; los comandos sin entrada se invocan sin argumentos. Rust obtiene cuenta, actor, dispositivo y época desde la sesión seleccionada: React no los puede sustituir.
+
+Las lecturas usan el último acceso activo de la sesión, sin HTTP. `list_catalog` no tiene acción de escritura en capabilities: no se inventa `ListCatalog` ni se llama a `allows_offline` con un nombre ajeno al catálogo. Las siete mutaciones sí comprueban su acción exacta con `allows_offline`; además, exigen propietario y profesional propio. Los tres cambios de cuenta exigen propietario, sesión y acceso activos, y permiso de la acción tanto antes como después del refresco de `/access`.
+
+`CommandError = { code: string, message: string, operationId?: Id, correlationId?: Id }`. El componente traduce errores de aplicación y transporte a códigos estables y mensajes seguros; no expone estado remoto crudo, tokens, SQL ni detalles de servidor. Se reutilizan los códigos existentes (p. ej. `VALIDATION_ERROR`, `AUTHENTICATION_REQUIRED`, `PERMISSION_DENIED`, `TEMPORARY_FAILURE`, `SERVICE_UNAVAILABLE`, `VERSION_CONFLICT`). No se amplía shared_kernel para añadir errores específicos del track.
+
+### DTO de los 14 comandos
+
+| Comando / caso Rust | Entrada DTO (contenido de `request`) | Salida DTO |
+|---|---|---|
+| `account_get_view` / `get_account_view` | Sin entrada | `AccountScreen` |
+| `account_get_preferences` / `get_preferences` | Sin entrada | `Preferences` |
+| `account_set_preference` / `set_preference` | `{ key: PreferenceKey, value: PreferenceValue }` | `Preferences` tras confirmar la transacción local |
+| `account_update_details` / `update_account_details` | `{ expectedVersion: Version, patch: AccountDetailsPatch }` | `AccountMutationResult` |
+| `account_update_policy` / `update_account_policy` | `{ expectedVersion: Version, noShowGraceMinutes: integer }` | `AccountMutationResult` |
+| `account_set_status` / `set_account_status` | `{ expectedVersion: Version, status: Status }` | `AccountMutationResult` |
+| `services_list_catalog` / `list_catalog` | Sin entrada | `CatalogScreen` |
+| `services_create_service` / `create_service` | `{ professionalId: Id, name: string, defaultDurationMinutes: Duration }` | `LocalMutationResult` (Rust genera serviceId y expectedVersion=0) |
+| `services_update_service` / `update_service` | `{ serviceId: Id, expectedVersion: Version, patch: ServicePatch }` | `LocalMutationResult` |
+| `services_set_service_status` / `set_service_status` | `{ serviceId: Id, expectedVersion: Version, status: Status }` | `LocalMutationResult` |
+| `services_offer_service` / `offer_service` | `{ professionalId: Id, serviceId: Id, durationMinutesOverride?: Duration | null }` | `LocalMutationResult` (expectedVersion=0) |
+| `services_update_service_offer` / `update_service_offer` | `{ professionalId: Id, serviceId: Id, expectedVersion: Version, durationMinutesOverride: Duration | null }` | `LocalMutationResult` |
+| `services_set_service_offer_status` / `set_service_offer_status` | `{ professionalId: Id, serviceId: Id, expectedVersion: Version, status: Status }` | `LocalMutationResult` |
+| `services_update_professional_profile` / `update_professional_profile` | `{ professionalId: Id, expectedVersion: Version, publicName: string }` | `LocalMutationResult` |
+
+`AccountDetailsPatch = { displayName?: string, timeZone?: string, locationName?: string, locationAddress?: string, locationCity?: string, locationState?: string, locationCountry?: string }`. Debe contener al menos un campo; los textos no pueden estar vacíos, la zona debe ser IANA y el país ISO alfa-2 asignado. Este formulario local no ofrece borrar con null los datos obligatorios de cuenta. No rellena campos omitidos al construir el payload. `ServicePatch = { name?: string, defaultDurationMinutes?: Duration }`, también no vacío, sin null para nombre o duración base. `UpdateServiceOffer` distingue campo ausente (error) de null (volver a base). Política admite 0–1440 enteros. Se rechazan fracciones y valores fuera del rango.
+
+Preferencias iniciales permitidas: `theme` (`system | light | dark`) y `servicesShowInactive` (boolean). `PreferenceKey` es esa lista cerrada y `PreferenceValue` debe corresponder a la clave. `Preferences = { theme: ..., servicesShowInactive: boolean }`, con valores por defecto `system` y `true` si no hay fila. No se aceptan claves de zona, política, permisos o credenciales. Las preferencias pertenecen al usuario/dispositivo/cuenta local y no generan operaciones.
+
+### DTO de lectura y resultados
+
+Los siguientes tipos son propios del componente y mantienen nombres camelCase al serializar:
+
+```text
+AccountPolicy = { noShowGraceMinutes: integer }
+AccountView = {
+  accountId: Id, displayName: string, timeZone: string,
+  locationName: string, locationAddress: string, locationCity: string,
+  locationState: string, locationCountry: string,
+  policy: AccountPolicy, status: Status, version: Version,
+  updatedAt: string | null
+}
+AccountScreen = {
+  account: AccountView | null, preferences: Preferences,
+  canManage: boolean
+}
+ServiceView = {
+  serviceId: Id, professionalId: Id, name: string,
+  defaultDurationMinutes: Duration, status: Status, version: Version
+}
+ServiceOfferView = {
+  professionalId: Id, serviceId: Id, name: string,
+  defaultDurationMinutes: Duration, durationMinutesOverride: Duration | null,
+  effectiveDurationMinutes: Duration, serviceStatus: Status,
+  status: Status, version: Version, serviceVersion: Version
+}
+ProfessionalView = {
+  professionalId: Id, userId: Id, publicName: string,
+  status: Status, version: Version
+}
+LocalChange = {
+  operationId: Id, action: string, expectedVersion: integer,
+  syncStatus: pending | in_flight | unknown | retryable | accepted | conflict |
+              rejected | review_required,
+  code: string | null
+}
+CatalogRow<T, D> = {
+  accepted: T | null, provisional: D | null,
+  isProvisional: boolean, localChanges: LocalChange[]
+}
+CatalogScreen = {
+  services: CatalogRow<ServiceView, ServiceDraft>[],
+  offers: CatalogRow<ServiceOfferView, ServiceOfferDraft>[],
+  professionals: CatalogRow<ProfessionalView, ProfessionalDraft>[],
+  canManage: boolean
+}
+LocalMutationResult = {
+  operationId: Id, entityType: service | service_offer | professional,
+  entityKey: Id | { professionalId: Id, serviceId: Id }, syncStatus: pending
+}
+AccountMutationResult = {
+  operationId: Id, status: accepted | conflict | rejected | retryable_failure,
+  entityVersion: Version | null, code: string | null,
+  refreshStatus: requested | failed | not_requested
+}
+```
+
+`ServiceDraft = { serviceId: Id, professionalId: Id, name: string, defaultDurationMinutes: Duration, status: Status }`; `ServiceOfferDraft = { professionalId: Id, serviceId: Id, durationMinutesOverride: Duration | null, status: Status }`; `ProfessionalDraft = { professionalId: Id, publicName: string }`. Ningún borrador asigna versión aceptada ni duración efectiva aceptada. Las filas se identifican por la clave de su valor aceptado o provisional. Si solo queda una intención tras remove, conserva ese borrador para mostrar la intención; no recrea la vista aceptada.
+
+La lectura agrupa por entidad y aplica las intenciones en orden local estable (`created_at`, `operation_id`), conservando todos los recibos visibles en `localChanges`. No mezcla intenciones de otros actores/dispositivos. El borrador muestra los valores elegidos por el usuario; los puertos para Citas/Agenda solo devuelven valores aceptados. El estado de envío se obtiene del resultado público de `SqliteOperationStore`; no se duplica la máquina de sync en las tablas del componente. Un resultado accepted no basta para retirar el provisional hasta que la proyección confirme la versión correspondiente. Conflictos y rechazos conservan la intención para revisión y una corrección crea un nuevo ID, sin editar la operación anterior. `canManage` solo orienta la UI; Rust vuelve a autorizar cada escritura.
+
+Los cambios online-only mantienen envelope e ID solo en memoria durante la invocación. `duplicate` se normaliza mediante `originalResult`, incluido rechazo/conflicto. Solo un resultado original accepted dispara `sync_now`. Si falla esa actualización, se devuelve accepted con `refreshStatus=failed`; no se repite la escritura con otro ID ni se muestra una cuenta local inventada. Tras agotar reintentos sin resultado, se devuelve error seguro con operationId para informar al usuario. El refresco de acceso previo no guarda una intención ni una entidad; el sync posterior sí puede escribir sus propios metadatos y proyecciones. No se interpreta «nada en SQLite» como prohibir la proyección aceptada solicitada por el propio plan.
+
+### Acciones y payloads congelados para C01
+
+La tabla «Contrato de sincronización usado» conserva las 10 acciones, claves, modos y versiones. La siguiente tabla completa su correspondencia exacta con `capabilities.payloadModels` y el payload enviado (sin datos de contexto):
+
+| Acción | Modelo (nombre final del valor en capabilities) | Payload |
+|---|---|---|
+| `CreateService` | `CreateServicePayload` | `{ professionalId, name, defaultDurationMinutes }` |
+| `UpdateService` | `ServicePatch` | campos presentes de `{ name?, defaultDurationMinutes? }` |
+| `SetServiceStatus` | `ServiceStatusPayload` | `{ status }` |
+| `OfferService` | `OfferServicePayload` | `{ durationMinutesOverride? }` |
+| `UpdateServiceOffer` | `UpdateServiceOfferPayload` | `{ durationMinutesOverride }` (null permitido) |
+| `SetServiceOfferStatus` | `ServiceStatusPayload` | `{ status }` |
+| `UpdateProfessionalProfile` | `ProfessionalPayload` | `{ publicName }` |
+| `UpdateAccountDetails` | `AccountDetailsPatch` | solo campos presentes del patch |
+| `UpdateAccountPolicy` | `AccountPolicyPayload` | `{ noShowGraceMinutes }` |
+| `SetAccountStatus` | `MembershipStatusPayload` | `{ status }` |
+
+Las claves compuestas contienen exactamente los dos UUIDv7 canónicos. Los IDs nuevos de servicio/operación se generan en Rust con el generador existente. Las dependencias causales de una oferta sobre un servicio aún pendiente se calculan desde la intención local y se incluyen en el envelope existente; no se permite un expectedVersion local ficticio para encadenar cambios. Si ya existe una operación sin resolver de la misma entidad, el caso impide otra escritura dependiente de una versión aceptada desconocida y pide sincronizar o revisar primero. No se muta la huella ni se cambia el contenido de una operación ya guardada.
+
+### Propiedad, claves y reserva de las siete tablas
+
+Todas las tablas incluyen `account_id`, `user_id`, `device_id` como ámbito, igual que el motor. La época acompaña a las operaciones mediante su contexto, no cambia la identidad de una preferencia. Las consultas y resets siempre filtran las tres columnas. No hay borrado en cascada desde vistas a intenciones.
+
+| Migración reservada | Tabla / propietario | Clave dentro del ámbito y escritura |
+|---|---|---|
+| `0005_account.sql` | `account_view` / account | Una fila por ámbito; solo AccountProjector. Datos de AccountView, con política como columna no_show_grace_minutes. |
+| `0005_account.sql` | `account_preferences` / account | `key`; caso set_preference en transacción local. JSON validado según clave, updated_at local. |
+| `0006_services.sql` | `service_catalog_view` / services | `service_id`; solo ServicesProjector. Columnas de ServiceView. |
+| `0006_services.sql` | `service_offer_view` / services | `(professional_id, service_id)`; solo ServicesProjector. Incluye ambas versiones, duración base y service_status para que la vista sea completa incluso sin una fila de catálogo visible. |
+| `0006_services.sql` | `professional_view` / services | `professional_id`; solo ServicesProjector. Columnas de ProfessionalView. |
+| `0006_services.sql` | `service_local` / services | `operation_id`; intenciones de service o professional, diferenciadas con entity_type. professional_id obligatorio; service_id nulo solo para UpdateProfessionalProfile. action, expected_version, payload, created_at, updated_at y estado derivado del recibo. |
+| `0006_services.sql` | `service_offer_local` / services | `operation_id`, más professional_id y service_id; action, expected_version, payload y fechas. Caso offline escribe junto con Outbox en la misma transacción IMMEDIATE. |
+
+La precisión de `service_local` evita una octava tabla y cubre la séptima mutación (perfil profesional), que no tiene serviceId. Las intenciones conservan su payload completo por operación y un `draft` JSON con los valores locales resultantes, para poder mostrar la intención incluso tras remove de la vista base; ese draft no se envía como payload de un patch. El Outbox conserva la operación y el recibo originales. La lectura/resolución de intenciones pertenece a services, nunca al proyector ni a una modificación de sync. Reset solo retira account_view o las tres vistas de services, según el proyector; remove retira solo la vista de su clave. La proyección de oferta acepta version igual con serviceVersion mayor y nunca retrocede version ni serviceVersion cuando la version propia sea igual.
+
+Ambos SQL añaden su fila a schema_migrations y fijan PRAGMA user_version a 5 o 6. El integrador registra la lista en platform/sqlite/mod.rs y prueba base nueva y actualización desde 4. No cambia SQL 0001–0004, application_id, reglas del runner ni dependencias.
+
+### Firmas públicas para Agenda y Citas
+
+Firmas de contrato Rust (aún sin implementación): los IDs ServiceId y ProfessionalId son valores propios de services, validados con canonical_uuid_v7; no se añaden al kernel. AccountView/Policy y las tres vistas de catálogo son modelos propios, sin serde remoto, SQL o framework. Los adaptadores encapsulan conexión y autorización; el consumidor pasa el contexto autorizado. `Result` expresa errores estables de aplicación; `None` significa que no hay vista aceptada visible en ese ámbito.
+
+```rust
+// account::application
+pub trait AccountViewQuery {
+    fn account_view(&self, scope: &OperationContext) -> Result<Option<AccountView>>;
+    fn account_policy(&self, scope: &OperationContext) -> Result<Option<AccountPolicy>>;
+}
+
+// services::application
+pub trait CatalogQuery {
+    fn list_services(&self, scope: &OperationContext) -> Result<Vec<ServiceView>>;
+    fn service(&self, scope: &OperationContext, service: &ServiceId)
+        -> Result<Option<ServiceView>>;
+    fn list_offers(&self, scope: &OperationContext) -> Result<Vec<ServiceOfferView>>;
+    fn offer(&self, scope: &OperationContext, professional: &ProfessionalId,
+        service: &ServiceId) -> Result<Option<ServiceOfferView>>;
+    fn list_professionals(&self, scope: &OperationContext) -> Result<Vec<ProfessionalView>>;
+    fn professional(&self, scope: &OperationContext, professional: &ProfessionalId)
+        -> Result<Option<ProfessionalView>>;
+}
+```
+
+Estas consultas no hacen HTTP, no devuelven borradores, no usan DTO de transporte ni exponen repositorios. Devuelven también estados inactivos para que el consumidor aplique sus reglas explícitas. Las listas usan orden por ID estable. AccountView aporta zona, lugar, política y versión; ServiceOfferView aporta nombre y duración aceptados y ambas versiones; ProfessionalView aporta nombre aceptado. Las futuras citas tomarán sus snapshots desde estos valores, sin recalcularlos desde intenciones.
+
+### Propietario único de integración y comprobación T01
+
+El agente ejecutor de este plan registra: `components/mod.rs` y `platform/sqlite/mod.rs` en T02; `build.rs`, `capabilities/default.json` y `lib.rs` en T06/T10; composición de AccountProjector y ServicesProjector en los dos puntos de `identity/desktop.rs` en T12. Se usará una estructura delegante si el motor no implementa tuplas; no se cambia sync para añadir esa comodidad. No hay tareas paralelas autorizadas en esta ejecución.
+
+T01 se verifica con lectura del código y contraste de las diez acciones/modelos con capabilities y esquemas, hashes del manifiesto, recuento de 14 comandos, enlaces locales y `git diff --check`. No necesita compilar ni ejecutar casos de producto porque solo cambia plan.md y todo.md. Las pruebas de consumidor ejecutables quedan en T11. API/OIDC reales, aprobación C01 y T02–T13 siguen pendientes.
+
+**Resultado 2026-11-02:** comprobación Python por stdin (`python -`, biblioteca estándar) en verde: cinco hashes SHA-256 del manifiesto, diez acciones/modelos, siete acciones offline y tres online-only, obligatoriedad de durationMinutesOverride, catorce DTO de comando únicos (6+8), destinos de enlaces y disponibilidad de migraciones 0005/0006. `git diff --check` terminó con código 0; Git solo avisó de su conversión LF/CRLF configurada. `git diff --name-only` confirmó únicamente este plan y todo.md. No se ejecutaron cargo/pnpm en T01 porque no hubo cambios de producto.
 
 ## Alcance vertical detallado
 
@@ -76,7 +258,7 @@ Al terminar, el equipo debe poder, desde el escritorio y con datos sintéticos: 
 | `service_local` | `services` | intención local: `service_id`, `operation_id`, `payload` (JSON), `sync_status` (`pending`/`accepted`/`conflict`/`rejected`), `created_at`, `updated_at`. Escrita por casos de uso junto al Outbox. |
 | `service_offer_local` | `services` | intención local análoga con clave compuesta y `operation_id`. |
 
-**Casos de uso públicos (todos validan acción contra `AccountAccess::allows_offline`, que ya cruza `allowedActions` con `capabilities.json`):**
+**Casos de uso públicos (las siete mutaciones validan su acción contra `AccountAccess::allows_offline`; la lectura valida acceso local activo, como fija T01):**
 - `list_catalog` — lectura offline fusionada: vista aceptada + intenciones locales no resueltas, con marca de provisional y estado de sincronización.
 - `create_service` — `expectedVersion=0`, payload `professionalId`, `name`, `defaultDurationMinutes` (entero 1–1440).
 - `update_service` — patch no vacío (`name` y/o `defaultDurationMinutes`), `expectedVersion` = versión conocida.
@@ -86,7 +268,7 @@ Al terminar, el equipo debe poder, desde el escritorio y con datos sintéticos: 
 - `set_service_offer_status` — `active`/`inactive`.
 - `update_professional_profile` — `publicName` (propietario).
 
-Cada mutación offline: una sola transacción `IMMEDIATE` que escribe la intención local y llama a `sync::application::record_operation` con el mismo `tx`. La vista aceptada **solo** avanza por el proyector al descargar cambios/captura o por el recibo aceptado que resuelve la intención (marcando `service_local.sync_status='accepted'`; la fila local provisional se retira al confirmarse la vista aceptada, sin borrar la intención del Outbox, que conserva su recibo).
+Cada mutación offline: una sola transacción `IMMEDIATE` que escribe la intención local y llama a `sync::application::record_operation` con el mismo `tx`. La vista aceptada **solo** avanza por el proyector al descargar cambios/captura. La lectura/resolución consulta el recibo para marcar la intención accepted; retira el provisional solo al confirmarse la versión en la vista, sin borrar la operación del Outbox. El proyector no escribe intenciones ni Outbox.
 
 **Proyectores (`RemoteProjector` por entityType):**
 - `AccountProjector` (`account`), `ServicesProjector` (`service`, `service_offer`, `professional`). Ignoran tipos que no poseen (composición por tupla/estructura delegante; el integrador los compone en `identity/desktop.rs`, reemplazando los `&()` actuales en las líneas ~434 y ~538).
@@ -177,7 +359,8 @@ Orden detallado con estados en [todo.md](todo.md). Resumen:
 ## Verificación
 
 ```powershell
-cargo test --workspace --locked components::account components::services
+cargo test --workspace --locked components::account
+cargo test --workspace --locked components::services
 cargo test --workspace --locked components::sync::contract_tests
 pnpm quality
 pnpm build:desktop
@@ -192,3 +375,15 @@ Las pruebas usan datos sintéticos, relojes e IDs controlados y HTTP loopback; n
 2. `service_local`/`service_offer_local` conservan el payload completo de la intención para permitir edición/reintento y revisión de conflictos; la vista aceptada sigue en las tablas `_view`. Si un track posterior añade un bus de eventos, la resolución de intenciones se puede simplificar sin cambiar contratos públicos.
 3. El alta administrativa de cuenta (crear la consulta) queda fuera: es un script administrativo del servidor (contrato §6).
 4. **Propiedad futura de los modelos de transporte (decisión del usuario, 2026-11-02):** a medio plazo los modelos de `sync/adapters/remote_models.rs` deberían ser reemplazados por los modelos que definan los componentes propietarios (p. ej. `account`/`services`). Esa refactorización se aplaza explícitamente hasta el final, cuando los componentes estén estables; ahora solo se respeta la frontera: transporte en el adaptador, dominio propio en el componente.
+
+## Integración UI autorizada durante T06
+
+El usuario autorizó incluir src/App.tsx para montar el panel de features/settings. El código vigente no tiene rutas ni un contenedor de features. El resto del panel permanece en features/settings y consume solo src/shared/api/account.ts.
+
+## Decisión de revisión durante T06: cuenta del formulario
+
+Se propuso expectedAccountId como guardia local en los tres comandos online para rechazar un formulario conservado tras cambiar de cuenta. El usuario decidió mantener los DTO C01 sin ese campo (2026-11-02). Se conserva el contrato: la sesión Rust seleccionada al ejecutar determina la cuenta. La puerta de identity mantiene ese ámbito durante refresh/envío, pero no vincula de forma atómica el formulario React previo con la selección. Dos cuentas pueden tener la misma expectedVersion. Este límite queda explícito para C02; no se afirma que exista una guardia de cuenta esperada.
+
+## Estado al presentar C02
+
+T01–T06 verificadas. pnpm quality, pnpm build:desktop y git diff --check correctos. El detalle de comandos, decisiones, fuentes y límites está en todo.md §C02. El usuario pidió detenerse en el siguiente checkpoint; no se inicia T07. La revisión C02 y API/OIDC reales no se acreditan. La composición del proyector sigue reservada a T12.

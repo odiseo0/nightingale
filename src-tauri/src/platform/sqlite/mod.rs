@@ -34,6 +34,16 @@ const MIGRATIONS: &[Migration] = &[
         name: "0004_sync_control",
         sql: include_str!("../../../migrations/0004_sync_control.sql"),
     },
+    Migration {
+        version: 5,
+        name: "0005_account",
+        sql: include_str!("../../../migrations/0005_account.sql"),
+    },
+    Migration {
+        version: 6,
+        name: "0006_services",
+        sql: include_str!("../../../migrations/0006_services.sql"),
+    },
 ];
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
@@ -246,6 +256,144 @@ mod tests {
             )
             .unwrap();
         assert_eq!(tables, 1);
+    }
+
+    fn assert_account_services_schema(connection: &Connection) {
+        assert_eq!(
+            connection
+                .pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
+                .unwrap(),
+            6
+        );
+        for table in [
+            "account_view",
+            "account_preferences",
+            "service_catalog_view",
+            "service_offer_view",
+            "professional_view",
+            "service_local",
+            "service_offer_local",
+        ] {
+            assert!(connection.table_exists(None, table).unwrap(), "{table}");
+        }
+        let history: Vec<(i64, String)> = connection
+            .prepare("SELECT version, name FROM schema_migrations ORDER BY version")
+            .unwrap()
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))
+            .unwrap()
+            .collect::<rusqlite::Result<_>>()
+            .unwrap();
+        assert_eq!(
+            history,
+            MIGRATIONS
+                .iter()
+                .map(|m| (m.version, m.name.to_owned()))
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            connection
+                .query_row("PRAGMA integrity_check", [], |r| r.get::<_, String>(0))
+                .unwrap(),
+            "ok"
+        );
+    }
+
+    #[test]
+    fn account_services_open_new_database_and_upgrade_schema_four() {
+        for prior_version in [0, 4] {
+            let fixture = Fixture::new();
+            let path = fixture.database();
+            let mut connection = Connection::open(&path).unwrap();
+            if prior_version == 4 {
+                migrate(&mut connection, &MIGRATIONS[..4]).unwrap();
+                connection.execute("INSERT INTO identity_context VALUES (1, 'synthetic-issuer', 'synthetic-subject', 'synthetic-user', 'synthetic-account')", []).unwrap();
+            }
+            drop(connection);
+            let connection = open(&path).unwrap();
+            assert_account_services_schema(&connection);
+            if prior_version == 4 {
+                assert_eq!(
+                    connection
+                        .query_row("SELECT subject FROM identity_context", [], |r| r
+                            .get::<_, String>(0))
+                        .unwrap(),
+                    "synthetic-subject"
+                );
+            }
+            drop(connection);
+            let bytes = fs::read(&path).unwrap();
+            let connection = open(&path).unwrap();
+            assert_account_services_schema(&connection);
+            assert_eq!(connection.total_changes(), 0);
+            drop(connection);
+            assert_eq!(fs::read(&path).unwrap(), bytes);
+        }
+    }
+
+    #[test]
+    fn failed_services_migration_rolls_back_account_migration_from_four() {
+        let fixture = Fixture::new();
+        let path = fixture.database();
+        let mut connection = seed_0002(&path);
+        migrate(&mut connection, &MIGRATIONS[..4]).unwrap();
+        let before = legacy_rows(&connection);
+        let broken_sql = format!("{}\nINVALID SQL;", MIGRATIONS[5].sql);
+        let mut migrations = MIGRATIONS.to_vec();
+        migrations[5].sql = &broken_sql;
+        assert!(migrate(&mut connection, &migrations).is_err());
+        assert_eq!(legacy_rows(&connection), before);
+        assert_eq!(
+            connection
+                .pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
+                .unwrap(),
+            4
+        );
+        assert!(!connection.table_exists(None, "account_view").unwrap());
+        assert!(
+            !connection
+                .table_exists(None, "service_catalog_view")
+                .unwrap()
+        );
+        assert_eq!(
+            connection
+                .query_row("SELECT count(*) FROM schema_migrations", [], |r| r
+                    .get::<_, i64>(0))
+                .unwrap(),
+            4
+        );
+        drop(connection);
+        assert_account_services_schema(&open(&path).unwrap());
+    }
+
+    #[test]
+    fn account_services_schema_keeps_scope_and_intentions_separate() {
+        let fixture = Fixture::new();
+        let connection = open(&fixture.database()).unwrap();
+        for account in ["account-a", "account-b"] {
+            connection.execute("INSERT INTO account_preferences VALUES (?1, 'user', 'device', 'theme', '\"dark\"', 1)", [account]).unwrap();
+        }
+        assert_eq!(
+            connection
+                .query_row("SELECT count(*) FROM account_preferences", [], |r| r
+                    .get::<_, i64>(0))
+                .unwrap(),
+            2
+        );
+        assert!(connection.execute("INSERT INTO account_preferences VALUES ('account-a', 'user', 'device', 'timeZone', '\"UTC\"', 1)", []).is_err());
+        assert!(connection.execute("INSERT INTO service_catalog_view VALUES ('a','u','d','s','p','Synthetic',1.5,'active',1)", []).is_err());
+        connection.execute("INSERT INTO service_catalog_view VALUES ('a','u','d','s','p','Synthetic',30,'active',1)", []).unwrap();
+        connection.execute("INSERT INTO service_local VALUES ('a','u','d','op','service','p','s','CreateService',0,'{}','{}',1,1)", []).unwrap();
+        connection.execute("INSERT INTO service_local VALUES ('a','u','d','profile-op','professional','p',NULL,'UpdateProfessionalProfile',1,'{}','{}',1,1)", []).unwrap();
+        connection
+            .execute("DELETE FROM service_catalog_view", [])
+            .unwrap();
+        assert_eq!(
+            connection
+                .query_row("SELECT count(*) FROM service_local", [], |r| r
+                    .get::<_, i64>(0))
+                .unwrap(),
+            2
+        );
     }
 
     #[test]

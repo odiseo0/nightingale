@@ -14,6 +14,12 @@
     "allow-identity-list-accounts",
     "allow-identity-activate-account",
     "allow-identity-logout",
-    "allow-sync-now"
+    "allow-sync-now",
+    "allow-account-get-view",
+    "allow-account-get-preferences",
+    "allow-account-set-preference",
+    "allow-account-update-details",
+    "allow-account-update-policy",
+    "allow-account-set-status"
   ]
 }

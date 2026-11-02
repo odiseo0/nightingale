@@ -45,6 +45,12 @@ pub fn run() {
             components::identity::desktop::identity_activate_account,
             components::identity::desktop::identity_logout,
             components::identity::desktop::sync_now,
+            components::account::adapters::inbound::account_get_view,
+            components::account::adapters::inbound::account_get_preferences,
+            components::account::adapters::inbound::account_set_preference,
+            components::account::adapters::inbound::account_update_details,
+            components::account::adapters::inbound::account_update_policy,
+            components::account::adapters::inbound::account_set_status,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

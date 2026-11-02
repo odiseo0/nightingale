@@ -12,6 +12,12 @@ fn main() {
             "identity_activate_account",
             "identity_logout",
             "sync_now",
+            "account_get_view",
+            "account_get_preferences",
+            "account_set_preference",
+            "account_update_details",
+            "account_update_policy",
+            "account_set_status",
         ]),
     ))
     .expect("failed to build Tauri application")

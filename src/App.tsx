@@ -4,6 +4,7 @@ import { getStorageStatus, type StorageStatus } from "./shared/api/storage";
 import { getPendingOperations, type PendingOperations } from "./shared/api/sync";
 import "./App.css";
 import CorePanel from "./CorePanel";
+import SettingsPanel from "./features/settings/SettingsPanel";
 
 type DiagnosticState =
   | { status: "idle" | "loading" }
@@ -97,6 +98,7 @@ function App() {
       </section>
 
       <CorePanel />
+      <SettingsPanel />
       <section aria-labelledby="scope-heading" className="space-y-2 border-t border-gray-200 pt-6">
         <h2 id="scope-heading" className="text-xl font-semibold">
           Funciones pendientes

@@ -30,6 +30,19 @@ La carpeta [contracts/](contracts/) conserva la copia de consulta del contrato v
 - `contracts/api-v1/nightingale-api.md` es la guía de consulta que explica propósito, decisiones, modelo de datos, endpoints y flujos del consumidor.
 - El esquema físico PostgreSQL **no vive en este repositorio**: la fuente editable es `nightingale-api/docs/database-schema.md`, conforme al propio contrato (§5.6). El borrador local `docs/database-schema.md` fue eliminado el 2026-10-29 por decisión del usuario: el escritorio no interactúa con la base de datos directamente y consume el API solo por sus contratos HTTP.
 
+## Documentación técnica de implementación
+
+Las guías de módulos viven en [technical/components/](technical/components/):
+[cuenta](technical/components/account.md),
+[servicios](technical/components/services.md),
+[identidad](technical/components/identity.md),
+[dispositivos](technical/components/devices.md),
+[sincronización](technical/components/sync.md),
+[plataforma](technical/components/platform.md) y
+[núcleo compartido](technical/components/shared-kernel.md).
+El [catálogo de datos de referencia](technical/reference-data.md) documenta las
+listas de países y zonas, su origen y el acceso común desde Rust.
+
 ## Propiedad y uso
 
 - Nightingale API mantiene su especificación en `docs/nightingale-api.md`, versión 0.2 del 2026-10-23. Su registro `docs/decisions.md` distingue criterios confirmados y detalles pendientes; esas rutas pertenecen al repositorio de API.

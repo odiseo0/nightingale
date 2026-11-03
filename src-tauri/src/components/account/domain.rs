@@ -1,5 +1,9 @@
 //! Account rules. No storage, HTTP, or remote transport models.
-use crate::shared_kernel::{NightingaleError, Result, id::AccountId};
+use crate::shared_kernel::{
+    NightingaleError, Result,
+    id::AccountId,
+    reference_data::{is_country_code, is_time_zone},
+};
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -83,13 +87,8 @@ impl AccountDetailsPatch {
             let valid = match key.as_str() {
                 "displayName" | "locationName" | "locationAddress" | "locationCity"
                 | "locationState" => !value.trim().is_empty(),
-                // Pinned IANA membership data; no date arithmetic or OS dependency.
-                "timeZone" => include_str!("time_zones.txt")
-                    .lines()
-                    .any(|zone| zone == value),
-                "locationCountry" => include_str!("countries.txt")
-                    .lines()
-                    .any(|country| country == value),
+                "timeZone" => is_time_zone(value),
+                "locationCountry" => is_country_code(value),
                 _ => false,
             };
 

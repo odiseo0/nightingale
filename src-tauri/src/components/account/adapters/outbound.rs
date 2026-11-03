@@ -26,7 +26,21 @@ impl AccountViewQuery for SqliteAccountRepository<'_> {
         let row = self.connection.query_row(
             "SELECT display_name,time_zone,location_name,location_address,location_city,location_state,location_country,no_show_grace_minutes,status,version,updated_at FROM account_view WHERE account_id=?1 AND user_id=?2 AND device_id=?3",
             params![scope.account_id.as_str(),scope.user_id.as_str(),scope.device_id.as_str()],
-            |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?,r.get(6)?,r.get::<_,i64>(7)?,r.get::<_,String>(8)?,r.get(9)?,r.get(10)?)),
+            |r| Ok(
+                (
+                    r.get(0)?,
+                    r.get(1)?,
+                    r.get(2)?,
+                    r.get(3)?,
+                    r.get(4)?,
+                    r.get(5)?,
+                    r.get(6)?,
+                    r.get::<_,i64>(7)?,
+                    r.get::<_,String>(8)?,
+                    r.get(9)?,
+                    r.get(10)?
+                )
+            ),
         ).optional().map_err(storage_error)?;
 
         row.map(
@@ -140,7 +154,14 @@ impl AccountReadRepository for SqliteAccountRepository<'_> {
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(storage_error)?;
         tx.execute("INSERT INTO account_preferences (account_id,user_id,device_id,key,value,updated_at) VALUES (?1,?2,?3,?4,?5,?6) ON CONFLICT(account_id,user_id,device_id,key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at",
-            params![scope.account_id.as_str(),scope.user_id.as_str(),scope.device_id.as_str(),key,value.to_string(),now]).map_err(storage_error)?;
+            params![
+                scope.account_id.as_str(),
+                scope.user_id.as_str(),
+                scope.device_id.as_str(),
+                key,
+                value.to_string(),
+                now
+            ]).map_err(storage_error)?;
         let preferences = read_preferences(&tx, scope)?;
 
         tx.commit().map_err(storage_error)?;

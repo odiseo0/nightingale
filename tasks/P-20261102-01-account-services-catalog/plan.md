@@ -349,12 +349,12 @@ Formatos y límites del contrato §10: duraciones enteras 1–1440; JSON camelCa
 Orden detallado con estados en [todo.md](todo.md). Resumen:
 
 - **T01 — Cerrar contratos del track:** DTO por comando, tabla de acciones/claves/versión, propiedad de tablas, reserva de migraciones `0005`/`0006`, firmas de `AccountViewQuery` y `CatalogQuery`, puntos calientes de integración. **C01: Contratos congelados.**
-- **T02 — Componentes y migraciones:** esqueletos `account`/`services` (domain/application/adapters), `mod.rs`, READMEs breves (PMD §27.2), migraciones `0005_account.sql` y `0006_services.sql`, runner verificado.
+- **T02 — Componentes y migraciones:** esqueletos `account`/`services` (domain/application/adapters), `mod.rs`, guías breves en docs/technical/components (ubicación solicitada por el usuario; PMD §27.2), migraciones `0005_account.sql` y `0006_services.sql`, runner verificado.
 - **T03–T06 — Vertical `account`:** dominio y aplicación (vista, preferencias, validaciones de patch y rangos); repositorios y proyector `account`; casos online-only con envío directo y disparo de `sync_now`; IPC + `account.ts` + UI settings. **C02: revisión vertical account.**
 - **T07–T10 — Vertical `services`:** dominio y aplicación (8 casos, validación 1–1440, patch no vacío, `allows_offline`); repositorios e intenciones locales con `record_operation` en la misma transacción; proyectores con regla de versiones dobles; IPC + `services.ts` + UI catálogo. **C03: revisión vertical services.**
 - **T11 — Contratos de consumidor:** fixtures contra el bundle fijo (huellas del manifiesto, presencia de las 10 acciones, correspondencia acción↔payload según `capabilities.json`, modelos de estado ya existentes). Sin editar artefactos.
 - **T12 — Integración y sincronización de punta a punta:** proyector compuesto registrado en `identity/desktop.rs`; escenarios sintéticos con servidor loopback: crear servicio offline → dispatch → `accepted` → proyección y resolución de la intención; `VERSION_CONFLICT` conserva intención; `remove` retira vista; reapertura conserva todo; oferta con `serviceVersion` mayor y `version` igual se proyecta.
-- **T13 — Calidad y guías:** `pnpm quality`, `pnpm build:desktop`, `git diff --check`, READMEs finales por componente. **C04: aceptación del track.**
+- **T13 — Calidad y guías:** `pnpm quality`, `pnpm build:desktop`, `git diff --check`, guías finales por componente en docs/technical/components. **C04: aceptación del track.**
 
 ## Verificación
 
@@ -371,7 +371,7 @@ Las pruebas usan datos sintéticos, relojes e IDs controlados y HTTP loopback; n
 
 ## Decisiones abiertas registradas (no bloquean el track)
 
-1. La repetición manual de un caso online-only con resultado desconocido genera una operación nueva (semántica online-only: no hay intención durable que recuperar). Aceptado por coherencia con el ADR; se documenta en el README de `account`.
+1. La repetición manual de un caso online-only con resultado desconocido genera una operación nueva (semántica online-only: no hay intención durable que recuperar). Aceptado por coherencia con el ADR; se documenta en docs/technical/components/account.md.
 2. `service_local`/`service_offer_local` conservan el payload completo de la intención para permitir edición/reintento y revisión de conflictos; la vista aceptada sigue en las tablas `_view`. Si un track posterior añade un bus de eventos, la resolución de intenciones se puede simplificar sin cambiar contratos públicos.
 3. El alta administrativa de cuenta (crear la consulta) queda fuera: es un script administrativo del servidor (contrato §6).
 4. **Propiedad futura de los modelos de transporte (decisión del usuario, 2026-11-02):** a medio plazo los modelos de `sync/adapters/remote_models.rs` deberían ser reemplazados por los modelos que definan los componentes propietarios (p. ej. `account`/`services`). Esa refactorización se aplaza explícitamente hasta el final, cuando los componentes estén estables; ahora solo se respeta la frontera: transporte en el adaptador, dominio propio en el componente.
@@ -387,3 +387,11 @@ Se propuso expectedAccountId como guardia local en los tres comandos online para
 ## Estado al presentar C02
 
 T01–T06 verificadas. pnpm quality, pnpm build:desktop y git diff --check correctos. El detalle de comandos, decisiones, fuentes y límites está en todo.md §C02. El usuario pidió detenerse en el siguiente checkpoint; no se inicia T07. La revisión C02 y API/OIDC reales no se acreditan. La composición del proyector sigue reservada a T12.
+
+## Ajustes solicitados durante revisión C02 (2026-11-03)
+
+El usuario pidió un lugar común para countries.txt/time_zones.txt y documentación técnica fuera de los componentes. Las listas pasan sin cambios a src-tauri/src/shared_kernel/reference_data; el módulo ofrece is_country_code e is_time_zone. Justificación del cambio en shared_kernel: son datos de referencia compartidos y funciones puras de pertenencia, sin entidades de negocio, estado, almacenamiento o framework; account conserva sus reglas de patch y llama esas funciones. No se añade una dependencia ni se cambian DTO.
+
+Las guías de account, services, identity, devices, sync, platform y shared_kernel pasan a docs/technical/components. El origen/hash de las listas pasa a docs/technical/reference-data.md. Esta petición sustituye la ubicación README dentro de cada componente prevista en T02/T13 para este trabajo; no cambia el contenido de la especificación general. Se actualizan enlaces e índice. Los dos archivos de account con formato cambiado por el usuario (application.rs y adapters/outbound.rs) se conservan sin modificar.
+
+C02 sigue pendiente de aprobación expresa del usuario tras revisar este ajuste. No se inicia T07 ni se acredita C03.

@@ -24,7 +24,7 @@ src/features/settings y se monta desde App.tsx con autorización del usuario.
 Preferencias: theme (system/light/dark) y servicesShowInactive (boolean), con lista
 cerrada de claves y valores. El componente guarda estas opciones de dispositivo;
 no impone política clínica ni cambia permisos. Las listas de zonas y países tienen
-origen, versión y hash en [validation-data.md](validation-data.md).
+origen, versión y hash en [datos de referencia](../reference-data.md).
 
 Errores: códigos estables y mensajes seguros; sin SQL, tokens ni estado de transporte.
 El envío conserva el ID durante dos intentos. duplicate usa su resultado original;
@@ -42,7 +42,7 @@ lo vincule con la cuenta que mostraba.
 Pruebas: `cargo test --workspace --locked components::account` (HTTP loopback para
 los casos online), pruebas del runner, `pnpm quality` y `pnpm build:desktop`.
 El contrato aprobado está en
-[plan.md](../../../../tasks/P-20261102-01-account-services-catalog/plan.md).
+[plan.md](../../../tasks/P-20261102-01-account-services-catalog/plan.md).
 
 Fuentes: [transacciones rusqlite 0.40.2](https://docs.rs/rusqlite/0.40.2/rusqlite/struct.Transaction.html),
 [UPSERT SQLite](https://www.sqlite.org/lang_upsert.html),

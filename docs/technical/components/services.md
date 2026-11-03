@@ -21,4 +21,4 @@ sí actualiza su vista. Desactivar servicios/ofertas no altera citas.
 
 Estado T02: estructura y migración disponibles; casos, proyectores e IPC pendientes
 de T07–T10. El contrato aprobado está en
-[plan.md](../../../../tasks/P-20261102-01-account-services-catalog/plan.md).
+[plan.md](../../../tasks/P-20261102-01-account-services-catalog/plan.md).

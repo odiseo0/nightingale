@@ -2,7 +2,7 @@
 
 **Plan:** [plan.md](plan.md)
 **Status:** In progress — C02 presentado; ejecución detenida por solicitud del usuario
-**Updated:** 2026-11-02
+**Updated:** 2026-11-03
 
 ## T01: Cerrar los contratos del track
 
@@ -27,8 +27,8 @@
 
 **Status:** Done
 
-- [x] Crear `components/account/{domain,application,adapters/{inbound,outbound}}` + `mod.rs` y README breve (responsabilidad, datos, API, puertos, invariantes).
-- [x] Crear `components/services/{domain,application,adapters/{inbound,outbound}}` + `mod.rs` y README breve.
+- [x] Crear `components/account/{domain,application,adapters/{inbound,outbound}}` + `mod.rs` y guía breve en docs/technical/components/account.md (responsabilidad, datos, API, puertos, invariantes; ubicación corregida durante revisión C02).
+- [x] Crear `components/services/{domain,application,adapters/{inbound,outbound}}` + `mod.rs` y guía breve en docs/technical/components/services.md (ubicación corregida durante revisión C02).
 - [x] `src-tauri/migrations/0005_account.sql` con `PRAGMA user_version = 5` y `schema_migrations`.
 - [x] `src-tauri/migrations/0006_services.sql` con `PRAGMA user_version = 6` y `schema_migrations`.
 - [x] Verificar apertura de base nueva y migración desde esquema 4 con pruebas del runner.
@@ -45,7 +45,7 @@
 - [x] Política: preferencia local no puede fijar política central obligatoria.
 - [x] Pruebas de dominio sin base ni red; pruebas de aplicación con puertos falsos.
 
-**Verificación T03:** `cargo fmt --all`; `cargo test --workspace --locked components::account`: 5 pruebas correctas de dominio/aplicación, sin base ni red. Validación por pertenencia a listas IANA tzdb 2026f (598 zonas/enlaces y 249 países), con origen y hash en account/validation-data.md; sin dependencia nueva. Serde 1.0.229 para errores camelCase y campos opcionales: https://serde.rs/container-attrs.html#rename_all y https://serde.rs/field-attrs.html#skip_serializing_if.
+**Verificación T03:** `cargo fmt --all`; `cargo test --workspace --locked components::account`: 5 pruebas correctas de dominio/aplicación, sin base ni red. Validación por pertenencia a listas IANA tzdb 2026f (598 zonas/enlaces y 249 países), con origen y hash en [docs/technical/reference-data.md](../../docs/technical/reference-data.md) (traslado solicitado el 2026-11-03); sin dependencia nueva. Serde 1.0.229 para errores camelCase y campos opcionales: https://serde.rs/container-attrs.html#rename_all y https://serde.rs/field-attrs.html#skip_serializing_if.
 
 ## T04: Repositorios y proyector de `account`
 
@@ -64,7 +64,7 @@
 
 - [x] `update_account_details`, `update_account_policy`, `set_account_status`: exigen sesión + acceso `active` + rol propietario; refresco `/access` como prueba de conectividad; rechazo sin persistir si falla.
 - [x] Envío directo con `SyncAPI::send_operations` y envelope en memoria (ID estable por invocación entre reintentos de transporte); tratamiento de `accepted` (disparar `sync_now`), `duplicate` (`originalResult`), `conflict`/`rejected`, y resultado desconocido.
-- [x] Nada escrito en SQLite; documentar la semántica de repetición manual en README.
+- [x] Nada escrito en SQLite; documentar la semántica de repetición manual en la guía técnica de cuenta.
 - [x] Pruebas con servidor HTTP sintético loopback: éxito, 401/403 (denegación local), timeout con reintento mismo ID, rechazo visible.
 
 **Verificación T05:** `cargo fmt --all`; `cargo test --workspace --locked components::account`: 12 pruebas correctas al permitir HTTP loopback. La primera ejecución aislada falló al conectar, sin resultados acreditados para esos cuatro tests; la repetición autorizada pasó. Se verifica timeout con mismo envelope/ID, las tres acciones, 401/403, duplicado con conflicto/rechazo y ausencia de escritura local. El adaptador de escritorio llama sync_now solo tras accepted y conserva accepted si falla el refresco. Reutiliza la puerta de sesión y credential de identity (solo visibilidad crate, sin cambiar reglas sync).
@@ -155,7 +155,7 @@
 
 ## T13: Calidad, guías y cierre
 
-- [ ] READMEs finales de `account` y `services` (PMD §26/§27.2).
+- [ ] Guías finales de `account` y `services` en docs/technical/components (PMD §26/§27.2; ubicación solicitada por el usuario).
 - [ ] `cargo test --workspace --locked`, `pnpm quality`, `pnpm build:desktop`, `git diff --check` en verde.
 - [ ] Actualizar [core-next-tracks.md](../../docs/operations/core-next-tracks.md) si el recorrido real difiere de la referencia (solo con aprobación del usuario).
 
@@ -163,3 +163,11 @@
 
 - [ ] Revisión del usuario de la evidencia local y decisión de aprobación.
 - [ ] Pendientes externos (API/OIDC de desarrollo) quedan explícitos, no acreditados.
+
+## Ajuste de organización durante revisión C02 — 2026-11-03
+
+- [x] Listas de países y zonas en shared_kernel/reference_data, con acceso puro compartido; account usa sus funciones sin duplicar las listas.
+- [x] Guías de los componentes, núcleo y plataforma en docs/technical/components; origen y hash de las listas en docs/technical/reference-data.md.
+- [x] Índice, enlaces y referencias del track actualizados. Formato del usuario en application.rs y adapters/outbound.rs preservado.
+- [x] Comprobaciones del traslado y evidencia final: `cargo test --workspace --locked components::account` (15 correctas, con HTTP loopback); `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo fmt --all -- --check` y `git diff --check` correctos. Comparación de contenido contra HEAD (normalizando LF/CRLF): listas idénticas, 249 países y 598 zonas. Enlaces relativos válidos en las guías trasladadas, índice, guías operativas y track; ningún Markdown permanece en src-tauri/src. Hashes del bundle API intactos. Los cambios de formato del usuario siguen limitados a 23 inserciones/2 borrados en outbound.rs y una línea en application.rs, como al empezar. No se repiten build web/escritorio: no cambian TS, configuración ni recursos de UI.
+- [ ] Aprobación C02 del usuario después de revisar el ajuste; T07–T10 hasta C03 requieren esa aprobación.

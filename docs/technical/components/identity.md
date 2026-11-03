@@ -8,4 +8,4 @@ Offline: `cached_access` y `selected_access` permiten leer la última autorizaci
 
 Puertos y adaptadores: `AccessStore` tiene implementación SQLite; `IdentityAPI`, `OidcProvider` y `SystemBrowser` adaptan API, OIDC y navegador; `SecretStore` protege las credenciales. No publica eventos de dominio propios. Los comandos IPC exponen solo identidad seleccionada, cuentas, acceso y metadatos de sincronización.
 
-Pruebas: `cargo test --workspace --locked components::identity`. Las pruebas de navegador/API reales están ignoradas y documentadas en la [guía de desarrollo](../../../../docs/operations/development.md). El [ADR aprobado](../../../../docs/decisions/desktop-core-engine.md) fija estos límites.
+Pruebas: `cargo test --workspace --locked components::identity`. Las pruebas de navegador/API reales están ignoradas y documentadas en la [guía de desarrollo](../../operations/development.md). El [ADR aprobado](../../decisions/desktop-core-engine.md) fija estos límites.

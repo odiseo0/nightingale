@@ -54,6 +54,7 @@ pub trait AccountViewQuery {
 
 pub trait AccountReadRepository: AccountViewQuery {
     fn preferences(&self, scope: &OperationContext) -> Result<Preferences>;
+
     /// The adapter commits one local transaction and never writes an Outbox item.
     fn set_preference(
         &mut self,

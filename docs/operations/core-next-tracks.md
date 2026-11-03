@@ -45,4 +45,4 @@ Offline: una cita guardada queda pendiente de aceptación compartida. Dependenci
 
 Ejemplo sintético: una ficha borrador usa `RegisterPatient`, clave UUIDv7 nueva, versión esperada cero y `payload={"fullName":"Paciente de prueba"}`. El caso local guarda el borrador y su intención juntos. Un recibo `accepted` resuelve la intención; la página/captura actualiza la vista aceptada mediante el proyector. Ninguno de esos pasos permite saltarse la autorización de API.
 
-La guía de [sync](../../src-tauri/src/components/sync/README.md), el [ADR](../decisions/desktop-core-engine.md) y la [guía de desarrollo](development.md) describen los puertos existentes. Cifrado de SQLite, claves, instaladores, publicación y datos reales siguen fuera de esta entrega.
+La guía de [sync](../technical/components/sync.md), el [ADR](../decisions/desktop-core-engine.md) y la [guía de desarrollo](development.md) describen los puertos existentes. Cifrado de SQLite, claves, instaladores, publicación y datos reales siguen fuera de esta entrega.

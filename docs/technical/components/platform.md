@@ -10,4 +10,4 @@ Configuración validada, transporte HTTP/SSE, almacén seguro del SO, SQLite y r
 
 Los adaptadores disponibles son `APIConfig`, `APITransport`, `NativeSecretStore`/`MemorySecretStore`, la apertura SQLite y `observability::{emit,write}`. No posee entidades ni publica eventos de dominio; `observability::Event` es telemetría, no un evento de negocio.
 
-Pruebas: `cargo test --workspace --locked platform`. [Requisitos y verificación manual](../../../docs/operations/development.md).
+Pruebas: `cargo test --workspace --locked platform`. [Requisitos y verificación manual](../../operations/development.md).

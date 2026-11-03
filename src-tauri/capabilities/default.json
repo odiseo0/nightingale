@@ -20,6 +20,14 @@
     "allow-account-set-preference",
     "allow-account-update-details",
     "allow-account-update-policy",
-    "allow-account-set-status"
+    "allow-account-set-status",
+    "allow-services-list-catalog",
+    "allow-services-create-service",
+    "allow-services-update-service",
+    "allow-services-set-service-status",
+    "allow-services-offer-service",
+    "allow-services-update-service-offer",
+    "allow-services-set-service-offer-status",
+    "allow-services-update-professional-profile"
   ]
 }

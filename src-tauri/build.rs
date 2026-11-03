@@ -18,6 +18,14 @@ fn main() {
             "account_update_details",
             "account_update_policy",
             "account_set_status",
+            "services_list_catalog",
+            "services_create_service",
+            "services_update_service",
+            "services_set_service_status",
+            "services_offer_service",
+            "services_update_service_offer",
+            "services_set_service_offer_status",
+            "services_update_professional_profile",
         ]),
     ))
     .expect("failed to build Tauri application")

@@ -5,6 +5,7 @@ import { getPendingOperations, type PendingOperations } from "./shared/api/sync"
 import "./App.css";
 import CorePanel from "./CorePanel";
 import SettingsPanel from "./features/settings/SettingsPanel";
+import ServicesPanel from "./features/services/ServicesPanel";
 
 type DiagnosticState =
   | { status: "idle" | "loading" }
@@ -99,12 +100,13 @@ function App() {
 
       <CorePanel />
       <SettingsPanel />
+      <ServicesPanel />
       <section aria-labelledby="scope-heading" className="space-y-2 border-t border-gray-200 pt-6">
         <h2 id="scope-heading" className="text-xl font-semibold">
           Funciones pendientes
         </h2>
         <p>
-          La gestión de pacientes, servicios, agenda y citas tendrá sus propios planes.
+          La gestión de pacientes, agenda y citas tendrá sus propios planes.
         </p>
       </section>
     </main>

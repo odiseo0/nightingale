@@ -1,8 +1,8 @@
 # P-20261102-01-account-services-catalog: Cuenta y catálogo de servicios
 
-**Status:** In progress — C02 presentado el 2026-11-02; ejecución detenida por solicitud del usuario
+**Status:** In progress — C03 presentado el 2026-11-03; ejecución detenida para revisión
 **Created:** 2026-11-02
-**Updated:** 2026-11-02
+**Updated:** 2026-11-03
 **Task list:** [todo.md](todo.md)
 **Plan relacionado:** [P-20261029-03-core-engine](../P-20261029-03-core-engine/plan.md) (motor transversal, en progreso; este plan lo consume, no lo reabre). Contratos iniciales: [core-next-tracks.md](../../docs/operations/core-next-tracks.md) §«Cuenta y catálogo de servicios».
 
@@ -395,3 +395,11 @@ El usuario pidió un lugar común para countries.txt/time_zones.txt y documentac
 Las guías de account, services, identity, devices, sync, platform y shared_kernel pasan a docs/technical/components. El origen/hash de las listas pasa a docs/technical/reference-data.md. Esta petición sustituye la ubicación README dentro de cada componente prevista en T02/T13 para este trabajo; no cambia el contenido de la especificación general. Se actualizan enlaces e índice. Los dos archivos de account con formato cambiado por el usuario (application.rs y adapters/outbound.rs) se conservan sin modificar.
 
 C02 sigue pendiente de aprobación expresa del usuario tras revisar este ajuste. No se inicia T07 ni se acredita C03.
+
+## Aprobación C02 y continuación (2026-11-03)
+
+El usuario aprobó C02 tras revisar la organización de datos y documentación y autorizó T07–T10 hasta C03. Se mantienen los DTO C01, la documentación fuera de los componentes y los datos compartidos en shared_kernel/reference_data. T11–T13 no se inician antes de revisar C03.
+
+## Estado al presentar C03 (2026-11-03)
+
+T07–T10 verificadas. pnpm quality (154 unitarias + 5 integración + 1 doctest, 6 manuales ignoradas), pnpm build:desktop y git diff --check correctos. Evidencia, decisiones y fuentes en todo.md §C03. El usuario autorizó continuar hasta este checkpoint; no se inicia T11. Sigue pendiente el registro compuesto y la prueba HTTP completa de catálogo de T12, API/OIDC real y aprobación C03.

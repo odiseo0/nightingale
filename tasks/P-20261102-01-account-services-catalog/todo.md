@@ -1,7 +1,7 @@
 # P-20261102-01-account-services-catalog — Tareas
 
 **Plan:** [plan.md](plan.md)
-**Status:** In progress — C02 presentado; ejecución detenida por solicitud del usuario
+**Status:** In progress — C03 presentado; detenido para revisión del usuario
 **Updated:** 2026-11-03
 
 ## T01: Cerrar los contratos del track
@@ -86,7 +86,7 @@
 
 **Presentado:** 2026-11-02. Detención solicitada por el usuario: «Detente en el siguiente checkpoint». No se inicia T07.
 
-- [ ] El usuario revisa el recorrido completo con datos sintéticos (con y sin conexión simulada).
+- [x] C02 aprobado por el usuario tras el ajuste de organización: «Vale, continuemos hasta C03. Por favor» (2026-11-03). Las pruebas reales API/OIDC siguen pendientes.
 
 **Tareas completadas:** T01–T06. Componentes y migraciones 0005/0006 registrados; cuenta con dominio, puertos, repositorio, proyector, tres cambios online-only, seis comandos y panel mínimo de settings.
 
@@ -111,35 +111,73 @@
 
 ## T07: Dominio y aplicación de `services`
 
-- [ ] Objeto de valor `DurationMinutes` (entero 1–1440); `ServicePatch`/`ServiceOfferPatch` no vacíos; `UpdateServiceOffer` exige `durationMinutesOverride` presente (admite `null`).
-- [ ] 8 casos de uso: lectura con acceso local activo y 7 mutaciones con validación de acción vía `AccountAccess::allows_offline`; clave compuesta `{professionalId, serviceId}` validada como UUIDv7 canónicos.
-- [ ] Cálculo de duración efectiva = override ?? default solo desde estado aceptado.
-- [ ] Pruebas de dominio: rangos, patches, ausencia vs nulo, claves compuestas, edición de intención local previa (nueva versión de la intención, mismo ID de operación solo si el contenido no cambió — huella).
+**Status:** Done
+
+- [x] Objeto de valor `DurationMinutes` (entero 1–1440); `ServicePatch`/`ServiceOfferPatch` no vacíos; `UpdateServiceOffer` exige `durationMinutesOverride` presente (admite `null`).
+- [x] 8 casos de uso: lectura con acceso local activo y 7 mutaciones con validación de acción vía `AccountAccess::allows_offline`; clave compuesta `{professionalId, serviceId}` validada como UUIDv7 canónicos.
+- [x] Cálculo de duración efectiva = override ?? default solo desde estado aceptado.
+- [x] Pruebas de dominio: rangos, patches, ausencia vs nulo, claves compuestas, edición de intención local previa (nueva versión de la intención, mismo ID de operación solo si el contenido no cambió — huella).
+
+**Verificación T07:** `cargo test --workspace --locked components::services`: 6 pruebas correctas de dominio/aplicación, sin red ni base. Rangos, patches, ausencia/null, UUIDv7, siete acciones exactas, lectura de asistentes y rechazo previo a almacenamiento. La conservación de ID/huella y la corrección con nueva intención se verifican en T08 sobre la transacción real.
 
 ## T08: Repositorios e intenciones locales de `services`
 
-- [ ] Escritura de `service_local`/`service_offer_local` + `record_operation` en la **misma** transacción `IMMEDIATE` (rollback conjunto).
-- [ ] Resolución de intenciones desde recibos (vía consulta de resultados por `operation_id`): `accepted` marca y retira provisional al confirmar vista; `conflict`/`rejected` quedan para revisión.
-- [ ] Lectura fusionada aceptada + provisionales con marca de estado de sincronización.
-- [ ] Pruebas: sin red, reapertura conserva, rollback, resolución por recibo.
+**Status:** Done
+
+- [x] Escritura de `service_local`/`service_offer_local` + `record_operation` en la **misma** transacción `IMMEDIATE` (rollback conjunto).
+- [x] Resolución de intenciones desde recibos (vía consulta de resultados por `operation_id`): `accepted` marca y retira provisional al confirmar vista; `conflict`/`rejected` quedan para revisión.
+- [x] Lectura fusionada aceptada + provisionales con marca de estado de sincronización.
+- [x] Pruebas: sin red, reapertura conserva, rollback, resolución por recibo.
+
+**Verificación T08:** `cargo test --workspace --locked components::services`: 12 correctas. Incluye creación offline + oferta dependiente, reapertura, rollback si falla local u Outbox, accepted sin proyección conserva borrador, confirmación retira solo fila provisional, conflicto conserva payload/huella y corrección usa nuevo ID. Se prueba rechazo de reutilización de ID con otra huella, de permisos revocados y de otro profesional. CatalogRepository resuelve sus filas confirmadas dentro de transacción local; CatalogQuery sigue siendo lectura de datos aceptados. Sin cambios en sync ni migraciones.
 
 ## T09: Proyectores de `services`
 
-- [ ] `ServicesProjector` para `Service`, `ServiceOffer`, `Professional` (misma estructura, ámbito compartido); ignora otros tipos.
-- [ ] Regla de versiones dobles: `version` igual con `serviceVersion` mayor sí se proyecta; `version` menor no.
-- [ ] `reset` retira solo sus tres vistas; `remove` retira vista sin tocar intenciones.
-- [ ] Pruebas: idempotencia, grupos repetidos, remove, reset de captura, regla de versiones.
+**Status:** Done
+
+- [x] `ServicesProjector` para `Service`, `ServiceOffer`, `Professional` (misma estructura, ámbito compartido); ignora otros tipos.
+- [x] Regla de versiones dobles: `version` igual con `serviceVersion` mayor sí se proyecta; `version` menor no.
+- [x] `reset` retira solo sus tres vistas; `remove` retira vista sin tocar intenciones.
+- [x] Pruebas: idempotencia, grupos repetidos, remove, reset de captura, regla de versiones.
+
+**Verificación T09:** `cargo test --workspace --locked components::services`: 16 correctas. Grupos repetidos, oferta igual versión con serviceVersion mayor, versiones menores, traducción profesional, rollback conjunto por duración remota inválida, remove/reset y reconstrucción sin tocar intenciones ni otra cuenta. Los modelos API solo se usan en el adaptador. El registro compuesto sigue reservado a T12.
 
 ## T10: IPC y UI mínima de `services`
 
-- [ ] Comandos: `services_list_catalog`, `services_create_service`, `services_update_service`, `services_set_service_status`, `services_offer_service`, `services_update_service_offer`, `services_set_service_offer_status`, `services_update_professional_profile`; permisos, `build.rs`, `lib.rs`.
-- [ ] `src/shared/api/services.ts`; UI `features/services` con marca de provisional y estados de sincronización; solo lectura para asistentes.
-- [ ] Revisión de conflictos enlazada al `ReviewSummary` existente.
-- [ ] Pruebas de permisos/redacción IPC.
+**Status:** Done
+
+- [x] Comandos: `services_list_catalog`, `services_create_service`, `services_update_service`, `services_set_service_status`, `services_offer_service`, `services_update_service_offer`, `services_set_service_offer_status`, `services_update_professional_profile`; permisos, `build.rs`, `lib.rs`.
+- [x] `src/shared/api/services.ts`; UI `features/services` con marca de provisional y estados de sincronización; solo lectura para asistentes.
+- [x] Revisión de conflictos enlazada al `ReviewSummary` existente.
+- [x] Pruebas de permisos/redacción IPC.
+
+**Verificación T10:** `cargo test --workspace --locked components::services`: 19 correctas (incluye selección, asistente con permisos cacheados incorrectos, entrada sin scope/envelope arbitrario, override obligatorio, null/fracciones y permisos por comando). `pnpm build`, `pnpm quality`, `pnpm build:desktop` y `git diff --check`: correctos. La ejecución inicial de pnpm dentro del aislamiento no pudo obtener el gestor por DNS; la repetición autorizada y la calidad completa pasaron.
 
 ## C03: Revisión vertical `services`
 
+**Presentado:** 2026-11-03. El usuario autorizó continuar hasta C03; se detiene la ejecución antes de T11.
+
 - [ ] El usuario revisa: alta offline → sincronización → aceptado; conflicto visible; asistente sin escritura.
+
+**Tareas completadas:** T07–T10. Ocho casos nativos y comandos específicos, cliente services.ts, UI en features/services, repositorio y proyectores propios. Consulta aceptada por CatalogQuery, vista fusionada con borradores y revisiones, escrituras locales atómicas con Outbox y comprobación de profesional propio.
+
+**Comandos y resultados:**
+
+| Comando | Resultado |
+|---|---|
+| `cargo test --workspace --locked components::services` | 6 correctas en T07, 12 en T08, 16 en T09 y 19 tras IPC de T10. |
+| `pnpm build` | TypeScript y Vite correctos. |
+| `pnpm quality` | Build, formato, Clippy con -D warnings y cargo test --workspace --locked correctos: 154 unitarias, 5 de integración y 1 doctest; 6 manuales ignoradas. |
+| `pnpm build:desktop` | Correcto; target/debug/nightingale.exe, debug sin instalador. |
+| `git diff --check` | Correcto. |
+| Comprobación Python por stdin | Hashes 5/5 del bundle intactos; enlaces locales válidos. Sin cambios a migraciones, reglas sync/account, dependencias ni lockfiles. |
+
+**Decisiones dentro del diseño aprobado:** las consultas de futuros consumidores solo devuelven estado aceptado; la UI recibe intenciones aparte. Una oferta creada sobre servicio pendiente conserva su dependencia causal. La resolución retira la fila provisional solo cuando el recibo accepted y la versión proyectada lo prueban; el Outbox mantiene el recibo. Un conflicto/rechazo no edita la operación original; una corrección usa ID nuevo. Una intención pendiente impide encadenar versiones aceptadas ficticias. Permisos y propiedad se comprueban también dentro de la transacción IMMEDIATE. Oferta igual versión con serviceVersion mayor se proyecta; menor versión propia no. Documentación en docs/technical/components/services.md, sin nuevos README dentro de código. App.tsx monta el panel; usa los puntos de integración ya autorizados. No cambian DTO de C01, API ni permisos administrativos de cuenta.
+
+**Fuentes contrastadas y versiones de lockfile:** rusqlite 0.40.2 para transacciones (https://docs.rs/rusqlite/0.40.2/rusqlite/struct.Connection.html#method.transaction_with_behavior y https://docs.rs/rusqlite/0.40.2/rusqlite/struct.Transaction.html); SQLite UPSERT con guardia doble (https://www.sqlite.org/lang_upsert.html); Serde 1.0.229 para ausencia frente a null y campos camelCase (https://serde.rs/field-attrs.html y https://serde.rs/container-attrs.html); Tauri/API JS 2.12.4 para comandos y permisos (https://v2.tauri.app/develop/calling-rust/#passing-arguments, https://v2.tauri.app/security/permissions/#app-manifest y https://v2.tauri.app/reference/javascript/api/namespacecore/#invoke); React 19.3.1 para limpieza de lecturas locales (https://react.dev/reference/react/useEffect#fetching-data-with-effects).
+
+**Pendientes y límites:** aprobación C03 del usuario; T11–T13. El registro compuesto de AccountProjector/ServicesProjector en ciclo y SSE sigue reservado a T12: ambos &() permanecen en identity/desktop.rs. Las pruebas actuales usan SQLite temporal, recibos sintéticos y grupos aplicados con ServicesProjector; no acreditan todavía el recorrido HTTP completo de catálogo desde dispatch hasta proyección ni una prueba manual UI autenticada. Los casos de permisos/solo lectura sí pasan con datos sintéticos en la entrada local. API/OIDC de desarrollo y las seis pruebas manuales ignoradas siguen pendientes, sin acreditación.
+
 
 ## T11: Pruebas de contrato del consumidor
 
@@ -170,4 +208,4 @@
 - [x] Guías de los componentes, núcleo y plataforma en docs/technical/components; origen y hash de las listas en docs/technical/reference-data.md.
 - [x] Índice, enlaces y referencias del track actualizados. Formato del usuario en application.rs y adapters/outbound.rs preservado.
 - [x] Comprobaciones del traslado y evidencia final: `cargo test --workspace --locked components::account` (15 correctas, con HTTP loopback); `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo fmt --all -- --check` y `git diff --check` correctos. Comparación de contenido contra HEAD (normalizando LF/CRLF): listas idénticas, 249 países y 598 zonas. Enlaces relativos válidos en las guías trasladadas, índice, guías operativas y track; ningún Markdown permanece en src-tauri/src. Hashes del bundle API intactos. Los cambios de formato del usuario siguen limitados a 23 inserciones/2 borrados en outbound.rs y una línea en application.rs, como al empezar. No se repiten build web/escritorio: no cambian TS, configuración ni recursos de UI.
-- [ ] Aprobación C02 del usuario después de revisar el ajuste; T07–T10 hasta C03 requieren esa aprobación.
+- [x] Aprobación C02 recibida el 2026-11-03; autorización para T07–T10 hasta presentar C03.

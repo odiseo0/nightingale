@@ -51,6 +51,14 @@ pub fn run() {
             components::account::adapters::inbound::account_update_details,
             components::account::adapters::inbound::account_update_policy,
             components::account::adapters::inbound::account_set_status,
+            components::services::adapters::inbound::services_list_catalog,
+            components::services::adapters::inbound::services_create_service,
+            components::services::adapters::inbound::services_update_service,
+            components::services::adapters::inbound::services_set_service_status,
+            components::services::adapters::inbound::services_offer_service,
+            components::services::adapters::inbound::services_update_service_offer,
+            components::services::adapters::inbound::services_set_service_offer_status,
+            components::services::adapters::inbound::services_update_professional_profile,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

@@ -8,6 +8,7 @@ use super::{
 use crate::{
     components::{
         devices::activation::{DeviceCredential, DeviceCredentials},
+        projector::DesktopProjector,
         sync::{
             coordinator::{
                 CycleOutcome, CycleReport, CycleTrigger, SyncCoordinator, SyncEngine, SyncStatus,
@@ -431,7 +432,7 @@ async fn run_cycle(app: &AppHandle, trigger: CycleTrigger) -> Result<CycleReport
         trigger,
         &SystemClock,
         &UuidV7Generator,
-        &(),
+        &DesktopProjector,
     )
     .await?;
     *app.state::<DesktopSession>()
@@ -535,7 +536,7 @@ pub fn start_watch(app: AppHandle) -> Result<()> {
                     http: &http,
                     database: &c,
                 }
-                .listen_once(&cred, &access.context, &())
+                .listen_once(&cred, &access.context, &DesktopProjector)
                 .await
             }
             .await;

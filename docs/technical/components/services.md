@@ -51,11 +51,25 @@ No se añaden eventos públicos en este track. Los recibos y páginas remotas no
 eventos de negocio. Los errores usan códigos estables y mensajes sin SQL, tokens,
 payloads de transporte o huellas. No se añaden dependencias.
 
-Pruebas: `cargo test --workspace --locked components::services`; `pnpm quality` y
-`pnpm build:desktop`. Se usan SQLite temporal y datos sintéticos. Las pruebas de
-contrato del bundle son T11; el registro compuesto del ciclo/SSE y la integración
-HTTP completa son T12. Hasta ese registro, el ciclo normal conserva su proyector
-vacío. API/OIDC reales y revisión manual del usuario no se acreditan.
+DesktopProjector compone los dos proyectores en components/projector.rs; el ciclo
+normal y SSE de identity usan esa misma composición. Cada llamada delega con la
+transacción recibida; no cambia el envío, los recibos, el cursor ni la recuperación.
+La consulta de services resuelve sus provisionales después de recibo y proyección.
+
+Pruebas: `cargo test --workspace --locked components::services`,
+`cargo test --workspace --locked components::sync::contract_tests` y
+`cargo test --workspace --locked catalog_integration_tests`; `pnpm quality` y
+`pnpm build:desktop`. Las fixtures contrastan las diez acciones y sus payloadModels
+con el bundle fijo; se comprueban sus cinco hashes y los modelos de estado existentes.
+El comprobador estructural de las fixtures no sustituye las reglas del servidor.
+La prueba HTTP loopback usa SQLite temporal y datos sintéticos: crea offline,
+reabre, envía con el coordinador, recibe accepted y proyecta; la consulta retira el
+provisional confirmado y conserva el recibo. VERSION_CONFLICT, remove, reapertura
+y captura nueva conservan la intención. La captura reconstruye las cuatro vistas
+y conserva otra cuenta local. Una oferta (version=2, serviceVersion=2) avanza a
+(2,3); una versión propia 1 con serviceVersion=99 no la reemplaza.
+API/OIDC reales, SSE con el nuevo catálogo en una sesión real y revisión manual
+del usuario no se acreditan. C04 requiere revisión del usuario.
 
 Fuentes: [transacciones rusqlite 0.40.2](https://docs.rs/rusqlite/0.40.2/rusqlite/struct.Transaction.html),
 [bloqueo IMMEDIATE](https://docs.rs/rusqlite/0.40.2/rusqlite/struct.Connection.html#method.transaction_with_behavior),

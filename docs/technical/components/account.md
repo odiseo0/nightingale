@@ -32,15 +32,19 @@ conflict/rejected permanecen visibles. Solo accepted dispara sync_now; si falla 
 descarga, se mantiene accepted con refreshStatus=failed. Se comparte la puerta de
 identity para evitar cambio de sesión durante el refresco de acceso y el envío.
 
-Límites para C02: el registro del proyector compuesto sigue reservado a T12. Hasta
-entonces, las pruebas invocan AccountProjector con datos sintéticos; el ciclo normal
-todavía usa el proyector vacío. No se acredita API/OIDC real ni revisión manual del
-usuario. El usuario decidió mantener los DTO sin expectedAccountId: la sesión Rust
+DesktopProjector compone AccountProjector y ServicesProjector con la misma
+transacción. identity/desktop.rs lo usa en el ciclo normal y al despertar por SSE.
+El proyector solo escribe vistas; los cambios online-only no pasan por el Outbox.
+La integración HTTP sintética reconstruye la cuenta mediante una captura nueva.
+No se acredita API/OIDC real ni revisión manual del usuario.
+El usuario decidió mantener los DTO sin expectedAccountId: la sesión Rust
 al ejecutar fija el destino; un formulario previo no tiene una guardia atómica que
 lo vincule con la cuenta que mostraba.
 
 Pruebas: `cargo test --workspace --locked components::account` (HTTP loopback para
-los casos online), pruebas del runner, `pnpm quality` y `pnpm build:desktop`.
+los tres casos online, sin escritura local),
+`cargo test --workspace --locked catalog_integration_tests`, pruebas del runner,
+`pnpm quality` y `pnpm build:desktop`.
 El contrato aprobado está en
 [plan.md](../../../tasks/P-20261102-01-account-services-catalog/plan.md).
 

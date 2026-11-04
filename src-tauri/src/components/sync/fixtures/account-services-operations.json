@@ -1,0 +1,153 @@
+[
+  {
+    "payloadModel": "AccountDetailsPatch",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000100",
+      "contractVersion": 1,
+      "action": "UpdateAccountDetails",
+      "entityKey": "019a1234-0000-7000-8000-000000000001",
+      "expectedVersion": 1,
+      "payload": {
+        "displayName": "Synthetic"
+      },
+      "dependsOn": []
+    }
+  },
+  {
+    "payloadModel": "AccountPolicyPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000101",
+      "contractVersion": 1,
+      "action": "UpdateAccountPolicy",
+      "entityKey": "019a1234-0000-7000-8000-000000000001",
+      "expectedVersion": 1,
+      "payload": {
+        "noShowGraceMinutes": 15
+      },
+      "dependsOn": []
+    }
+  },
+  {
+    "payloadModel": "MembershipStatusPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000102",
+      "contractVersion": 1,
+      "action": "SetAccountStatus",
+      "entityKey": "019a1234-0000-7000-8000-000000000001",
+      "expectedVersion": 1,
+      "payload": {
+        "status": "active"
+      },
+      "dependsOn": []
+    }
+  },
+  {
+    "payloadModel": "CreateServicePayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000103",
+      "contractVersion": 1,
+      "action": "CreateService",
+      "entityKey": "019a1234-0000-7000-8000-000000000005",
+      "expectedVersion": 0,
+      "payload": {
+        "professionalId": "019a1234-0000-7000-8000-000000000004",
+        "name": "Synthetic",
+        "defaultDurationMinutes": 30
+      },
+      "dependsOn": []
+    }
+  },
+  {
+    "payloadModel": "ServicePatch",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000104",
+      "contractVersion": 1,
+      "action": "UpdateService",
+      "entityKey": "019a1234-0000-7000-8000-000000000005",
+      "expectedVersion": 1,
+      "payload": {
+        "name": "Changed"
+      },
+      "dependsOn": []
+    }
+  },
+  {
+    "payloadModel": "ServiceStatusPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000105",
+      "contractVersion": 1,
+      "action": "SetServiceStatus",
+      "entityKey": "019a1234-0000-7000-8000-000000000005",
+      "expectedVersion": 1,
+      "payload": {
+        "status": "inactive"
+      },
+      "dependsOn": []
+    }
+  },
+  {
+    "payloadModel": "OfferServicePayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000106",
+      "contractVersion": 1,
+      "action": "OfferService",
+      "entityKey": {
+        "professionalId": "019a1234-0000-7000-8000-000000000004",
+        "serviceId": "019a1234-0000-7000-8000-000000000005"
+      },
+      "expectedVersion": 0,
+      "payload": {
+        "durationMinutesOverride": null
+      },
+      "dependsOn": []
+    }
+  },
+  {
+    "payloadModel": "UpdateServiceOfferPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000107",
+      "contractVersion": 1,
+      "action": "UpdateServiceOffer",
+      "entityKey": {
+        "professionalId": "019a1234-0000-7000-8000-000000000004",
+        "serviceId": "019a1234-0000-7000-8000-000000000005"
+      },
+      "expectedVersion": 1,
+      "payload": {
+        "durationMinutesOverride": 45
+      },
+      "dependsOn": []
+    }
+  },
+  {
+    "payloadModel": "ServiceStatusPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000108",
+      "contractVersion": 1,
+      "action": "SetServiceOfferStatus",
+      "entityKey": {
+        "professionalId": "019a1234-0000-7000-8000-000000000004",
+        "serviceId": "019a1234-0000-7000-8000-000000000005"
+      },
+      "expectedVersion": 1,
+      "payload": {
+        "status": "active"
+      },
+      "dependsOn": []
+    }
+  },
+  {
+    "payloadModel": "ProfessionalPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000109",
+      "contractVersion": 1,
+      "action": "UpdateProfessionalProfile",
+      "entityKey": "019a1234-0000-7000-8000-000000000004",
+      "expectedVersion": 1,
+      "payload": {
+        "publicName": "Synthetic"
+      },
+      "dependsOn": []
+    }
+  }
+]

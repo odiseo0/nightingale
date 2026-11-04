@@ -12,6 +12,9 @@ pub mod snapshot;
 mod contract_tests;
 
 #[cfg(test)]
+mod catalog_integration_tests;
+
+#[cfg(test)]
 mod matrix_tests;
 
 #[cfg(test)]

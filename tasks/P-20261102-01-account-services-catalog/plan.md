@@ -1,8 +1,8 @@
 # P-20261102-01-account-services-catalog: Cuenta y catálogo de servicios
 
-**Status:** In progress — C03 presentado el 2026-11-03; ejecución detenida para revisión
+**Status:** Completado — T01–T13 y C04 aprobados el 2026-11-04
 **Created:** 2026-11-02
-**Updated:** 2026-11-03
+**Updated:** 2026-11-04
 **Task list:** [todo.md](todo.md)
 **Plan relacionado:** [P-20261029-03-core-engine](../P-20261029-03-core-engine/plan.md) (motor transversal, en progreso; este plan lo consume, no lo reabre). Contratos iniciales: [core-next-tracks.md](../../docs/operations/core-next-tracks.md) §«Cuenta y catálogo de servicios».
 
@@ -403,3 +403,17 @@ El usuario aprobó C02 tras revisar la organización de datos y documentación y
 ## Estado al presentar C03 (2026-11-03)
 
 T07–T10 verificadas. pnpm quality (154 unitarias + 5 integración + 1 doctest, 6 manuales ignoradas), pnpm build:desktop y git diff --check correctos. Evidencia, decisiones y fuentes en todo.md §C03. El usuario autorizó continuar hasta este checkpoint; no se inicia T11. Sigue pendiente el registro compuesto y la prueba HTTP completa de catálogo de T12, API/OIDC real y aprobación C03.
+
+## Aprobación C03 y traspaso (2026-11-04)
+
+El usuario aprobó C03 y pidió un prompt para continuar en una nueva sesión. T11–T13 siguen pendientes; la siguiente sesión debe completarlas en orden y presentar C04 para revisión. La aprobación C03 no acredita pruebas externas ni el recorrido HTTP de catálogo reservado a T12. Esta sesión solo registra la aprobación y prepara el traspaso, sin iniciar T11.
+
+## Estado al presentar C04 (2026-11-04)
+
+T11–T13 completadas en orden tras la aprobación C03. Se añaden diez fixtures contra el bundle fijo y DesktopProjector, usado por ciclo y SSE. La prueba HTTP sintética recorre creación offline, envío, aceptación, proyección, resolución, conflicto, remove, reapertura y captura nueva, con dos ámbitos locales. Evidencia y límites en [todo.md](todo.md#c04-aceptación-del-track). `cargo test --workspace --locked`, `pnpm quality`, `pnpm build:desktop` y `git diff --check` correctos.
+
+La ejecución se detiene para revisión C04. No se acredita aprobación C04, API/OIDC real ni pruebas manuales. No se hacen commits ni push. Las decisiones C01–C03 siguen vigentes.
+
+## Aprobación C04 (2026-11-04)
+
+El usuario aprobó C04: «Listo, todo bien». El plan queda completado. La aprobación no acredita API/OIDC reales, recorrido manual de UI, SSE real con catálogo ni las seis pruebas manuales ignoradas. Se conservan los límites registrados. Sin commits ni push.

@@ -9,6 +9,75 @@ fn contract() -> Value {
     .unwrap()
 }
 
+#[test]
+fn account_services_actions_payload_models_and_keys_match_fixed_bundle() {
+    let capabilities: Value = serde_json::from_str(include_str!(
+        "../../../../docs/contracts/api-v1/capabilities.json"
+    ))
+    .unwrap();
+    let schema: Value = serde_json::from_str(include_str!(
+        "../../../../docs/contracts/api-v1/accepted-operations.schema.json"
+    ))
+    .unwrap();
+    let fixtures: Vec<Value> =
+        serde_json::from_str(include_str!("fixtures/account-services-operations.json")).unwrap();
+    assert_eq!(fixtures.len(), 10);
+    let mut actions = std::collections::BTreeSet::new();
+    for fixture in fixtures {
+        let operation = &fixture["operation"];
+        let action = operation["action"].as_str().unwrap();
+        assert!(actions.insert(action.to_owned()));
+        assert!(
+            capabilities["operationCatalog"]
+                .as_array()
+                .unwrap()
+                .contains(&json!(action))
+        );
+        let model = capabilities["payloadModels"][action].as_str().unwrap();
+        assert_eq!(model.rsplit('.').next().unwrap(), fixture["payloadModel"]);
+        check(&schema, &schema, operation, action).unwrap();
+        let envelope: OperationEnvelope = serde_json::from_value(operation.clone()).unwrap();
+        assert_eq!(serde_json::to_value(envelope).unwrap(), *operation);
+        let online = capabilities["onlineOnlyActions"]
+            .as_array()
+            .unwrap()
+            .contains(&json!(action));
+        assert_eq!(online, action.contains("Account"));
+        if action.contains("Offer") {
+            assert_eq!(operation["entityKey"].as_object().unwrap().len(), 2);
+            for field in ["professionalId", "serviceId"] {
+                crate::shared_kernel::id::canonical_uuid_v7(
+                    operation["entityKey"][field].as_str().unwrap(),
+                )
+                .unwrap();
+            }
+            let mut change = super::download::tests::group().changes.remove(10);
+            assert_eq!(
+                change
+                    .entity_key
+                    .as_object()
+                    .unwrap()
+                    .keys()
+                    .collect::<Vec<_>>(),
+                operation["entityKey"]
+                    .as_object()
+                    .unwrap()
+                    .keys()
+                    .collect::<Vec<_>>()
+            );
+            change
+                .entity_key
+                .as_object_mut()
+                .unwrap()
+                .remove("serviceId");
+            assert!(change.translate(&super::download::tests::scope()).is_err());
+        }
+        let mut invalid = operation.clone();
+        invalid["payload"]["unexpected"] = json!(true);
+        assert!(check(&schema, &schema, &invalid, action).is_err());
+    }
+}
+
 // Test-only structural checks for the schema forms used in these fixtures.
 // Business validation, IANA zones and full date arithmetic belong to API.
 fn check(root: &Value, schema: &Value, value: &Value, path: &str) -> Result<(), String> {

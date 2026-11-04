@@ -1,8 +1,8 @@
 # P-20261102-01-account-services-catalog — Tareas
 
 **Plan:** [plan.md](plan.md)
-**Status:** In progress — C03 presentado; detenido para revisión del usuario
-**Updated:** 2026-11-03
+**Status:** Completado — T01–T13 y C04 aprobados el 2026-11-04
+**Updated:** 2026-11-04
 
 ## T01: Cerrar los contratos del track
 
@@ -157,7 +157,7 @@
 
 **Presentado:** 2026-11-03. El usuario autorizó continuar hasta C03; se detiene la ejecución antes de T11.
 
-- [ ] El usuario revisa: alta offline → sincronización → aceptado; conflicto visible; asistente sin escritura.
+- [x] C03 aprobado por el usuario el 2026-11-04: «Aprobado, por favor dame un prompt para continuar el desarrollo de esta tarea en una nueva sesión». Esta aprobación no acredita las pruebas HTTP completas y manuales pendientes de T12.
 
 **Tareas completadas:** T07–T10. Ocho casos nativos y comandos específicos, cliente services.ts, UI en features/services, repositorio y proyectores propios. Consulta aceptada por CatalogQuery, vista fusionada con borradores y revisiones, escrituras locales atómicas con Outbox y comprobación de profesional propio.
 
@@ -176,31 +176,75 @@
 
 **Fuentes contrastadas y versiones de lockfile:** rusqlite 0.40.2 para transacciones (https://docs.rs/rusqlite/0.40.2/rusqlite/struct.Connection.html#method.transaction_with_behavior y https://docs.rs/rusqlite/0.40.2/rusqlite/struct.Transaction.html); SQLite UPSERT con guardia doble (https://www.sqlite.org/lang_upsert.html); Serde 1.0.229 para ausencia frente a null y campos camelCase (https://serde.rs/field-attrs.html y https://serde.rs/container-attrs.html); Tauri/API JS 2.12.4 para comandos y permisos (https://v2.tauri.app/develop/calling-rust/#passing-arguments, https://v2.tauri.app/security/permissions/#app-manifest y https://v2.tauri.app/reference/javascript/api/namespacecore/#invoke); React 19.3.1 para limpieza de lecturas locales (https://react.dev/reference/react/useEffect#fetching-data-with-effects).
 
-**Pendientes y límites:** aprobación C03 del usuario; T11–T13. El registro compuesto de AccountProjector/ServicesProjector en ciclo y SSE sigue reservado a T12: ambos &() permanecen en identity/desktop.rs. Las pruebas actuales usan SQLite temporal, recibos sintéticos y grupos aplicados con ServicesProjector; no acreditan todavía el recorrido HTTP completo de catálogo desde dispatch hasta proyección ni una prueba manual UI autenticada. Los casos de permisos/solo lectura sí pasan con datos sintéticos en la entrada local. API/OIDC de desarrollo y las seis pruebas manuales ignoradas siguen pendientes, sin acreditación.
+**Pendientes y límites:** T11–T13; C03 aprobado el 2026-11-04. El registro compuesto de AccountProjector/ServicesProjector en ciclo y SSE sigue reservado a T12: ambos &() permanecen en identity/desktop.rs. Las pruebas actuales usan SQLite temporal, recibos sintéticos y grupos aplicados con ServicesProjector; no acreditan todavía el recorrido HTTP completo de catálogo desde dispatch hasta proyección ni una prueba manual UI autenticada. Los casos de permisos/solo lectura sí pasan con datos sintéticos en la entrada local. API/OIDC de desarrollo y las seis pruebas manuales ignoradas siguen pendientes, sin acreditación.
 
 
 ## T11: Pruebas de contrato del consumidor
 
-- [ ] Fixtures contra el bundle fijo: hashes del manifiesto, presencia de las 10 acciones, correspondencia acción↔modelo según `capabilities.json`, claves compuestas.
-- [ ] Los modelos de estado usados ya existen en `remote_models.rs`; verificar que no hay deriva respecto al bundle.
-- [ ] Nunca editar artefactos de `docs/contracts/api-v1/`.
+- [x] Fixtures contra el bundle fijo: hashes del manifiesto, presencia de las 10 acciones, correspondencia acción↔modelo según `capabilities.json`, claves compuestas.
+- [x] Los modelos de estado usados ya existen en `remote_models.rs`; verificar que no hay deriva respecto al bundle.
+- [x] Nunca editar artefactos de `docs/contracts/api-v1/`.
+
+**Verificación T11 (2026-11-04):** `cargo test --workspace --locked components::sync::contract_tests`: 4 correctas. Diez fixtures contrastan acciones, payloadModels, payloads, claves de oferta y online-only. Se reutilizan las pruebas de hashes 5/5 y modelos de estado remotos. El comprobador estructural no sustituye las reglas de negocio del servidor. Bundle sin editar. Fuentes: serde_json 1.0.154 (https://docs.rs/serde_json/1.0.154/serde_json/fn.from_value.html), sha2 0.10.9 (https://docs.rs/sha2/0.10.9/sha2/#one-shot-api).
 
 ## T12: Integración y punta a punta
 
-- [ ] Proyector compuesto `(AccountProjector, ServicesProjector)` registrado en `identity/desktop.rs` (sustituye `&()` en ciclo y SSE).
-- [ ] Escenarios sintéticos con servidor loopback y dos perfiles donde aplique: crear servicio offline → dispatch → `accepted` → proyección; `VERSION_CONFLICT` conserva intención; `remove` retira vista; reapertura conserva; oferta con `serviceVersion` mayor proyecta; captura nueva reconstruye vistas conservando intenciones.
-- [ ] Confirmar que casos online-only no dejan intenciones en Outbox.
+- [x] DesktopProjector delega en AccountProjector y ServicesProjector, registrado en `identity/desktop.rs` (sustituye `&()` en ciclo y SSE).
+- [x] Escenarios sintéticos con servidor loopback y dos perfiles donde aplique: crear servicio offline → dispatch → `accepted` → proyección; `VERSION_CONFLICT` conserva intención; `remove` retira vista; reapertura conserva; oferta con `serviceVersion` mayor proyecta; captura nueva reconstruye vistas conservando intenciones.
+- [x] Confirmar que casos online-only no dejan intenciones en Outbox.
+
+**Verificación T12 (2026-11-04):** `cargo test --workspace --locked catalog_integration_tests`: 1 prueba HTTP completa correcta tras repetir fuera del aislamiento que bloqueaba loopback. Creación offline durable antes de HTTP; dos ciclos reales del coordinador envían y descargan accepted/conflict; services retira el provisional confirmado al consultar, conservando recibo. Descarga remove conserva el conflicto; reapertura lo mantiene. Oferta (2,2) pasa a (2,3), rechaza (1,99); captura nueva reconstruye cuenta, profesional, servicio y oferta y conserva intención/Outbox y otra cuenta local. Cada respuesta comprueba que HTTP no mantiene el mutex SQLite. DesktopProjector delega reset/project en ambos adaptadores con la misma transacción; ciclo y SSE lo usan. No se cambian reglas sync. `cargo test --workspace --locked all_three_account_changes_refresh_access_and_send_without_local_writes`: 1 correcta, las tres acciones online-only sin Outbox ni vista local.
 
 ## T13: Calidad, guías y cierre
 
-- [ ] Guías finales de `account` y `services` en docs/technical/components (PMD §26/§27.2; ubicación solicitada por el usuario).
-- [ ] `cargo test --workspace --locked`, `pnpm quality`, `pnpm build:desktop`, `git diff --check` en verde.
-- [ ] Actualizar [core-next-tracks.md](../../docs/operations/core-next-tracks.md) si el recorrido real difiere de la referencia (solo con aprobación del usuario).
+- [x] Guías finales de `account` y `services` en docs/technical/components (PMD §26/§27.2; ubicación solicitada por el usuario).
+- [x] `cargo test --workspace --locked`, `pnpm quality`, `pnpm build:desktop`, `git diff --check` en verde.
+- [x] Se contrastó [core-next-tracks.md](../../docs/operations/core-next-tracks.md): el recorrido coincide. No requiere cambios.
+
+**Verificación T13 (2026-11-04):** `cargo test --workspace --locked` y `pnpm quality`: 156 unitarias + 5 integración + 1 doctest correctos; 6 manuales ignoradas. quality incluye build web, formato y Clippy con `-D warnings`. `pnpm build:desktop`: correcto, target/debug/nightingale.exe sin instalador. `git diff --check`: correcto. Hashes del bundle 5/5 y enlaces de las dos guías correctos. Sin cambios en contratos, migraciones 0001–0004, dependencias/lockfiles ni reglas internas de sync.
 
 ## C04: Aceptación del track
 
-- [ ] Revisión del usuario de la evidencia local y decisión de aprobación.
-- [ ] Pendientes externos (API/OIDC de desarrollo) quedan explícitos, no acreditados.
+- [x] C04 aprobado por el usuario el 2026-11-04: «Listo, todo bien».
+- [x] Pendientes externos (API/OIDC de desarrollo) quedan explícitos, no acreditados.
+
+**Presentado:** 2026-11-04. Se detiene el trabajo para revisión C04; no se registra aprobación.
+
+| Comando | Resultado de esta sesión |
+|---|---|
+| `cargo test --workspace --locked components::sync::contract_tests` | 4 correctas; hashes, diez acciones/payloadModels, claves y estados remotos. |
+| `cargo test --workspace --locked catalog_integration_tests` | 1 correcta con HTTP loopback; primera ejecución bloqueada por aislamiento, sin acreditación. |
+| `cargo test --workspace --locked all_three_account_changes_refresh_access_and_send_without_local_writes` | 1 correcta; tres acciones online-only sin escritura local. |
+| `cargo test --workspace --locked` | 156 unitarias + 5 integración + 1 doctest correctos; 6 manuales ignoradas. |
+| `pnpm quality` | Build web, formato, Clippy y suite completa correctos; mismos recuentos. |
+| `pnpm build:desktop` | Correcto; ejecutable debug, sin instalador. |
+| `git diff --check` | Correcto. |
+
+**Decisiones:** composición en components/projector.rs, fuera de las reglas de sync;
+reset/project comparten la transacción recibida. Solo services resuelve sus intenciones.
+Se reutilizan las pruebas de hashes/modelos y de los tres cambios online-only.
+Documentación en docs/technical/components, listas en shared_kernel/reference_data,
+DTO sin expectedAccountId y modelos remotos solo en adaptadores: sin cambios.
+El recorrido coincide con core-next-tracks.md; no se modifica esa referencia.
+Se conservan los cambios previos de plan.md y todo.md. Sin commits ni push.
+
+**Fuentes verificadas (docs-first-framework-code):** rusqlite 0.40.2,
+https://docs.rs/rusqlite/0.40.2/rusqlite/struct.Transaction.html#example
+(delegación con la misma transacción y rollback); serde_json 1.0.154,
+https://docs.rs/serde_json/latest/serde_json/fn.from_value.html
+(la página consultada identifica 1.0.154; fixtures y conversión tipada);
+sha2 0.10.9, https://docs.rs/sha2/0.10.9/sha2/#one-shot-api
+(comprobación de hashes reutilizada). Versiones contrastadas con Cargo.lock.
+minimal-code: se reutilizan puertos, modelos, casos, servidor y ayudas existentes;
+sin dependencias, nuevos modelos remotos ni cambios de reglas de sincronización.
+
+**Pendientes no acreditados:** API/OIDC reales para este catálogo; recorrido manual
+de UI autenticada; seis pruebas manuales ignoradas; SSE con datos de catálogo en una
+sesión real; aprobación del usuario C04. Las pruebas HTTP usan datos sintéticos.
+La matriz previa de dos perfiles del motor también pasa en la suite, pero no sustituye
+la prueba manual de catálogo en dos dispositivos. El límite del formulario sin
+expectedAccountId sigue documentado. Los avisos de caché de compilación indican
+copia de archivos al no poder crear enlaces físicos; no impidieron los comandos.
 
 ## Ajuste de organización durante revisión C02 — 2026-11-03
 
@@ -209,3 +253,7 @@
 - [x] Índice, enlaces y referencias del track actualizados. Formato del usuario en application.rs y adapters/outbound.rs preservado.
 - [x] Comprobaciones del traslado y evidencia final: `cargo test --workspace --locked components::account` (15 correctas, con HTTP loopback); `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo fmt --all -- --check` y `git diff --check` correctos. Comparación de contenido contra HEAD (normalizando LF/CRLF): listas idénticas, 249 países y 598 zonas. Enlaces relativos válidos en las guías trasladadas, índice, guías operativas y track; ningún Markdown permanece en src-tauri/src. Hashes del bundle API intactos. Los cambios de formato del usuario siguen limitados a 23 inserciones/2 borrados en outbound.rs y una línea en application.rs, como al empezar. No se repiten build web/escritorio: no cambian TS, configuración ni recursos de UI.
 - [x] Aprobación C02 recibida el 2026-11-03; autorización para T07–T10 hasta presentar C03.
+
+## Aprobación C04 (2026-11-04)
+
+El usuario aprobó C04: «Listo, todo bien». El plan queda completado. La aprobación no acredita API/OIDC reales, recorrido manual de UI, SSE real con catálogo ni las seis pruebas manuales ignoradas. Se conservan los límites registrados. Sin commits ni push.

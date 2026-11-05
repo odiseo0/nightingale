@@ -78,6 +78,84 @@ fn account_services_actions_payload_models_and_keys_match_fixed_bundle() {
     }
 }
 
+#[test]
+fn patients_actions_payload_models_and_keys_match_fixed_bundle() {
+    let capabilities: Value = serde_json::from_str(include_str!(
+        "../../../../docs/contracts/api-v1/capabilities.json"
+    ))
+    .unwrap();
+    let schema: Value = serde_json::from_str(include_str!(
+        "../../../../docs/contracts/api-v1/accepted-operations.schema.json"
+    ))
+    .unwrap();
+    let fixtures: Vec<Value> =
+        serde_json::from_str(include_str!("fixtures/patients-operations.json")).unwrap();
+    assert_eq!(fixtures.len(), 11);
+    let mut actions = std::collections::BTreeSet::new();
+    for fixture in fixtures {
+        let operation = &fixture["operation"];
+        let action = operation["action"].as_str().unwrap();
+        assert!(actions.insert(action.to_owned()));
+        assert!(
+            capabilities["operationCatalog"]
+                .as_array()
+                .unwrap()
+                .contains(&json!(action))
+        );
+        let model = capabilities["payloadModels"][action].as_str().unwrap();
+        assert_eq!(model.rsplit('.').next().unwrap(), fixture["payloadModel"]);
+        check(&schema, &schema, operation, action).unwrap();
+        let envelope: OperationEnvelope = serde_json::from_value(operation.clone()).unwrap();
+        assert_eq!(serde_json::to_value(envelope).unwrap(), *operation);
+        assert!(
+            !capabilities["onlineOnlyActions"]
+                .as_array()
+                .unwrap()
+                .contains(&json!(action)),
+            "{action} must stay offline-capable"
+        );
+        if action.contains("Relationship") {
+            assert_eq!(operation["entityKey"].as_object().unwrap().len(), 2);
+            for field in ["patientId", "contactPersonId"] {
+                crate::shared_kernel::id::canonical_uuid_v7(
+                    operation["entityKey"][field].as_str().unwrap(),
+                )
+                .unwrap();
+            }
+            let mut change = super::download::tests::group().changes.remove(8);
+            assert!(matches!(
+                change.entity_type,
+                super::remote::EntityType::PatientContact
+            ));
+            assert_eq!(
+                change
+                    .entity_key
+                    .as_object()
+                    .unwrap()
+                    .keys()
+                    .collect::<Vec<_>>(),
+                operation["entityKey"]
+                    .as_object()
+                    .unwrap()
+                    .keys()
+                    .collect::<Vec<_>>()
+            );
+            change
+                .entity_key
+                .as_object_mut()
+                .unwrap()
+                .remove("contactPersonId");
+            assert!(change.translate(&super::download::tests::scope()).is_err());
+        } else {
+            crate::shared_kernel::id::canonical_uuid_v7(operation["entityKey"].as_str().unwrap())
+                .unwrap();
+        }
+        let mut invalid = operation.clone();
+        invalid["payload"]["unexpected"] = json!(true);
+        assert!(check(&schema, &schema, &invalid, action).is_err());
+    }
+}
+
 // Test-only structural checks for the schema forms used in these fixtures.
 // Business validation, IANA zones and full date arithmetic belong to API.
 fn check(root: &Value, schema: &Value, value: &Value, path: &str) -> Result<(), String> {

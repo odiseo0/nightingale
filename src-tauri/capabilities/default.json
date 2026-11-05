@@ -28,6 +28,24 @@
     "allow-services-offer-service",
     "allow-services-update-service-offer",
     "allow-services-set-service-offer-status",
-    "allow-services-update-professional-profile"
+    "allow-services-update-professional-profile",
+    "allow-patients-register-patient",
+    "allow-patients-update-patient-profile",
+    "allow-patients-set-patient-completion",
+    "allow-patients-set-patient-profile-status",
+    "allow-patients-add-patient-identifier",
+    "allow-patients-list-patients",
+    "allow-patients-get-patient",
+    "allow-patients-list-patient-identifiers",
+    "allow-patients-create-contact-person",
+    "allow-patients-update-contact-person",
+    "allow-patients-set-contact-person-status",
+    "allow-patients-create-patient-contact-relationship",
+    "allow-patients-update-patient-contact-relationship",
+    "allow-patients-set-patient-contact-relationship-status",
+    "allow-patients-list-contacts",
+    "allow-patients-get-contact",
+    "allow-patients-list-patient-contacts",
+    "allow-patients-list-contact-patients"
   ]
 }

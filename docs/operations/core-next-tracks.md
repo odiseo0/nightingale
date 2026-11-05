@@ -10,6 +10,11 @@ Contrato API: `patient_profile`, `patient_identifier`, `contact_person`, `patien
 
 Offline: guardar con el último permiso válido y emitir una intención durable. API comprueba completitud, representación y permisos al aceptar. Un conflicto conserva ambas versiones para revisión. Las consultas públicas para Citas deben devolver referencias y datos administrativos necesarios; no ofrecen SQL ni tablas ajenas.
 
+Estado: implementado en el plan P-20261104-01-patients-core (ver
+[guía del componente](../technical/components/patients.md)). La pantalla React,
+la edad a fecha de cita y la prueba con API de desarrollo real quedan fuera o
+pendientes de su entorno.
+
 ## Cuenta y catálogo de servicios
 
 Propietarios: configuración de cuenta y componente `services`, con puertos públicos distintos. Casos nativos: consultar preferencias, editar datos/política online, crear servicio y ofrecerlo en una cuenta. Datos: vista de cuenta, profesional, catálogo, ofertas e intenciones propias.

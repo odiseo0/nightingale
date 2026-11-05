@@ -1,0 +1,195 @@
+[
+  {
+    "payloadModel": "RegisterPatientPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000200",
+      "contractVersion": 1,
+      "action": "RegisterPatient",
+      "entityKey": "019a1234-0000-7000-8000-000000000020",
+      "expectedVersion": 0,
+      "payload": {
+        "fullName": "Menor sintético",
+        "birthDate": "2018-02-28",
+        "phoneCode": null,
+        "phone": null,
+        "identificationBasis": "minor_without_document",
+        "identifiers": [
+          {
+            "id": "019a1234-0000-7000-8000-000000000021",
+            "issuingCountry": "VE",
+            "documentType": "national_id",
+            "documentNumber": "V-00.012-3"
+          }
+        ]
+      },
+      "dependsOn": []
+    }
+  },
+  {
+    "payloadModel": "PatientPatch",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000201",
+      "contractVersion": 1,
+      "action": "UpdatePatientProfile",
+      "entityKey": "019a1234-0000-7000-8000-000000000020",
+      "expectedVersion": 1,
+      "payload": {
+        "fullName": "Menor sintético Pérez",
+        "birthDate": null,
+        "phoneCode": "+58",
+        "phone": "4140000000",
+        "identificationBasis": "minor_without_document"
+      },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000200"]
+    }
+  },
+  {
+    "payloadModel": "PatientCompletionPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000202",
+      "contractVersion": 1,
+      "action": "SetPatientCompletion",
+      "entityKey": "019a1234-0000-7000-8000-000000000020",
+      "expectedVersion": 2,
+      "payload": { "completionStatus": "complete" },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000201"]
+    }
+  },
+  {
+    "payloadModel": "PatientStatusPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000203",
+      "contractVersion": 1,
+      "action": "SetPatientProfileStatus",
+      "entityKey": "019a1234-0000-7000-8000-000000000020",
+      "expectedVersion": 3,
+      "payload": { "status": "inactive" },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000202"]
+    }
+  },
+  {
+    "payloadModel": "AddPatientIdentifierPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000204",
+      "contractVersion": 1,
+      "action": "AddPatientIdentifier",
+      "entityKey": "019a1234-0000-7000-8000-000000000021",
+      "expectedVersion": 0,
+      "payload": {
+        "patientId": "019a1234-0000-7000-8000-000000000020",
+        "issuingCountry": "VE",
+        "documentType": "passport",
+        "documentNumber": "P-0009"
+      },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000201"]
+    }
+  },
+  {
+    "payloadModel": "ContactData",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000205",
+      "contractVersion": 1,
+      "action": "CreateContactPerson",
+      "entityKey": "019a1234-0000-7000-8000-000000000022",
+      "expectedVersion": 0,
+      "payload": {
+        "fullName": "Responsable sintético",
+        "phoneCode": "+58",
+        "phone": "4120000000",
+        "issuingCountry": null,
+        "documentType": null,
+        "documentNumber": null
+      },
+      "dependsOn": []
+    }
+  },
+  {
+    "payloadModel": "ContactPatch",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000206",
+      "contractVersion": 1,
+      "action": "UpdateContactPerson",
+      "entityKey": "019a1234-0000-7000-8000-000000000022",
+      "expectedVersion": 1,
+      "payload": {
+        "fullName": "Responsable sintético Pérez",
+        "phoneCode": "+58",
+        "phone": null,
+        "issuingCountry": "VE",
+        "documentType": "national_id",
+        "documentNumber": "V-1"
+      },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000205"]
+    }
+  },
+  {
+    "payloadModel": "PatientStatusPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000207",
+      "contractVersion": 1,
+      "action": "SetContactPersonStatus",
+      "entityKey": "019a1234-0000-7000-8000-000000000022",
+      "expectedVersion": 2,
+      "payload": { "status": "inactive" },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000206"]
+    }
+  },
+  {
+    "payloadModel": "RelationshipData",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000208",
+      "contractVersion": 1,
+      "action": "CreatePatientContactRelationship",
+      "entityKey": {
+        "patientId": "019a1234-0000-7000-8000-000000000020",
+        "contactPersonId": "019a1234-0000-7000-8000-000000000022"
+      },
+      "expectedVersion": 0,
+      "payload": {
+        "relationshipKind": "mother",
+        "isResponsibleContact": true,
+        "validFrom": "2026-01-01T08:00:00-04:00",
+        "validUntil": null
+      },
+      "dependsOn": [
+        "019a1234-0000-7000-8000-000000000201",
+        "019a1234-0000-7000-8000-000000000205"
+      ]
+    }
+  },
+  {
+    "payloadModel": "RelationshipPatch",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000209",
+      "contractVersion": 1,
+      "action": "UpdatePatientContactRelationship",
+      "entityKey": {
+        "patientId": "019a1234-0000-7000-8000-000000000020",
+        "contactPersonId": "019a1234-0000-7000-8000-000000000022"
+      },
+      "expectedVersion": 1,
+      "payload": {
+        "relationshipKind": "guardian",
+        "isResponsibleContact": true,
+        "validFrom": "2026-01-01T08:00:00-04:00",
+        "validUntil": "2030-01-01T00:00:00-04:00"
+      },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000208"]
+    }
+  },
+  {
+    "payloadModel": "PatientStatusPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-00000000020a",
+      "contractVersion": 1,
+      "action": "SetPatientContactRelationshipStatus",
+      "entityKey": {
+        "patientId": "019a1234-0000-7000-8000-000000000020",
+        "contactPersonId": "019a1234-0000-7000-8000-000000000022"
+      },
+      "expectedVersion": 2,
+      "payload": { "status": "inactive" },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000209"]
+    }
+  }
+]

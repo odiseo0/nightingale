@@ -44,6 +44,11 @@ const MIGRATIONS: &[Migration] = &[
         name: "0006_services",
         sql: include_str!("../../../migrations/0006_services.sql"),
     },
+    Migration {
+        version: 7,
+        name: "0007_patients",
+        sql: include_str!("../../../migrations/0007_patients.sql"),
+    },
 ];
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
@@ -263,7 +268,7 @@ mod tests {
             connection
                 .pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
                 .unwrap(),
-            6
+            MIGRATIONS.last().unwrap().version
         );
         for table in [
             "account_view",
@@ -537,6 +542,109 @@ mod tests {
         let fixture = Fixture::new();
         assert!(open(&fixture.0).is_err());
         assert!(fixture.0.is_dir());
+    }
+
+    fn seed_patients_schema_six(path: &Path) -> Connection {
+        let mut connection = Connection::open(path).unwrap();
+        migrate(&mut connection, &MIGRATIONS[..6]).unwrap();
+        connection.execute("INSERT INTO service_catalog_view VALUES ('a','u','d','s','p','Synthetic',30,'active',1)", []).unwrap();
+        connection
+            .execute(
+                "INSERT INTO account_preferences VALUES ('b','u','d','theme','\"dark\"',1)",
+                [],
+            )
+            .unwrap();
+        connection
+    }
+
+    #[test]
+    fn patients_upgrade_six_keeps_existing_data_and_reopens() {
+        let fixture = Fixture::new();
+        let path = fixture.database();
+        drop(seed_patients_schema_six(&path));
+        let connection = open(&path).unwrap();
+        assert_eq!(
+            connection
+                .pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
+                .unwrap(),
+            7
+        );
+        for table in [
+            "patient_profile_view",
+            "patient_identifier_view",
+            "contact_person_view",
+            "patient_contact_view",
+            "patient_local",
+        ] {
+            assert!(connection.table_exists(None, table).unwrap());
+        }
+        assert_eq!(
+            connection
+                .query_row(
+                    "SELECT name FROM service_catalog_view WHERE account_id='a'",
+                    [],
+                    |r| r.get::<_, String>(0)
+                )
+                .unwrap(),
+            "Synthetic"
+        );
+        assert_eq!(
+            connection
+                .query_row(
+                    "SELECT value FROM account_preferences WHERE account_id='b'",
+                    [],
+                    |r| r.get::<_, String>(0)
+                )
+                .unwrap(),
+            "\"dark\""
+        );
+        drop(connection);
+        let before = fs::read(&path).unwrap();
+        let connection = open(&path).unwrap();
+        assert_eq!(connection.total_changes(), 0);
+        assert_eq!(
+            connection
+                .query_row("PRAGMA integrity_check", [], |r| r.get::<_, String>(0))
+                .unwrap(),
+            "ok"
+        );
+        drop(connection);
+        assert_eq!(fs::read(path).unwrap(), before);
+    }
+
+    #[test]
+    fn patients_failed_seventh_migration_restores_six_byte_for_byte() {
+        let fixture = Fixture::new();
+        let path = fixture.database();
+        drop(seed_patients_schema_six(&path));
+        let before = fs::read(&path).unwrap();
+        let mut connection = Connection::open(&path).unwrap();
+        let broken_sql = format!("{}\nINVALID SQL;", MIGRATIONS[6].sql);
+        let mut migrations = MIGRATIONS.to_vec();
+        migrations[6].sql = &broken_sql;
+        assert!(migrate(&mut connection, &migrations).is_err());
+        assert_eq!(
+            connection
+                .pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
+                .unwrap(),
+            6
+        );
+        assert_eq!(
+            connection
+                .query_row("SELECT count(*) FROM schema_migrations", [], |r| r
+                    .get::<_, i64>(0))
+                .unwrap(),
+            6
+        );
+        assert!(!connection.table_exists(None, "patient_local").unwrap());
+        assert!(
+            !connection
+                .table_exists(None, "patient_profile_view")
+                .unwrap()
+        );
+        drop(connection);
+        assert_eq!(fs::read(&path).unwrap(), before);
+        assert!(open(&path).is_ok());
     }
 
     fn legacy_rows(connection: &Connection) -> Vec<Vec<rusqlite::types::Value>> {

@@ -1,15 +1,15 @@
 # P-20261104-01-patients-core: Núcleo de Pacientes
 
-**Status:** Approved
+**Status:** In progress
 **Created:** 2026-11-04
-**Updated:** 2026-11-04
+**Updated:** 2026-11-05
 **Task list:** [todo.md](todo.md)
 
 ## Aprobación y límite de ejecución
 
 El usuario aprobó el plan el 2026-11-04: «Lo veo bien, apruebo el plan. No comiences el desarrollo».
 
-La aprobación fija el alcance y los IDs T01–T18/C01–C06. No autoriza iniciar el desarrollo. Todas las tareas permanecen Todo y todos los checkpoints siguen pendientes. Guardar estos documentos no completa T01 ni acredita pruebas de Pacientes.
+El 2026-11-04 el usuario autorizó ejecutar T01–T03, en orden, y presentar C01. Esta instrucción sustituye «No comiences el desarrollo». Conserva alcance e IDs. El usuario aprobó C01 y autorizó continuar: «Por favor, puedes continuar con el plan. C01 está bien». Ejecutar T04–T06 en orden y detenerse en C02.
 
 ## Overview
 
@@ -34,7 +34,7 @@ Quedan fuera datos clínicos, fusión de duplicados, consentimiento de comunicac
 - [Reglas de planificación](../README.md) y [CONTRIBUTING](../../CONTRIBUTING.md).
 - Código actual: componentes services, identity y sync; DesktopProjector; migraciones 0001–0006 y registro SQLite.
 
-Los planes de motor transversal y cuenta/catálogo están completados; este plan consume sus interfaces y no reabre su historial. El repositorio todavía no tiene un componente patients. La composición existente ya conecta AccountProjector y ServicesProjector con el ciclo normal y SSE.
+Los planes de motor transversal y cuenta/catálogo están completados; este plan consume sus interfaces y no reabre su historial. Al aprobar el plan, el repositorio todavía no tenía un componente patients. La composición existente ya conecta AccountProjector y ServicesProjector con el ciclo normal y SSE.
 
 Durante la exploración previa pasaron las cuatro pruebas existentes de `components::sync::contract_tests` y las cinco huellas del bundle. Esta evidencia no acredita funcionalidad de Pacientes ni la futura prueba API real.
 
@@ -113,70 +113,76 @@ Corregir un conflicto o rechazo conocido crea otra operación mediante el caso e
 
 ## Dependency Order
 
-T01 → T02 → T03 → C01 → T04 → T05 → T06 → C02 → T07 → T08 → T09 → C03 → T10 → T11 → T12 → C04 → T13 → T14 → T15 → C05 → T16 → T17 → T18 → C06.
+T01 → T02 → T03 → C01 → T04 → T05 → T06 → C02 → T07 → T08 → T09 → T19 → T20 → T21 → C03 → T10 → T11 → T12 → C04 → T13 → T14 → T15 → C05 → T16 → T17 → T18 → C06.
 
 Un checkpoint pendiente detiene la fase siguiente hasta la revisión del usuario. Antes de cada cambio de código aplicar minimal-code tras trazar el flujo real y docs-first-framework-code cuando corresponda. El dominio local no depende de que el entorno remoto esté disponible.
 
 ## Task List
 
 ### Fase 1: Contratos y persistencia
-- [ ] T01: Contratos del componente.
-- [ ] T02: Dominio de fichas y formatos.
-- [ ] T03: Persistencia local.
+- [x] T01: Contratos del componente.
+- [x] T02: Dominio de fichas y formatos.
+- [x] T03: Persistencia local.
 
 ### C01: Revisión de contratos y persistencia
-- [ ] Revisar interfaces, límites y migración antes de ampliar los casos de uso.
-- [ ] Completar verificaciones de T01–T03.
-- [ ] Revisión del usuario.
+- [x] Revisar interfaces, límites y migración antes de ampliar los casos de uso.
+- [x] Completar verificaciones de T01–T03.
+- [x] Revisión del usuario.
 
 ### Fase 2: Fichas
-- [ ] T04: Registro y consulta de pacientes.
-- [ ] T05: Ediciones sucesivas.
-- [ ] T06: Documentos y completitud.
+- [x] T04: Registro y consulta de pacientes.
+- [x] T05: Ediciones sucesivas.
+- [x] T06: Documentos y completitud.
 
 ### C02: Revisión del recorrido de fichas
-- [ ] Demostrar registro → edición → documento → completitud sin red y tras reinicio.
-- [ ] Completar verificaciones de T04–T06.
-- [ ] Revisión del usuario.
+- [x] Demostrar registro → edición → documento → completitud sin red y tras reinicio.
+- [x] Completar verificaciones de T04–T06.
+- [x] Revisión del usuario.
 
 ### Fase 3: Contactos
-- [ ] T07: Contactos.
-- [ ] T08: Vínculos.
-- [ ] T09: Protección de fichas completas.
+- [x] T07: Contactos.
+- [x] T08: Vínculos.
+- [x] T09: Protección de fichas completas.
+
+### Correcciones C03
+- [x] T19: Impacto de completitud por ficha.
+- [x] T20: Dependencia de completitud tras edición posterior.
+- [x] T21: RelationshipPatch sin retiro de responsabilidad.
 
 ### C03: Revisión de contactos y responsables
 - [ ] Demostrar menores y contactos compartidos, incluidos cambios que rompen requisitos.
-- [ ] Completar verificaciones de T07–T09.
+- [x] Completar verificaciones de T07–T09.
+- [x] Completar verificaciones de T19–T21 y reejecutar la suite de la fase tras las correcciones.
 - [ ] Revisión del usuario.
 
 ### Fase 4: Sincronización
-- [ ] T10: Proyecciones remotas.
-- [ ] T11: Conciliación de cambios locales.
-- [ ] T12: Integración del componente.
+- [x] T10: Proyecciones remotas.
+- [x] T11: Conciliación de cambios locales.
+- [x] T12: Integración del componente.
 
 ### C04: Revisión de sincronización
 - [ ] Demostrar que resultados parciales o perdidos no duplican efectos ni borran cambios.
-- [ ] Completar verificaciones de T10–T12.
+- [x] Completar verificaciones de T10–T12.
 - [ ] Revisión del usuario.
 
 ### Fase 5: Comandos nativos
-- [ ] T13: Comandos de fichas.
-- [ ] T14: Comandos de contactos.
-- [ ] T15: Registro y permisos Tauri.
+- [x] T13: Comandos de fichas.
+- [x] T14: Comandos de contactos.
+- [x] T15: Registro y permisos Tauri.
 
 ### C05: Revisión de la interfaz nativa
 - [ ] Comprobar comandos, DTO y permisos sin añadir pantalla React.
-- [ ] Completar verificaciones de T13–T15.
+- [x] Completar verificaciones de T13–T15.
 - [ ] Revisión del usuario.
 
 ### Fase 6: Verificación y cierre
-- [ ] T16: Contrato del consumidor.
-- [ ] T17: API de desarrollo real.
-- [ ] T18: Documentación y calidad.
+- [x] T16: Contrato del consumidor.
+- [ ] T17: API de desarrollo real (pendiente de entorno; prueba manual documentada).
+- [x] T18: Documentación y calidad.
 
 ### C06: Aceptación de Pacientes
 - [ ] Revisar resultados locales, prueba API real y límites expresos.
-- [ ] Completar verificaciones de T16–T18.
+- [x] Completar verificaciones de T16–T18.
 - [ ] Revisión y aceptación del usuario.
 
 ## Test Plan
@@ -229,4 +235,116 @@ El cierre requiere evidencia con API real de desarrollo. Si el entorno impide la
 
 ## Open Questions
 
-Ninguna decisión de alcance pendiente. T01 concretará los contratos internos dentro del alcance aprobado; cualquier incompatibilidad que exija cambiarlo se presentará al usuario antes de implementar el punto afectado.
+Ninguna decisión de alcance pendiente. T01 concretó los contratos internos dentro del alcance aprobado; cualquier incompatibilidad que exija cambiarlo se presentará al usuario antes de implementar el punto afectado.
+
+## Contratos internos fijados en T01
+
+Fuentes cotejadas: guía API §§5.2, 5.5, 6–10; `$defs` de accepted-operations.schema.json y public-models.schema.json; payloadModels y onlineOnlyActions de capabilities.json. No se altera el bundle.
+
+### Once escrituras
+
+Todas exigen acceso operativo y la acción exacta en allowedActions del contexto local vigente. Propietario y asistente pueden ejercerlas. Ninguna es online-only. Crear exige expectedVersion=0; editar exige versión positiva. Todos los IDs son UUIDv7 canónicos. Cuenta, usuario, dispositivo y permissionEpoch proceden de la sesión Rust; no se reciben por IPC. Rust genera operationId y conserva su contenido para reintentar.
+
+| Acción (comando Tauri previsto) | Entidad / clave | Payload contractual |
+|---|---|---|
+| RegisterPatient (patients_register_patient) | patient_profile / patientId | RegisterPatientPayload |
+| UpdatePatientProfile (patients_update_patient_profile) | patient_profile / patientId | PatientPatch |
+| SetPatientCompletion (patients_set_patient_completion) | patient_profile / patientId | PatientCompletionPayload |
+| SetPatientProfileStatus (patients_set_patient_profile_status) | patient_profile / patientId | PatientStatusPayload |
+| AddPatientIdentifier (patients_add_patient_identifier) | patient_identifier / identifierId | AddPatientIdentifierPayload |
+| CreateContactPerson (patients_create_contact_person) | contact_person / contactPersonId | ContactData |
+| UpdateContactPerson (patients_update_contact_person) | contact_person / contactPersonId | ContactPatch |
+| SetContactPersonStatus (patients_set_contact_person_status) | contact_person / contactPersonId | PatientStatusPayload |
+| CreatePatientContactRelationship (patients_create_patient_contact_relationship) | patient_contact / {patientId,contactPersonId} | RelationshipData |
+| UpdatePatientContactRelationship (patients_update_patient_contact_relationship) | patient_contact / {patientId,contactPersonId} | RelationshipPatch |
+| SetPatientContactRelationshipStatus (patients_set_patient_contact_relationship_status) | patient_contact / {patientId,contactPersonId} | PatientStatusPayload |
+
+Los DTO de entrada son camelCase y rechazan extras. Clave y base acompañan al payload específico; no hay envoltorio remoto libre.
+
+- RegisterPatientPayload: fullName?, birthDate?, phoneCode?, phone?, identificationBasis? admiten null; identifiers es una lista opcional de hasta 100 IdentifierInput. Registro crea draft/active, sin admitir esos estados como campos de entrada.
+- IdentifierInput: id, documentType, documentNumber; issuingCountry por defecto VE. AddPatientIdentifierPayload sustituye id por patientId. No admite verificationStatus y crea declared. Conservar número como texto sin eliminar ceros, prefijos o puntuación.
+- PatientPatch: solo fullName, birthDate, phoneCode, phone, identificationBasis; ausencia conserva, null retira. Rechazar patch vacío; validar teléfono sobre el resultado completo.
+- PatientCompletionPayload: completionStatus obligatorio draft/complete. PatientStatusPayload: status obligatorio active/inactive. Estados independientes.
+- ContactData: fullName obligatorio; phoneCode, phone, issuingCountry, documentType, documentNumber opcionales/nulos. ContactPatch admite esos mismos campos; null no puede retirar el nombre obligatorio del resultado. Documento de contacto: terna completa o nula.
+- RelationshipData: relationshipKind obligatorio mother/father/guardian/other, validFrom obligatorio RFC3339 con offset, isResponsibleContact por defecto false, validUntil opcional/nulo. RelationshipPatch admite esos cuatro campos; null solo retira validUntil. El resultado exige validUntil posterior a validFrom cuando existe.
+- El cliente no recibe campos de verificación como entrada: verificationStatus, representationStatus, verifiedAt o verifiedByUserId solo proceden del estado aceptado.
+
+### Base de edición y respuesta
+
+Base: `Accepted { version }` o `LocalOperation { operationId }`. La primera debe coincidir con la vista aceptada; la segunda debe ser la última intención de la entidad en el mismo ámbito. Versiones previstas de una secuencia son provisionales. No ajustar una base antigua de forma automática.
+
+Cada paso depende del anterior; documentos y vínculos incorporan creaciones locales referidas. Contactos compartidos incorporan las operaciones explícitas que pasan fichas afectadas a draft. Hasta ocho IDs, sin duplicados, ciclos ni truncamiento. Exceder el límite rechaza la preparación sin perder pasos previos.
+
+Una escritura devuelve operationId, clave, provisional, expectedVersion y dependsOn; no una aceptación remota. Sin diferencia devuelve NO_CHANGES sin operación nueva. Guardar provisional y Outbox mediante record_operation en la misma transacción. Resultado desconocido exige recuperar el original; corregir rechazo/conflicto crea otra operación por el caso concreto.
+
+Consulta por entidad: clave, `accepted: { state, version } | null`, `provisional: { state, operationId, expectedVersion } | null`, `operations: [{ operationId, dependsOn, status, error }]`. Estados derivados de sync distinguen pendientes, unknown, conflictos, rechazos y dependencias bloqueadas. Un recibo accepted no retira el provisional hasta que la vista alcance la versión confirmada; nunca dar versión aceptada al provisional.
+
+Errores: VALIDATION_ERROR (forma, fecha, teléfono, documento, base o dependencia inválidos), AUTHENTICATION_REQUIRED, PERMISSION_DENIED, NOT_FOUND, VERSION_CONFLICT, NO_CHANGES, COMPLETENESS_CONFLICT con IDs locales afectados, DEPENDENCY_FAILED e INTERNAL_ERROR seguro. Conservar códigos remotos sin SQL ni datos de otra cuenta.
+
+### Siete consultas y puerto
+
+| Comando previsto | Entrada local |
+|---|---|
+| patients_list_patients | q?, status?, completionStatus?, page=1, shows=100 (1–500) |
+| patients_get_patient | patientId |
+| patients_list_patient_identifiers | patientId |
+| patients_list_patient_contacts | patientId, status? |
+| patients_list_contacts | q?, status?, page=1, shows=100 (1–500) |
+| patients_get_contact | contactPersonId |
+| patients_list_contact_patients | contactPersonId, status? |
+
+Todas usan SQLite con ámbito obligatorio y últimos permisos válidos, sin HTTP. Sin filtro incluyen ambos estados. q busca nombre/documento/teléfono solo del ámbito. Orden estable por ID; items/total tras filtrar. Dato ajeno equivale a no encontrado. Un vínculo puede reunir datos actuales en lectura, sin copiarlos a su estado aceptado.
+
+`PatientQuery` entrega ficha administrativa, documentos y responsables aceptados por referencias tipadas y ámbito explícito; no expone HTTP, SQL ni modelos de almacenamiento. Los casos internos combinan aceptado/provisional por separado. El puerto no decide edad o validez para una cita futura.
+
+### Persistencia y cotejo manual
+
+0007_patients crea patient_profile_view, patient_identifier_view, contact_person_view, patient_contact_view y patient_local. Las cuatro primeras conservan estados públicos aceptados y versiones, con índices por filtros/referencias. patient_local conserva operationId, acción, claves de entidad, expectedVersion, operación base, dependsOn, payload, provisional y orden local. Todas exigen cuenta/usuario/dispositivo. No hay cascadas desde vistas a intenciones. La época del permiso vive en Outbox y no reasigna intenciones.
+
+Ejemplos revisados: `{}` registra draft sin requisitos de complete; un menor usa nombre, birthDate y responsable vigente con teléfono, sin usar el documento del adulto como propio; registro seguido de dos ediciones usa bases de operación previa, dependencias y versiones previstas 0/1/2, sin afirmar aceptación. Completar own_document exige nombre, documento declared/verified y teléfono propio o responsable; minor_without_document exige nombre, nacimiento y responsable con teléfono. Edad a fecha de cita queda fuera.
+
+## Entrega C01
+
+T01–T03 completos. [Evidencia y límites de C01](evidence-c01.md). Pruebas y build correctos. C01 aprobado por el usuario el 2026-11-04. Continuación autorizada hasta C02.
+
+## Entrega C02
+
+T04–T06 completos. [Evidencia y límites de C02](evidence-c02.md). La suite completa, compilación, formato, Clippy y build de escritorio pasan. C02 aprobado por el usuario el 2026-11-05: «Apruebo C02». T07 no iniciado; la siguiente sesión puede ejecutar T07–T09 y detenerse en C03.
+
+## Instrucción vigente tras C02
+
+El usuario aprobó C02 el 2026-11-05. T07–T09 constituyen la siguiente fase autorizada, en orden, con parada en C03 para revisión. Se deja su ejecución para la otra sesión solicitada por el usuario; ninguna de esas tareas se ha iniciado aquí.
+
+## Entrega C03
+
+T07–T09 completos, más correcciones T19–T21 de la revisión. [Evidencia y límites de C03](evidence-c03.md). C03 aprobado por el usuario el 2026-11-05 tras sus correcciones y commit.
+
+## Entrega C04
+
+T10–T12 completos. [Evidencia y límites de C04](evidence-c04.md). C04 aprobado por el usuario el 2026-11-05 (commit `0be5631`).
+
+## Entrega C05
+
+T13–T15 completos. [Evidencia y límites de C05](evidence-c05.md). C05 aprobado por el usuario el 2026-11-05 («Continue»).
+
+## Entrega C06
+
+T16 y T18 completos; T17 preparada y pendiente de su entorno real (prueba manual opt-in documentada). [Evidencia y límites](evidence-c06.md). Suite completa, `pnpm quality` y build de escritorio en verde. C06 aprobado por el usuario el 2026-11-05: «Puedes continuar».
+
+## Instrucción vigente tras la entrega de C06
+
+T16–T18 se ejecutaron en la sesión del 2026-11-05 tras la aprobación de C05. T17 solo podrá marcarse completa cuando la prueba manual contra Nightingale API/OIDC de desarrollo pase en su entorno; hasta entonces C06 queda pendiente de revisión del usuario.
+
+## Correcciones de C03 (revisión 2026-11-05)
+
+La revisión de C03 (ejes Estándares y Spec) detectó tres defectos confirmados en T07–T09 y dos señales de robustez. Se corrigen en este mismo plan con T19–T21, antes de la aprobación de C03. No se inicia T10.
+
+Defectos confirmados:
+
+1. **Falso COMPLETENESS_CONFLICT con otro responsable vigente** — `responsible_impact` (`adapters/documents.rs`) evalúa cada vínculo del contacto editado de forma aislada y no comprueba si la ficha conserva soporte con otro responsable; un menor completo con madre y padre recibe conflicto al retirar el teléfono de uno solo. Contradicen «sin sus requisitos» (Reglas del dominio) y el comportamiento de `completion_support`, que sí admite varios responsables.
+2. **Dependencia de completitud perdida tras una edición posterior** — la dependencia de la operación `SetPatientCompletion` solo se cablea cuando es la última intención local de la ficha; si la ficha se edita después de pasar a draft, la edición del contacto/vínculo no depende del paso a draft y puede ordenarse antes en el envío («Contactos compartidos incorporan las operaciones explícitas que pasan fichas afectadas a draft»).
+3. **RelationshipPatch admite retirar la responsabilidad** — `is_responsible_contact: Clear` se aplica como `false` y el payload emite `isResponsibleContact: null`, cuando el contrato fija que «null solo retira validUntil».
+
+Robustez incluida en T19: el closure de evaluación futura del vínculo releía los contactos por iteración y convertía errores de almacenamiento en «sin teléfono» (`.ok()…unwrap_or((false, false))`); se calcula una vez y propaga. La cola de protección duplicada entre los `prepare` de contacto y vínculo se extrae a un helper común.
+
+Queda fuera, con justificación: el hard-error `INTERNAL_ERROR` cuando un vínculo carece de contacto visible (solo posible con estado local corrupto; el contrato admite «INTERNAL_ERROR seguro»), la ubicación del cálculo de impacto en `documents.rs` (juicio de diseño, sin impacto de corrección) y los estados con primitivos en `application.rs` (precedente de `IdentifierState`).

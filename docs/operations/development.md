@@ -1,6 +1,8 @@
 # Desarrollo del escritorio
 
-Esta guía cubre la base local y el motor transversal de Nightingale. Los casos locales no requieren servicios web, PostgreSQL, n8n, Docker ni configuración privada; el acceso y la sincronización remota sí requieren Nightingale API y OIDC de desarrollo. SQLite conserva esquema, identidad/acceso, Outbox/Inbox, cursor y vista remota aceptada. Pacientes, Servicios, Agenda y Citas siguen pendientes como funcionalidades de producto.
+Esta guía cubre la base local y el motor transversal de Nightingale. Los casos locales no requieren servicios web, PostgreSQL, n8n, Docker ni configuración privada; el acceso y la sincronización remota sí requieren Nightingale API y OIDC de desarrollo. SQLite conserva esquema, identidad/acceso, Outbox/Inbox, cursor y vista remota aceptada. Pacientes y Servicios están implementados como componentes; Agenda y Citas siguen pendientes como funcionalidades de producto.
+
+Prueba real de Pacientes (opt-in, requiere Nightingale API y OIDC de desarrollo y un login por navegador): `$env:NIGHTINGALE_API_BASE_URL = "<url>"; cargo test --workspace --locked -- --ignored components::patients::development_tests`. Crea solo datos sintéticos; un bloqueo no cuenta como éxito.
 
 **Revisión documental del 2026-10-23:** alineación de permisos, sin cambiar las rutas del escritorio ni repetir sus comprobaciones de ejecución.
 

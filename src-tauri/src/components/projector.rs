@@ -1,5 +1,6 @@
 use super::{
     account::adapters::outbound::AccountProjector,
+    patients::adapters::projector::PatientsProjector,
     services::adapters::projector::ServicesProjector,
     sync::remote::{RemoteChange, RemoteProjector},
 };
@@ -12,7 +13,8 @@ pub(crate) struct DesktopProjector;
 impl RemoteProjector for DesktopProjector {
     fn reset(&self, tx: &Transaction, scope: &OperationContext) -> Result<()> {
         AccountProjector.reset(tx, scope)?;
-        ServicesProjector.reset(tx, scope)
+        ServicesProjector.reset(tx, scope)?;
+        PatientsProjector.reset(tx, scope)
     }
 
     fn project(
@@ -22,6 +24,7 @@ impl RemoteProjector for DesktopProjector {
         change: &RemoteChange,
     ) -> Result<()> {
         AccountProjector.project(tx, scope, change)?;
-        ServicesProjector.project(tx, scope, change)
+        ServicesProjector.project(tx, scope, change)?;
+        PatientsProjector.project(tx, scope, change)
     }
 }

@@ -6,6 +6,7 @@ import "./App.css";
 import CorePanel from "./CorePanel";
 import SettingsPanel from "./features/settings/SettingsPanel";
 import ServicesPanel from "./features/services/ServicesPanel";
+import SchedulingPanel from "./features/scheduling/SchedulingPanel";
 
 type DiagnosticState =
   | { status: "idle" | "loading" }
@@ -101,6 +102,7 @@ function App() {
       <CorePanel />
       <SettingsPanel />
       <ServicesPanel />
+      <SchedulingPanel />
       <section aria-labelledby="scope-heading" className="space-y-2 border-t border-gray-200 pt-6">
         <h2 id="scope-heading" className="text-xl font-semibold">
           Funciones pendientes

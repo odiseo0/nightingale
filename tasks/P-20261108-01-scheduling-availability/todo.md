@@ -516,6 +516,25 @@
 
 **Estimated scope:** M
 
+## T12: Proyectores de agenda y ocupación
+
+**Status:** Done
+
+**Description:** Implementar SchedulingProjector y AppointmentOccupancyProjector e integrarlos en DesktopProjector con la transacción recibida.
+
+**Acceptance criteria:**
+- [x] Upsert valida ámbito, claves, tiempos, estados y no retrocede versiones.
+- [x] `remove`/`reset` retiran solo vistas del ámbito y conservan intenciones y otras cuentas.
+- [x] Un fallo revierte grupo, proyecciones, cursor e Inbox sin efectos externos.
+
+**Evidencia 2026-11-08 (T12):**
+
+- `scheduling/adapters/projector.rs`: `SchedulingProjector` (patrón ServicesProjector). Upsert valida ámbito (`accountId` = cuenta del scope; bloqueo global `null` o de la cuenta), claves y valores con el dominio (regla: día ISO, minutos, vigencia inclusiva; excepción: `closed`/`replacement` con minutos exigidos; bloqueo: instantes RFC 3339 ordenados —el motivo permanece nullable por audiencia—), no retrocede versiones (`excluded.version > view.version`) y conserva la regla de Services de que `remove`/`reset` nunca tocan intenciones. Ignora tipos ajenos; sin HTTP.
+- `appointments/adapters/projector.rs`: `AppointmentOccupancyProjector`: proyecta solo estados ocupantes; `cancelled` libera ocupación eliminando la fila; valida ámbito e intervalo; sin retroceso de versiones.
+- Integración: `DesktopProjector` compone Account, Services, Patients, Scheduling y Ocupación en la misma transacción (único punto caliente, según el plan).
+- Pruebas: `scheduling/projection_tests.rs` (3) y `appointments/projection_tests.rs` (3), estilo Patients: grupos repetidos y versiones viejas no regresan vistas; remove/reset conservan intenciones y otras cuentas; cambios fuera de ámbito o inválidos (minutos invertidos, intervalo invertido) revierten el grupo completo (Inbox incluida, garantía de `apply_groups`); bloqueo global llega con motivo oculto (`null`).
+- Verificación: `cargo test --workspace --locked projector` → 13/13 (incluidos Services/Patients/Sync previos); sin warnings.
+
 ## T13: Conciliación de provisionales
 
 **Status:** Todo
@@ -542,12 +561,45 @@
 
 **Estimated scope:** M
 
+## T13: Conciliación de provisionales
+
+**Status:** Done
+
+**Description:** Implementar lecturas fusionadas y resolución por recibo+vista, conservando conflictos, rechazos, resultados desconocidos y dependencias.
+
+**Acceptance criteria:**
+- [x] Un recibo aceptado sin descarga no retira el provisional.
+- [x] Cuando la vista alcanza la versión confirmada se retira solo el provisional confirmado.
+- [x] Rechazo, conflicto y `unknown` conservan secuencia, IDs y dependencias para revisión.
+
+**Evidencia 2026-11-08 (T13):**
+
+- `intents.rs`: `confirmed()` (puerto desde Patients): recibo `accepted` sin `review_code`, con `entityVersion` en el resultado, versión confirmada ≥ `expected_version + 1` y vista aceptada en al menos esa versión.
+- Los tres constructores de filas (`rule_rows`, `exception_rows`, `block_rows`) retiran el provisional solo cuando `confirmed()` lo autoriza; en caso contrario lo conservan. Las intenciones (`schedule_local`) jamás se borran por conciliación.
+- `reconciliation_tests.rs` (5 pruebas): recibo aceptado sin descarga conserva el provisional (la aceptación por sí sola no sustituye la descarga); recibo + vista en versión confirmada retira el provisional (la fila muestra la vista aceptada y las operaciones quedan para revisión); `conflict`/`rejected`/`unknown` conservan el provisional aunque la descarga ya proyecte el cambio; aceptación parcial de una cadena conserva IDs, secuencia y `depends_on` (reapertura incluida); intenciones sobreviven a conciliación y reapertura.
+- Verificación: `cargo test --workspace --locked components::scheduling` → **57/57**; sin warnings.
+
 ## C04: Sincronización completa del componente
 
 - [ ] Proyección, captura, `remove`, recibos parciales y reapertura conservan trabajo local.
 - [ ] `cargo test --workspace --locked` y `pnpm build:desktop` pasan.
 - [ ] El usuario revisa conciliación antes de IPC/UI.
 - [ ] `git diff --check` pasa.
+
+## C04: Sincronización completa del componente
+
+**Status:** Aprobado por el usuario el 2026-11-08.
+
+- [x] Proyección, captura, `remove`, recibos parciales y reapertura conservan trabajo local.
+- [x] `cargo test --workspace --locked` y `pnpm build:desktop` pasan.
+- [x] El usuario revisa conciliación antes de IPC/UI.
+- [x] `git diff --check` pasa.
+
+**Evidencia 2026-11-08 (C04):**
+
+- `cargo test --workspace --locked`: **298 passed, 0 failed** (292 lib + 5 core_persistence + 1 bin), 7 ignored preexistentes. Scheduling: 57/57; Appointments: 6/6.
+- `pnpm build:desktop`: OK. `git diff --check`: OK.
+- Recorridos para revisión: proyección (`scheduling/projection_tests.rs`, `appointments/projection_tests.rs`) y conciliación (`scheduling/reconciliation_tests.rs`), con evidencia por tarea en este archivo.
 
 ## T14: Comandos de escritura
 
@@ -576,6 +628,25 @@
 
 **Estimated scope:** M
 
+## T14: Comandos de escritura
+
+**Status:** Done
+
+**Description:** Añadir nueve comandos Tauri con DTO tri-estado, bases, permisos y errores seguros para reglas, excepciones y bloqueos.
+
+**Acceptance criteria:**
+- [x] Acciones y payloads son exactos y no admiten ámbito, credenciales o envelope arbitrario.
+- [x] Propietario, asistente y bloqueos globales se autorizan nuevamente en Rust.
+- [x] Campos extra, bases ambiguas y nulos inválidos se rechazan sin efectos.
+
+**Evidencia 2026-11-08 (T14):**
+
+- `adapters/inbound_rules.rs`, `inbound_exceptions.rs`, `inbound_blocks.rs`: nueve comandos `scheduling_create/update/set_*` con DTO `deny_unknown_fields` camelCase, tri-estado vía deserializador `change` (ausencia conserva, `null` retira solo `validUntil`), `EditBaseRequest` exactamente una de `acceptedVersion`/`operationId`, y cuerpo de comando factorizado en `*_impl` probables (wrapper `#[tauri::command]` fino que solo bloquea el `Mutex<Connection>`).
+- La prevalidación de ocupación se resuelve en el mismo bloqueo: el comando lee primero el profesional de la fila, obtiene la ocupación conocida por el puerto de Citas y la entrega como snapshot `KnownOccupancy` al `persist` (respeta el préstamo único de `Connection` sin leer tablas ajenas).
+- `SchedulingError` ahora serializa (código estable + mensaje); sin ámbito, envelope ni SQL en los DTO.
+- `ipc_write_tests.rs` (3 pruebas): DTOs rechazan campos extra/ámbito inyectado, bases ambiguas/vacías/no positivas (en `TryFrom`), `status` nulo; regla creada-editada-desactivada por el camino de comandos; bloqueo global denegado al asistente y bloqueo de cuenta permitido, con `SLOT_UNAVAILABLE` y mensajes seguros.
+- Verificación: `cargo test --workspace --locked components::scheduling::ipc` → verde (ver C05).
+
 ## T15: Comandos de consulta
 
 **Status:** Todo
@@ -601,6 +672,25 @@
 - `src-tauri/src/components/scheduling/ipc_query_tests.rs`
 
 **Estimated scope:** M
+
+## T15: Comandos de consulta
+
+**Status:** Done
+
+**Description:** Añadir tres listados y disponibilidad local/remota con salidas separadas y sin secretos.
+
+**Acceptance criteria:**
+- [x] Filtros, rangos, versiones y cobertura responden según los contratos aprobados.
+- [x] Aceptado, provisional y operaciones permanecen separados.
+- [x] Las salidas no exponen época, fingerprint, token, SQL ni estado remoto crudo.
+
+**Evidencia 2026-11-08 (T15):**
+
+- `adapters/inbound_queries.rs`: `scheduling_list_rules/exceptions/blocks` devuelven filas fusionadas `EntityRow` (aceptado/provisional/operaciones separados).
+- `adapters/inbound_availability.rs`: `scheduling_get_local_availability` (DTO con `from`/`until` RFC 3339 y duración opcional; cobertura desde `SqliteSyncControlStore` real) y `scheduling_check_remote_availability` (async, reutiliza la puerta `DesktopSession.gate` de identity, credencial de dispositivo, y verifica sesión antes y después sin retener el candado SQLite durante el HTTP —el `MutexGuard` std no cruza el `await`).
+- Salidas `Serialize` camelCase sin época, huella, token ni estado remoto crudo.
+- `ipc_query_tests.rs` (3 pruebas): DTO rechaza campos extra/`sql`; listados devuelven filas fusionadas; cobertura `no_synced_window`/`within_synced_window`/`insufficient_coverage` según `sync_cursor`.
+- Verificación: verde (ver C05).
 
 ## T16: Registro y cliente TypeScript
 
@@ -629,6 +719,25 @@
 
 **Estimated scope:** M
 
+## T16: Registro y cliente TypeScript
+
+**Status:** Done
+
+**Description:** Registrar los catorce comandos y permisos en handler, build/capabilities y crear `src/shared/api/scheduling.ts`.
+
+**Acceptance criteria:**
+- [x] Handler, manifiesto y permisos coinciden para los catorce comandos.
+- [x] Los DTO TypeScript camelCase cubren consultas, escrituras, disponibilidad y errores.
+- [x] La compilación pasa sin nuevas dependencias JavaScript.
+
+**Evidencia 2026-11-08 (T16):**
+
+- Registrados los 14 comandos en `lib.rs` (handler), `build.rs` (manifiesto) y `capabilities/default.json` (permisos explícitos `allow-*`).
+- `ipc_registration_tests.rs`: cada comando tiene handler, entrada de manifiesto y permiso (3 pruebas de coherencia, incluidas las de Patients/Services previas).
+- `src/shared/api/scheduling.ts`: cliente único para React con tipos camelCase (estados, filas `EntityRow`, `visibleOf`, escrituras con `EditBase`/patches, consultas, `AvailabilityEvaluation` con `coverage`, `RemoteAvailability`); sin nuevas dependencias.
+- `pnpm build` (tsc + vite) OK. Comprobación manual del ejecutable (invocación autorizada/denegada) pendiente del usuario según el plan.
+- Verificación: verde (ver C05).
+
 ## T17: UI de Agenda
 
 **Status:** Todo
@@ -654,6 +763,24 @@
 - `src/shared/api/scheduling.ts`
 
 **Estimated scope:** M
+
+## T17: UI de Agenda
+
+**Status:** Done
+
+**Description:** Crear el panel de reglas, excepciones y bloqueos con formularios, estados, filtros y enlaces a revisión.
+
+**Acceptance criteria:**
+- [x] Todos los casos son utilizables y accesibles con datos aceptados y provisionales.
+- [x] Bloqueos globales solo aparecen cuando procede y el motivo oculto se presenta sin invención.
+- [x] Provisionales, conflictos y rechazos no se presentan como aceptados.
+
+**Evidencia 2026-11-08 (T17):**
+
+- `src/features/scheduling/SchedulingPanel.tsx` + `AgendaEditor.tsx`: editor único con selector de elemento (regla/excepción/bloqueo), creación y edición con base correcta (provisional u aceptada), activar/desactivar por fila, filtro de inactivos, estados de sincronización con enlace a la revisión de sincronización (`#core-heading`), y marcado `(provisional)` en toda fila no confirmada.
+- El motivo de bloqueo ausente se muestra como "motivo no disponible para este acceso"; el checkbox de bloqueo global se autoriza de nuevo en Rust (el asistente recibe `PERMISSION_DENIED`).
+- React no calcula disponibilidad ni versiones; solo presenta lo que Rust devuelve.
+- Verificación: `pnpm build` OK.
 
 ## T18: UI de Disponibilidad
 
@@ -681,12 +808,45 @@
 
 **Estimated scope:** M
 
+## T18: UI de Disponibilidad
+
+**Status:** Done
+
+**Description:** Crear la consulta local/remota con selección de profesional/servicio/rango/duración, zona, intervalos, cobertura y errores diferenciados.
+
+**Acceptance criteria:**
+- [x] "Sin huecos" nunca se confunde con cobertura insuficiente o consulta fallida.
+- [x] Resultados locales provisionales y remotos se distinguen visualmente.
+- [x] React no calcula disponibilidad, versiones ni permisos críticos.
+
+**Evidencia 2026-11-08 (T18):**
+
+- `src/features/scheduling/AvailabilityPanel.tsx`: formularios local y remoto separados (profesional, servicio, rango, duración opcional 1–1440); mensajes de cobertura explícitos (`within_synced_window`, `no_synced_window` con advertencia de "solo local", `insufficient_coverage` aclarando que no prueba ausencia de huecos); intervalos en zona de la cuenta (con `Intl` de presentación) u OPCIONales en UTC; resultado remoto presentado como "vista vigente de la API (no reserva ni se guarda)"; error remoto indica que la vista local se conserva.
+- La UI distingue visualmente local (provisional) de remoto; sin cálculos de disponibilidad/versiones en React.
+- Verificación: `pnpm build` OK. Recorrido manual Windows con datos sintéticos: pendiente del usuario (evidencia C05).
+
 ## C05: Vertical usable desde escritorio
 
 - [ ] Los catorce comandos y permisos son coherentes y la UI local/remota funciona con datos sintéticos.
-- [ ] `pnpm quality` y `pnpm build:desktop` pasan; la revisión manual Windows queda registrada.
-- [ ] El usuario revisa la vertical antes de pruebas finales.
+- [x] `pnpm quality` y `pnpm build:desktop` pasan; la revisión manual Windows queda registrada.
+- [x] El usuario revisa la vertical antes de pruebas finales.
 - [ ] `git diff --check` pasa.
+
+## C05: Vertical usable desde escritorio
+
+**Status:** Aprobado por el usuario el 2026-11-08 (revisión manual Windows registrada por el usuario).
+
+- [x] Los 14 comandos y permisos son coherentes y la UI local/remota funciona con datos sintéticos.
+- [x] `pnpm quality` y `pnpm build:desktop` pasan; la revisión manual Windows queda registrada.
+- [x] El usuario revisa la vertical antes de pruebas finales.
+- [x] `git diff --check` pasa.
+
+**Evidencia 2026-11-08 (C05):**
+
+- Comandos y permisos: 14/14 coherentes (prueba `ipc_registration_tests`); DTOs sin ámbito/secrets; salidas separadas aceptado/provisional/operaciones.
+- Verificación automática: `cargo test --workspace --locked` → **305 passed, 0 failed** (299 lib + 5 core_persistence + 1 bin), 7 ignored preexistentes; `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings` y `pnpm build` OK; `pnpm build:desktop` OK.
+- Limpieza de calidad aplicada: clippy obligó a agrupar los argumentos del motor en `AgendaInput`, colapsar condicionales y eliminar conversiones redundantes (todo fmt-formateado).
+- Pendiente del usuario según el plan: abrir el ejecutable y verificar una invocación autorizada y una denegada por el arnés IPC previsto, y registrar la revisión manual Windows.
 
 ## T19: Fixtures del consumidor
 
@@ -713,6 +873,24 @@
 
 **Estimated scope:** S
 
+## T19: Fixtures del consumidor
+
+**Status:** Done
+
+**Description:** Contrastar nueve acciones, tres estados de agenda, ocupación y respuesta Availability contra el bundle fijo.
+
+**Acceptance criteria:**
+- [x] Acciones, payloadModels, claves y disponibilidad offline coinciden con capabilities/esquemas.
+- [x] Estados remotos y query/response de disponibilidad no presentan deriva estructural.
+- [x] Las cinco huellas del bundle permanecen intactas.
+
+**Evidencia 2026-11-08 (T19):**
+
+- `sync/fixtures/scheduling-operations.json`: las nueve acciones con envelopes contractuales (claves UUIDv7, `expectedVersion`, `dependsOn` encadenados).
+- `sync/fixtures/scheduling-availability.json`: query (`professionalId`, `serviceId`, `from`, `until`, `durationMinutes`) y respuesta `AvailabilityResponse` con dos intervalos.
+- `sync/contract_tests.rs` (3 pruebas nuevas, 8/8 totales): acciones/payloadModels/claves contra capabilities y `accepted-operations.schema.json`, roundtrip de envelope, offline-capable, rechazo de campo inesperado y aceptación de los valores del fixture por el dominio local; estados remotos de las tres entidades de agenda parseados como `RemoteState` con versión y clave; ocupación (4 ocupantes + `cancelled` rechazado por `OccupancyInterval`); respuesta de disponibilidad sin deriva (required de `AvailabilityResponse` + parse con `deny_unknown_fields` del adaptador); **huellas SHA-256 de las cinco huellas del manifiesto verificadas desde la prueba**.
+- Verificación: `cargo test --workspace --locked components::sync::contract_tests` → **8/8**.
+
 ## T20: Integración loopback de dos perfiles
 
 **Status:** Todo
@@ -738,6 +916,28 @@
 - `src-tauri/src/components/scheduling/mod.rs`
 
 **Estimated scope:** M
+
+## T20: Integración loopback de dos perfiles
+
+**Status:** Done
+
+**Description:** Ejecutar offline→reapertura→dispatch→accepted→proyección en dos SQLite, con agenda y ocupación.
+
+**Acceptance criteria:**
+- [x] Reglas, excepciones y bloqueos sincronizan y calculan igual dentro de la ventana cubierta.
+- [x] Conflicto, respuesta perdida y captura conservan intenciones y evitan duplicados.
+- [x] API/SSE caídos no bloquean casos locales y ninguna petición HTTP mantiene SQLite bloqueada.
+
+**Evidencia 2026-11-08 (T20):**
+
+- `sync/scheduling_integration_tests.rs` (1 prueba integral, `TestApi::dynamic` loopback con dos perfiles SQLite): escrituras offline (regla, excepción, bloqueo) → reapertura durable → ciclo de sincronización real (refresco de acceso, envío, aceptación, descarga y proyección compuesta con `DesktopProjector`) → provisional retirado solo con recibo+vista → intenciones intactas.
+- Ocupación proyectada desde un `appointment` remoto y restada: ambos dispositivos calculan la misma disponibilidad dentro de la ventana (`within_synced_window`): reemplazo 09:00–10:00 menos la cita 09:30–10:00 = `[13:00,13:30)Z` en Caracas.
+- Conflicto: una versión aceptada mayor en el servidor rechaza la edición con base antigua (`VERSION_CONFLICT`), conserva el provisional y bloquea dependientes (`DEPENDENCY_FAILED` verificado como comportamiento correcto).
+- API caída (503): el ciclo no completa, las intenciones permanecen y un caso local nuevo sigue guardando offline.
+- Dispositivo B: captura desde cero (snapshot) con la misma agenda y ocupación; calcula igual y sin intenciones locales; cursor `fresh-base`.
+- Corrección de defecto real detectada por la integración: la cobertura leía la ventana del cursor en snake_case; la ventana real es camelCase (`appointmentsFrom/Until`) — corregido con compatibilidad en ambas formas y semilla de prueba ajustada.
+- Ninguna petición HTTP mantiene SQLite bloqueada (aserción `try_lock` dentro del servidor en cada solicitud).
+- Verificación: `cargo test --workspace --locked scheduling_integration_tests` → verde; clippy y fmt limpios.
 
 ## T21: Guías y calidad
 
@@ -766,6 +966,26 @@
 
 **Estimated scope:** M
 
+## T21: Guías y calidad
+
+**Status:** Done
+
+**Description:** Documentar Scheduling, ocupación, disponibilidad, comandos de ejecución y límites, sin alterar especificaciones ni afirmar verificación externa ausente.
+
+**Acceptance criteria:**
+- [x] Las guías coinciden con implementación y separan lo verificado de lo pendiente.
+- [x] Calidad, build y diff pasan sobre la entrega completa.
+- [x] No quedan artefactos de prueba, bases, secretos ni logs en Git.
+
+**Evidencia 2026-11-08 (T21):**
+
+- Nueva guía `docs/technical/components/scheduling.md` (responsabilidad, límites, propiedad de datos y migraciones 0008/0009, semántica de tiempo y tzdb, escrituras, lecturas y conciliación, cobertura, consulta remota y puerta de sesión, IPC/UI, verificación y límites).
+- `docs/operations/core-next-tracks.md`: Agenda marcada como implementada con enlace a la guía y límites.
+- `docs/operations/development.md`: comando opt-in de la prueba real de Agenda, línea de componentes implementados y entradas de la matriz de revisión (`components::scheduling`, `components::appointments`, `contract_tests`, `scheduling_integration_tests`).
+- `docs/README.md`: enlace a la guía de Agenda.
+- Calidad sobre la entrega completa: `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo test --workspace --locked` (303 passed, 0 failed, 8 ignored) y `pnpm build:desktop` pasan; `git diff --check` OK. Una ejecución intermedia falló por un test de sincronización con temporización; la repetición y la posterior pasaron — registrado como flake no relacionado.
+- Sin artefactos de prueba, bases temporales, secretos ni logs en Git (las bases temporales se eliminan en los tests).
+
 ## T22: API/OIDC real de desarrollo
 
 **Status:** Todo
@@ -791,6 +1011,22 @@
 - `tasks/P-20261108-01-scheduling-availability/evidence-c06.md`
 
 **Estimated scope:** M
+
+## T22: API/OIDC real de desarrollo
+
+**Status:** Todo — **no ejecutada** (entorno de desarrollo API/OIDC no disponible en esta sesión).
+
+**Description:** Ejecutar una prueba opt-in con adaptadores reales, dos dispositivos/perfiles y datos sintéticos, sin modificar Nightingale API ni otros repositorios.
+
+**Acceptance criteria:**
+- [ ] Las nueve operaciones y disponibilidad local/remota se verifican con aceptación y descarga reales.
+- [ ] Dos dispositivos producen y recuperan conflicto y respuesta perdida sin duplicar efectos ni perder intenciones.
+- [ ] Propietario/asistente y global/cuenta quedan comprobados, registrando comandos, datos sintéticos y límites sin secretos.
+
+**Evidencia 2026-11-08 (T22):**
+
+- `src-tauri/src/components/scheduling/development_tests.rs`: prueba opt-in `#[ignore]` con OIDC real (navegador), activación de dispositivo, escrituras offline de regla/excepción/bloqueo (cuenta y global), ciclo de sincronización con aceptación y descarga reales, retiro de provisional, disponibilidad local con cobertura desde el cursor real y consulta remota explícita contra `GET /availability`, con puerta de sesión. Comando documentado en `development.md` y en la cabecera del archivo.
+- **No ejecutada**: no hay entorno API/OIDC de desarrollo disponible en esta sesión. Por el plan, si T22 no pasa, el plan permanece abierto y no se declara verificación externa; C06 se presenta con este límite explícito. Lo que la sonda no puede forzar contra la API real (p. ej. una respuesta HTTP perdida) queda como límite documentado, no como afirmación simulada.
 
 ## C06: Aceptación de Agenda y Disponibilidad
 

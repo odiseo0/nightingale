@@ -59,6 +59,11 @@ const MIGRATIONS: &[Migration] = &[
         name: "0009_appointment_occupancy",
         sql: include_str!("../../../migrations/0009_appointment_occupancy.sql"),
     },
+    Migration {
+        version: 10,
+        name: "0010_appointments",
+        sql: include_str!("../../../migrations/0010_appointments.sql"),
+    },
 ];
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;

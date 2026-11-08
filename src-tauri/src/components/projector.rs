@@ -1,6 +1,8 @@
 use super::{
     account::adapters::outbound::AccountProjector,
+    appointments::adapters::projector::AppointmentOccupancyProjector,
     patients::adapters::projector::PatientsProjector,
+    scheduling::adapters::projector::SchedulingProjector,
     services::adapters::projector::ServicesProjector,
     sync::remote::{RemoteChange, RemoteProjector},
 };
@@ -14,7 +16,9 @@ impl RemoteProjector for DesktopProjector {
     fn reset(&self, tx: &Transaction, scope: &OperationContext) -> Result<()> {
         AccountProjector.reset(tx, scope)?;
         ServicesProjector.reset(tx, scope)?;
-        PatientsProjector.reset(tx, scope)
+        PatientsProjector.reset(tx, scope)?;
+        SchedulingProjector.reset(tx, scope)?;
+        AppointmentOccupancyProjector.reset(tx, scope)
     }
 
     fn project(
@@ -25,6 +29,8 @@ impl RemoteProjector for DesktopProjector {
     ) -> Result<()> {
         AccountProjector.project(tx, scope, change)?;
         ServicesProjector.project(tx, scope, change)?;
-        PatientsProjector.project(tx, scope, change)
+        PatientsProjector.project(tx, scope, change)?;
+        SchedulingProjector.project(tx, scope, change)?;
+        AppointmentOccupancyProjector.project(tx, scope, change)
     }
 }

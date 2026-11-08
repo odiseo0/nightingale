@@ -375,7 +375,7 @@ fn failed_page_rolls_back_cursor_inbox_and_projection_without_changing_file() {
             .query_row("SELECT count(*) FROM schema_migrations", [], |row| row
                 .get::<_, i64>(0))
             .unwrap(),
-        9
+        10
     );
     drop(connection);
     assert_eq!(fs::read(&db.0).unwrap(), before);

@@ -46,6 +46,20 @@
     "allow-patients-list-contacts",
     "allow-patients-get-contact",
     "allow-patients-list-patient-contacts",
-    "allow-patients-list-contact-patients"
-  ]
+    "allow-patients-list-contact-patients",
+      "allow-scheduling-create-rule",
+    "allow-scheduling-update-rule",
+    "allow-scheduling-set-rule-status",
+    "allow-scheduling-create-exception",
+    "allow-scheduling-update-exception",
+    "allow-scheduling-set-exception-status",
+    "allow-scheduling-create-block",
+    "allow-scheduling-update-block",
+    "allow-scheduling-set-block-status",
+    "allow-scheduling-list-rules",
+    "allow-scheduling-list-exceptions",
+    "allow-scheduling-list-blocks",
+    "allow-scheduling-get-local-availability",
+    "allow-scheduling-check-remote-availability"
+]
 }

@@ -1097,3 +1097,71 @@ impl app::PatientQuery for SqlitePatientRepository<'_> {
         Ok(accepted)
     }
 }
+
+/// A row is chainable when every recorded operation is still acceptable:
+/// rejected or conflicting results cannot anchor new dependencies.
+fn chainable<T>(row: &app::EntityRow<T>) -> bool {
+    row.operations
+        .iter()
+        .all(|op| op.status != "conflict" && op.status != "rejected")
+}
+
+impl app::PatientBookingQuery for SqlitePatientRepository<'_> {
+    fn booking_patient(
+        &mut self,
+        access: &AccountAccess,
+        patient: &PatientId,
+    ) -> app::Result<Option<app::BookingPatient>> {
+        let profile = match self.profile(access, patient) {
+            Ok(profile) => profile,
+            Err(error) if error.code == "NOT_FOUND" => return Ok(None),
+            Err(error) => return Err(error),
+        };
+
+        if profile.visible().is_none() || !chainable(&profile) {
+            return Ok(None);
+        }
+
+        let reference = match &profile.provisional {
+            Some(provisional) => app::BookingReference::Provisional {
+                operation_id: provisional.operation_id.clone(),
+                expected_version: provisional.expected_version,
+            },
+            None => app::BookingReference::Accepted {
+                version: profile
+                    .accepted
+                    .as_ref()
+                    .map(|accepted| accepted.version)
+                    .unwrap_or(0),
+            },
+        };
+
+        let identifiers = self
+            .identifiers(access, patient)?
+            .into_iter()
+            .filter(|row| row.visible().is_some() && chainable(row))
+            .collect();
+        let responsible_contacts = self
+            .patient_contacts(access, patient, Some(super::super::domain::Status::Active))?
+            .into_iter()
+            .filter(|row| {
+                row.visible().is_some()
+                    && chainable(row)
+                    && row
+                        .visible()
+                        .map(|view| view.relationship.is_responsible_contact)
+                        .unwrap_or(false)
+            })
+            .collect();
+
+        Ok(Some(app::BookingPatient {
+            profile,
+            reference,
+            identifiers,
+            responsible_contacts,
+        }))
+    }
+}
+
+// Trait methods used by the booking composition above.
+use app::PatientRepository as _;

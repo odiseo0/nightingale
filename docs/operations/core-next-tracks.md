@@ -31,6 +31,8 @@ Contrato API: `schedule_rule`, `schedule_exception`, `schedule_block`; claves UU
 
 Offline: la disponibilidad calculada es provisional. No reserva ni acredita hueco compartido. Un bloqueo rechazado o conflicto conserva la intención. Citas consulta por puerto disponibilidad de referencia y versiones; API hace la comprobación compartida final.
 
+Estado: implementado en el plan P-20261108-01-scheduling-availability (guía del componente en [docs/technical/components/scheduling.md](../technical/components/scheduling.md)). Ocupa las migraciones `0008_scheduling` y `0009_appointment_occupancy`; la prueba con API/OIDC real queda como límite explícito de ese plan.
+
 ## Citas e historia
 
 Propietario: componente `appointments`. Casos nativos: crear, confirmar, reprogramar, cancelar, completar y marcar ausencia. Depende de puertos de Pacientes, Servicios y Agenda; conserva citas, historia aceptada e intenciones de cuenta. No posee contactos o catálogo.

@@ -77,6 +77,20 @@ pub fn run() {
             components::patients::adapters::inbound_contacts::patients_get_contact,
             components::patients::adapters::inbound_contacts::patients_list_patient_contacts,
             components::patients::adapters::inbound_contacts::patients_list_contact_patients,
+            components::scheduling::adapters::inbound_rules::scheduling_create_rule,
+            components::scheduling::adapters::inbound_rules::scheduling_update_rule,
+            components::scheduling::adapters::inbound_rules::scheduling_set_rule_status,
+            components::scheduling::adapters::inbound_exceptions::scheduling_create_exception,
+            components::scheduling::adapters::inbound_exceptions::scheduling_update_exception,
+            components::scheduling::adapters::inbound_exceptions::scheduling_set_exception_status,
+            components::scheduling::adapters::inbound_blocks::scheduling_create_block,
+            components::scheduling::adapters::inbound_blocks::scheduling_update_block,
+            components::scheduling::adapters::inbound_blocks::scheduling_set_block_status,
+            components::scheduling::adapters::inbound_queries::scheduling_list_rules,
+            components::scheduling::adapters::inbound_queries::scheduling_list_exceptions,
+            components::scheduling::adapters::inbound_queries::scheduling_list_blocks,
+            components::scheduling::adapters::inbound_availability::scheduling_get_local_availability,
+            components::scheduling::adapters::inbound_availability::scheduling_check_remote_availability,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

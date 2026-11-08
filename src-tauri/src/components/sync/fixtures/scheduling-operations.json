@@ -1,0 +1,143 @@
+[
+  {
+    "payloadModel": "CreateScheduleRulePayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000300",
+      "contractVersion": 1,
+      "action": "CreateScheduleRule",
+      "entityKey": "019a1234-0000-7000-8000-000000000030",
+      "expectedVersion": 0,
+      "payload": {
+        "professionalId": "019a1234-0000-7000-8000-000000000008",
+        "isoWeekday": 3,
+        "localStartMinute": 480,
+        "localEndMinute": 720,
+        "validFrom": "2026-01-01",
+        "validUntil": null
+      },
+      "dependsOn": []
+    }
+  },
+  {
+    "payloadModel": "ScheduleRulePatch",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000301",
+      "contractVersion": 1,
+      "action": "UpdateScheduleRule",
+      "entityKey": "019a1234-0000-7000-8000-000000000030",
+      "expectedVersion": 1,
+      "payload": {
+        "localStartMinute": 540,
+        "validUntil": "2026-12-31"
+      },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000300"]
+    }
+  },
+  {
+    "payloadModel": "ScheduleRuleStatusPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000302",
+      "contractVersion": 1,
+      "action": "SetScheduleRuleStatus",
+      "entityKey": "019a1234-0000-7000-8000-000000000030",
+      "expectedVersion": 2,
+      "payload": {
+        "status": "inactive"
+      },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000301"]
+    }
+  },
+  {
+    "payloadModel": "CreateScheduleExceptionPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000303",
+      "contractVersion": 1,
+      "action": "CreateScheduleException",
+      "entityKey": "019a1234-0000-7000-8000-000000000031",
+      "expectedVersion": 0,
+      "payload": {
+        "professionalId": "019a1234-0000-7000-8000-000000000008",
+        "localDate": "2026-05-06",
+        "kind": "replacement",
+        "localStartMinute": 540,
+        "localEndMinute": 600
+      },
+      "dependsOn": []
+    }
+  },
+  {
+    "payloadModel": "ScheduleExceptionPatch",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000304",
+      "contractVersion": 1,
+      "action": "UpdateScheduleException",
+      "entityKey": "019a1234-0000-7000-8000-000000000031",
+      "expectedVersion": 1,
+      "payload": {
+        "localEndMinute": 660
+      },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000303"]
+    }
+  },
+  {
+    "payloadModel": "ScheduleRuleStatusPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000305",
+      "contractVersion": 1,
+      "action": "SetScheduleExceptionStatus",
+      "entityKey": "019a1234-0000-7000-8000-000000000031",
+      "expectedVersion": 2,
+      "payload": {
+        "status": "inactive"
+      },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000304"]
+    }
+  },
+  {
+    "payloadModel": "CreateScheduleBlockPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000306",
+      "contractVersion": 1,
+      "action": "CreateScheduleBlock",
+      "entityKey": "019a1234-0000-7000-8000-000000000032",
+      "expectedVersion": 0,
+      "payload": {
+        "professionalId": "019a1234-0000-7000-8000-000000000008",
+        "accountId": "019a1234-0000-7000-8000-000000000001",
+        "startsAt": "2026-04-01T13:00:00Z",
+        "endsAt": "2026-04-01T17:00:00Z",
+        "reasonCode": "administrative"
+      },
+      "dependsOn": []
+    }
+  },
+  {
+    "payloadModel": "ScheduleBlockPatch",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000307",
+      "contractVersion": 1,
+      "action": "UpdateScheduleBlock",
+      "entityKey": "019a1234-0000-7000-8000-000000000032",
+      "expectedVersion": 1,
+      "payload": {
+        "endsAt": "2026-04-01T18:00:00Z",
+        "reasonCode": "unavailable"
+      },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000306"]
+    }
+  },
+  {
+    "payloadModel": "ScheduleRuleStatusPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000308",
+      "contractVersion": 1,
+      "action": "SetScheduleBlockStatus",
+      "entityKey": "019a1234-0000-7000-8000-000000000032",
+      "expectedVersion": 2,
+      "payload": {
+        "status": "inactive"
+      },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000307"]
+    }
+  }
+]

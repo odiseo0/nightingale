@@ -532,6 +532,188 @@ impl CatalogRepository for SqliteCatalogRepository<'_> {
     }
 }
 
+fn row_blocked<T, D>(row: &CatalogRow<T, D>) -> bool {
+    row.local_changes
+        .iter()
+        .any(|change| change.sync_status == "conflict" || change.sync_status == "rejected")
+}
+
+/// Pending or unknown local changes can still anchor a dependency; conflict
+/// and rejection are filtered by `row_blocked` before this is used.
+fn pending_reference<T, D>(row: &CatalogRow<T, D>) -> Option<String> {
+    row.local_changes
+        .iter()
+        .find(|change| matches!(change.sync_status.as_str(), "pending" | "unknown"))
+        .map(|change| change.operation_id.clone())
+}
+
+impl CatalogBookingQuery for SqliteCatalogRepository<'_> {
+    fn booking_offer(
+        &mut self,
+        access: &AccountAccess,
+        professional: &ProfessionalId,
+        service: &ServiceId,
+    ) -> Result<Option<BookingOffer>> {
+        require_read(access)?;
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(storage_error)?;
+        intents::resolve(&tx, access)?;
+        let screen = intents::screen(&tx, access)?;
+        tx.commit().map_err(storage_error)?;
+
+        let professional_row = screen
+            .professionals
+            .iter()
+            .find(|row| {
+                row.accepted
+                    .as_ref()
+                    .map(|view| view.professional_id.as_str())
+                    == Some(professional.as_str())
+            })
+            .ok_or_else(|| ServicesError::new("NOT_FOUND", "profesional no disponible"))?;
+        let professional_view = professional_row
+            .accepted
+            .as_ref()
+            .ok_or_else(|| ServicesError::new("NOT_FOUND", "profesional no disponible"))?;
+
+        if professional_view.status != "active" || row_blocked(professional_row) {
+            return Ok(None);
+        }
+
+        let offer_row = match screen.offers.iter().find(|row| {
+            row.accepted
+                .as_ref()
+                .map(|view| {
+                    view.professional_id.as_str() == professional.as_str()
+                        && view.service_id.as_str() == service.as_str()
+                })
+                .unwrap_or(false)
+                || row
+                    .provisional
+                    .as_ref()
+                    .map(|draft| {
+                        draft.professional_id.as_str() == professional.as_str()
+                            && draft.service_id.as_str() == service.as_str()
+                    })
+                    .unwrap_or(false)
+        }) {
+            Some(row) => row,
+            None => return Ok(None),
+        };
+
+        if row_blocked(offer_row) {
+            return Ok(None);
+        }
+
+        // Default name and duration: accepted service view or provisional draft.
+        let service_row = screen.services.iter().find(|row| {
+            row.accepted
+                .as_ref()
+                .map(|view| view.service_id.as_str() == service.as_str())
+                .unwrap_or(false)
+                || row
+                    .provisional
+                    .as_ref()
+                    .map(|draft| draft.service_id.as_str() == service.as_str())
+                    .unwrap_or(false)
+        });
+
+        if service_row.map(row_blocked).unwrap_or(false) {
+            return Ok(None);
+        }
+
+        let (service_name, default_duration, service_status) = match service_row {
+            Some(row) => {
+                let name = row
+                    .accepted
+                    .as_ref()
+                    .map(|view| view.name.clone())
+                    .or_else(|| row.provisional.as_ref().map(|draft| draft.name.clone()));
+                let duration = row
+                    .accepted
+                    .as_ref()
+                    .map(|view| view.default_duration_minutes)
+                    .or_else(|| {
+                        row.provisional
+                            .as_ref()
+                            .map(|draft| draft.default_duration_minutes)
+                    });
+                let status = row
+                    .accepted
+                    .as_ref()
+                    .map(|view| view.status.clone())
+                    .or_else(|| row.provisional.as_ref().map(|draft| draft.status.clone()));
+
+                match (name, duration, status) {
+                    (Some(name), Some(duration), Some(status)) => (name, duration, status),
+                    _ => return Ok(None),
+                }
+            }
+            None => return Ok(None),
+        };
+
+        let booking = match &offer_row.accepted {
+            Some(view) => {
+                let (status, effective_duration_minutes, reference) = match &offer_row.provisional {
+                    Some(draft) => (
+                        draft.status.clone(),
+                        draft
+                            .duration_minutes_override
+                            .unwrap_or(view.default_duration_minutes),
+                        CatalogReference::Provisional {
+                            operation_id: pending_reference(offer_row).unwrap_or_default(),
+                        },
+                    ),
+                    None => (
+                        view.status.clone(),
+                        view.effective_duration_minutes,
+                        CatalogReference::Accepted {
+                            version: view.version,
+                            service_version: view.service_version,
+                        },
+                    ),
+                };
+                BookingOffer {
+                    professional_id: professional.as_str().into(),
+                    service_id: service.as_str().into(),
+                    service_name: view.name.clone(),
+                    professional_name: professional_view.public_name.clone(),
+                    effective_duration_minutes,
+                    status,
+                    service_status: view.service_status.clone(),
+                    reference,
+                }
+            }
+            None => {
+                // Oferta creada offline: nombre y duración desde el servicio.
+                let draft = offer_row.provisional.as_ref().unwrap();
+                BookingOffer {
+                    professional_id: professional.as_str().into(),
+                    service_id: service.as_str().into(),
+                    service_name,
+                    professional_name: professional_view.public_name.clone(),
+                    effective_duration_minutes: draft
+                        .duration_minutes_override
+                        .unwrap_or(default_duration),
+                    status: draft.status.clone(),
+                    service_status,
+                    reference: CatalogReference::Provisional {
+                        operation_id: pending_reference(offer_row).unwrap_or_default(),
+                    },
+                }
+            }
+        };
+
+        if booking.status != "active" || booking.service_status != "active" {
+            return Ok(None);
+        }
+
+        Ok(Some(booking))
+    }
+}
+
 #[cfg(test)]
 #[path = "../repository_tests.rs"]
 mod tests;

@@ -5,7 +5,7 @@
 **Created:** 2026-11-08  
 **Updated:** 2026-11-08
 
-**Instrucción vigente:** el usuario aprobó el diseño y autorizó materializar estos archivos. Ninguna tarea ha comenzado. T01 se ejecutará después de `P-20261108-01-scheduling-availability/C06` y de una instrucción de inicio posterior.
+**Instrucción vigente:** el usuario autorizó el 2026-11-08 ejecutar T01–T06 y detenerse en C01 a pesar de que `P-20261108-01-scheduling-availability/C06` queda pendiente de revisión (decisión explícita del usuario: "es algo que revisaremos después").
 
 **Migración reservada:** `0010_appointments`.  
 **Responsable de integración:** quien ejecute el plan; una sola persona registra migraciones, composición, comandos, permisos, manifiestos y lockfile.  
@@ -14,14 +14,29 @@
 
 ## T01: Congelar contratos de Citas
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Fijar DTO, seis acciones, historia, snapshots, puertos booking, exclusión de reprogramación, tablas `0010`, comandos, dependencias y puntos de integración antes de escribir dominio.
 
 **Acceptance criteria:**
-- [ ] Los contratos de las seis acciones, cita e historia coinciden con `api-v1.1`.
-- [ ] Cobertura, datos provisionales, puertos booking, exclusión y resolución recibo+cita+historia quedan definidos.
-- [ ] Migración, diez comandos, propietarios e integrador quedan reservados y las cinco huellas del bundle intactas.
+- [x] Los contratos de las seis acciones, cita e historia coinciden con `api-v1.1`.
+- [x] Cobertura, datos provisionales, puertos booking, exclusión y resolución recibo+cita+historia quedan definidos.
+- [x] Migración, diez comandos, propietarios e integrador quedan reservados y las cinco huellas del bundle intactas.
+
+**Evidencia 2026-11-08 (T01):**
+
+- **Bundle:** las cinco huellas SHA-256 de `manifest.json` verificadas contra `accepted-operations.schema.json`, `capabilities.json`, `openapi.json`, `public-models.schema.json` y `sse.schema.json`; todas OK, sin ediciones.
+- **Seis acciones congeladas** (capabilities `payloadModels`, todas en `operationCatalog` y **ausentes de `onlineOnlyActions`** → offline-capables): `CreateAppointment` (`CreateAppointmentPayload`), `ConfirmAppointment` (`EmptyAppointmentPayload`), `RescheduleAppointment` (`AppointmentInterval`), `CancelAppointment`/`CompleteAppointment`/`MarkAppointmentNoShow` (`AppointmentReasonPayload` con `changeReason` opcional minLength 1, por defecto null).
+- **Payloads remotos** (esquemas verificados): create `{patientId,professionalId,serviceId,startsAt,endsAt,responsibleContactId?}`; reschedule `{startsAt,endsAt}`; confirm `{}`; motivo `{changeReason?}`. `additionalProperties:false` en todos.
+- **`AppointmentResponse`**: `id`, `accountId`, `patientId`, `professionalId`, `serviceId`, `responsibleContactId` (nullable), `startsAt`, `endsAt`, `status ∈ {scheduled,confirmed,cancelled,completed,no_show}`, `confirmedAt` nullable, `version>=1`, nueve snapshots (`serviceNameSnapshot`, `offeredDurationMinutesSnapshot` 1–1440, `professionalNameSnapshot`, `locationNameSnapshot/Address/Country(2 letras)/State/City`, `timeZoneSnapshot`), `createdAt`/`updatedAt` nullable.
+- **Historia**: `AppointmentHistoryResponse` (una entrada por versión: `action ∈ {created,confirmed,rescheduled,cancelled,completed,no_show}`, `actorKind ∈ {staff,patient,contact}` — escritorio solo `staff` —, `actorUserId`/`actorContactPersonId` nullable, `changeReason`, `changedAt`, intervalo, `confirmedAt`, estado y nueve snapshots) y `AppointmentHistoryProjection` (`{appointmentId,accountId,version,startsAt,endsAt,items}`; la proyección conserva el intervalo de su agregado).
+- **Transiciones** (contrato §5.4, verificadas contra el plan): `Create→scheduled(v1)`; `Confirm scheduled→confirmed` (hora de confirmación del servidor); `Reschedule scheduled/confirmed→scheduled` con igual duración y `confirmedAt` nulo; `Cancel scheduled/confirmed→cancelled` libera ocupación; `Complete scheduled/confirmed→completed` exige inicio alcanzado; `NoShow scheduled/confirmed→no_show` exige inicio + margen vigente (0–1440, base 15) y acción staff. `cancelled`/`completed`/`no_show` terminales; repetir la misma operación recupera su recibo, no crea otro efecto. `scheduled`/`confirmed`/`completed`/`no_show` ocupan; solo `cancelled` libera; contigüidad fin/inicio permitida; exclusión por profesional entre cuentas.
+- **OpenAPI**: `GET /v1/accounts/{id}/appointments` (listado, paginación máx 500), `GET .../appointments/{id}`, `GET .../appointments/{id}/history`. `DefaultAppointmentWindow` = `{daysBefore:30, daysAfter:180, maxDays:366}` (los comandos locales limitan el rango a 366 días).
+- **Resolución de provisionales congelada:** un provisional se resuelve solo con recibo `accepted` **y** cita e historia alcanzando la versión confirmada; recibo solo no retira nada; intenciones jamás se borran por conciliación.
+- **Puertos booking congelados (aditivos):** `PatientBookingQuery` (Patients; ficha/documentos/responsables aceptados o provisionales encadenables con versión/operación y teléfono/vigencia), `CatalogBookingQuery` (Services; servicio/oferta/profesional con nombre y duración efectiva para snapshot), `AccountViewQuery` sin cambios (solo aceptado), `ScheduleAvailabilityQuery` ampliado con `excludeAppointmentId?: AppointmentId`, `ScheduleOccupancyQuery` combinando vista aceptada + operaciones locales.
+- **Migración reservada:** `0010_appointments` (`appointment_view`, `appointment_history_view`, `appointment_local`; `appointment_occupancy_view` se conserva). Sin colisión: registro actual termina en `0009_appointment_occupancy`.
+- **Comandos congelados (10):** cuatro consultas (`appointments_list_appointments`, `appointments_get_appointment`, `appointments_get_history`, `appointments_get_booking_context`) y seis escrituras (`appointments_create_appointment`, `appointments_confirm_appointment`, `appointments_reschedule_appointment`, `appointments_cancel_appointment`, `appointments_complete_appointment`, `appointments_mark_no_show`).
+- **Propietarios/integrador:** según plan §Arquitectura y `core-next-tracks.md`; integrador único registra `lib.rs`, `build.rs`, `components/mod.rs`, `platform/sqlite/mod.rs`, `components/projector.rs`, manifiestos/lockfile y `capabilities/default.json`.
 
 **Verification:**
 - [ ] Focused checks: cotejo estructural de payloads, modelos remotos, capabilities y OpenAPI.
@@ -38,14 +53,25 @@
 
 ## T02: Dominio de cita y tiempo
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Implementar estados, transiciones, intervalos de minuto, snapshots, edad a fecha local y errores estables sin almacenamiento ni framework.
 
 **Acceptance criteria:**
-- [ ] Las seis transiciones y los estados terminales respetan el contrato.
-- [ ] Instantes, precisión de minuto y duración real 1–1440 se validan exactamente.
-- [ ] Menor de 18, 29 de febrero y responsables se evalúan a la fecha local de la cita.
+- [x] Las seis transiciones y los estados terminales respetan el contrato.
+- [x] Instantes, precisión de minuto y duración real 1–1440 se validan exactamente.
+- [x] Menor de 18, 29 de febrero y responsables se evalúan a la fecha local de la cita.
+
+**Evidencia 2026-11-08 (T02):**
+
+- Nuevo `src-tauri/src/components/appointments/domain.rs` registrado en `mod.rs`; sin almacenamiento, HTTP ni Tauri.
+- `AppointmentId` UUIDv7 con macro local (mismo patrón que Scheduling; `shared_kernel` no se amplía). `AppointmentsError` con códigos estables `VALIDATION_ERROR`/`INVALID_STATE_TRANSITION`/`INTERNAL_ERROR`.
+- `AppointmentStatus` (5 estados contractuales), terminales y `occupies()` (solo `cancelled` libera). `HistoryAction` y `ActorKind` (staff/patient/contact) con strings contractuales. `ChangeReason` opcional no vacío.
+- `MinuteInstant`: RFC 3339 con offset, normalizado a UTC, precisión de minuto exacta (segundos y subsegundos nulos). `AppointmentInterval` `[start,end)` con duración real 1–1440 vía `Span::total(Unit::Minute)` (fuente: [jiff 0.2.38 Span](https://docs.rs/jiff/0.2.38/jiff/struct.Span.html), [`Timestamp`](https://docs.rs/jiff/0.2.38/jiff/struct.Timestamp.html)).
+- `Snapshots`: nueve referencias con validación contractual (textos no vacíos, país ISO de 2 letras, duración ofrecida 1–1440); comentario de dominio: el servidor los recalcula al aceptar y el cliente jamás los recalcula al reprogramar o proyectar historia.
+- `apply_transition`: seis transiciones como intenciones; `Create` exige ausencia de cita; `Confirm` solo desde `scheduled`; `Reschedule` desde `scheduled`/`confirmed` → `scheduled`; `Cancel`/`Complete`/`NoShow` desde `scheduled`/`confirmed` → terminal; terminales rechazan con `INVALID_STATE_TRANSITION`. La repetición de una operación se reconcilia con su recibo en sync (no aquí).
+- `age_on`/`is_minor_at`: edad administrativa a fecha civil; 29 de febrero cumple el 1 de marzo en años no bisiestos; menor de 18 límite exacto el día del cumpleaños.
+- Verificación: `cargo test --locked components::appointments` → **14/14** (8 de dominio: estados/transiciones, intervalos/minuto/duración, historia/actores, motivo, snapshots, edad/feb-29, IDs); `cargo check --workspace --all-targets --locked` sin warnings; `git diff --check` OK.
 
 **Verification:**
 - [ ] Focused tests: `cargo test --workspace --locked components::appointments::domain`.
@@ -62,14 +88,26 @@
 
 ## T03: Persistencia de Citas
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Crear `0010_appointments`, vistas de cita/historia, intenciones e índices, conservando `appointment_occupancy_view`.
 
 **Acceptance criteria:**
-- [ ] La migración 9→10 conserva datos y reabre sin repetir cambios.
-- [ ] Un fallo revierte archivo, historial y versión completos.
-- [ ] Las filas aíslan cuenta/usuario/dispositivo y no hay cascadas hacia intenciones.
+- [x] La migración 9→10 conserva datos y reabre sin repetir cambios.
+- [x] Un fallo revierte archivo, historial y versión completos.
+- [x] Las filas aíslan cuenta/usuario/dispositivo y no hay cascadas hacia intenciones.
+
+**Evidencia 2026-11-08 (T03):**
+
+- `src-tauri/migrations/0010_appointments.sql` registrada como versión 10 en `platform/sqlite/mod.rs` (`0001`–`0009` intactas). Tablas:
+  - `appointment_view` (PK ámbito+`appointment_id`): referencias, `responsible_contact_id` NULL, `starts_at<ends_at`, estado limitado a los 5 contractuales, `confirmed_at` NULL, nueve snapshots con CHECK (duración ofrecida 1–1440, país 2 letras), `created_at`/`updated_at` NULL, `version>0`. Índices por profesional/ventana, paciente y servicio.
+  - `appointment_history_view` (PK ámbito+`appointment_id`+`version`): acción/actor contractuales (actor `staff|patient|contact`), motivo e intervalo por versión, `confirmed_at` y nueve snapshots; append-only por diseño. Índice por cita/versión.
+  - `appointment_local`: intenciones con las seis acciones con CHECK, `expected_version>=0`, `base_operation_id`, `depends_on` JSON ≤8, `payload`/`draft` JSON objeto, `created_at`. Sin columna `provisional` (se deriva de `sync_outbox`, igual que Agenda).
+  - `appointment_occupancy_view` (0009) se conserva sin cambios.
+- Adaptadores: `components/appointments/adapters/outbound.rs` amplía con `AppointmentRecord`/`AppointmentHistoryRecord`/`LocalChange`, `save_*` sobre `&Transaction`, lecturas sobre `&Connection`, aisladas por ámbito triple; sin SQL expuesto al consumidor.
+- `repository_tests.rs` (+3 pruebas): ida y vuelta aceptado+historia+intención, aislamiento de ámbito (otra cuenta no ve nada), supervivencia de intenciones al vaciar vistas y a reapertura; CHECK rechazan estado `reschedule_requested`, país de 3 letras, intervalo invertido, acción de historia `deleted`, acción de intención ajena y 9 dependencias; migración 9→10 conserva datos de Scheduling con reapertura sin cambios (`total_changes()==0`). Prueba previa de Agenda actualizada a `user_version=10`.
+- El rollback byte a byte de un fallo de migración queda cubierto por la suite común del runner (`rolls_back_failed_migration`, `failed_*_restores_*`), que ahora ejerce la cadena completa hasta la 10 (19/19 en `platform::sqlite`).
+- Verificación: `cargo test --locked components::appointments` → **17/17**; `platform::sqlite` → **19/19**; `cargo check --workspace --all-targets --locked` sin warnings; `git diff --check` OK.
 
 **Verification:**
 - [ ] Focused tests: `cargo test --workspace --locked components::appointments` y `cargo test --workspace --locked platform::sqlite::tests`.
@@ -89,14 +127,21 @@
 
 ## T04: Puerto PatientBookingQuery
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Añadir una lectura pública de ficha, documentos y responsables aceptados o provisionales utilizables con sus referencias, sin exponer el repositorio de Patients.
 
 **Acceptance criteria:**
-- [ ] La lectura aporta completitud, documentos, teléfono y responsables con vigencia.
-- [ ] Las referencias aceptadas/provisionales incluyen versión u operación y excluyen estados no encadenables.
-- [ ] El puerto mantiene aislamiento y no expone SQL, HTTP ni almacenamiento.
+- [x] La lectura aporta completitud, documentos, teléfono y responsables con vigencia.
+- [x] Las referencias aceptadas/provisionales incluyen versión u operación y excluyen estados no encadenables.
+- [x] El puerto mantiene aislamiento y no expone SQL, HTTP ni almacenamiento.
+
+**Evidencia 2026-11-08 (T04):**
+
+- `patients/application.rs`: `BookingReference` (`Accepted{version}` | `Provisional{operationId,expectedVersion}`), `BookingPatient` (perfil fusionado `EntityRow<ProfileState>`, documentos `EntityRow<IdentifierState>`, responsables `EntityRow<RelationshipView>` con teléfono actual y vigencia) y el puerto público `PatientBookingQuery::booking_patient`. Ampliación aditiva: `PatientQuery` y `PatientRepository` no cambian.
+- `patients/adapters/outbound.rs`: implementación sobre `SqlitePatientRepository` reutilizando las lecturas fusionadas existentes (`profile`, `identifiers`, `patient_contacts` activos); sin SQL nuevo expuesto y sin tocar tablas ajenas. Reglas: sin estado visible o con operaciones `conflict`/`rejected` → `Ok(None)` (referencia no encadenable excluida); `NOT_FOUND` del ámbito se mapea a `Ok(None)`; la referencia toma la versión aceptada o la operación provisional vigente.
+- `patients/booking_tests.rs` (3 pruebas): adulto aceptado con documento `declared` resuelve con `Accepted{version:2}`, teléfono propio, identificadores y responsable activo con teléfono; paciente inexistente → `None`; paciente creado offline (`Register`) resuelve como `Provisional{operationId,expectedVersion:0}` con operación `pending`; operación en `conflict` (simulado vía `sync_outbox`, patrón `reconciliation_tests`) excluye al paciente (`None`).
+- Verificación: `cargo test --locked components::patients` → **72/72**, 1 ignored preexistente (prueba de desarrollo real); `cargo check --workspace --all-targets --locked` sin warnings.
 
 **Verification:**
 - [ ] Focused tests: `cargo test --workspace --locked components::patients`.
@@ -115,14 +160,21 @@
 
 ## T05: Puerto CatalogBookingQuery
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Añadir una lectura pública de servicio, oferta y profesional aceptados o provisionales con snapshots y referencias, sin cambiar `CatalogQuery`.
 
 **Acceptance criteria:**
-- [ ] Nombre y duración efectiva de referencia se calculan desde el estado elegido.
-- [ ] Estados y referencias provisionales solo se ofrecen cuando pueden encadenarse.
-- [ ] No se leen tablas ajenas ni se alteran las consultas aceptadas existentes.
+- [x] Nombre y duración efectiva de referencia se calculan desde el estado elegido.
+- [x] Estados y referencias provisionales solo se ofrecen cuando pueden encadenarse.
+- [x] No se leen tablas ajenas ni se alteran las consultas aceptadas existentes.
+
+**Evidencia 2026-11-08 (T05):**
+
+- `services/application.rs`: `CatalogReference` (`Accepted{version,serviceVersion}` — ambas versiones contractuales — | `Provisional{operationId}`), `BookingOffer` (profesional, servicio, nombre, nombre profesional, duración efectiva de referencia y estados) y puerto público `CatalogBookingQuery::booking_offer`. Ampliación aditiva: `CatalogQuery` no cambia.
+- `services/adapters/outbound.rs`: implementación sobre `SqliteCatalogRepository` reutilizando `intents::resolve` + `intents::screen` (misma fusión aceptado/provisional de la pantalla de catálogo, transacción `IMMEDIATE` y commit como `catalog()`); sin SQL nuevo ni tablas ajenas. Reglas: profesional activo no bloqueado; oferta visible con cambios `conflict`/`rejected` → excluida (`None`); oferta aceptada → referencia `Accepted` con ambas versiones y duración efectiva; oferta con borrador provisional (ajuste o creación offline) → referencia `Provisional` con la operación pendiente/`unknown`, duración `override` o por defecto del servicio (vista aceptada o borrador del servicio offline) y nombre del servicio (vista o borrador); oferta o servicio inactivos → `None`.
+- `services/booking_tests.rs` (4 pruebas): oferta aceptada resuelve con `Accepted{1,1}`, duración efectiva 30 y nombre; servicio+oferta creados offline encadenan (`Provisional{operationId}` de la oferta, nombre "Consulta offline", override 45, estados activos); conflicto sobre la operación de la oferta excluye la reserva (`None`); oferta inactiva o `service_status` inactivo excluyen.
+- Verificación: `cargo test --locked components::services` → **23/23**; `cargo check --workspace --all-targets --locked` sin warnings.
 
 **Verification:**
 - [ ] Focused tests: `cargo test --workspace --locked components::services`.
@@ -140,14 +192,24 @@
 
 ## T06: Exclusión y ocupación provisional
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Ampliar disponibilidad con `excludeAppointmentId` y la ocupación local de Appointments para bloquear provisionales sin autobloqueo al reprogramar.
 
 **Acceptance criteria:**
-- [ ] La exclusión retira únicamente la cita indicada del cálculo de ocupación.
-- [ ] `scheduled`, `confirmed`, `completed` y `no_show` ocupan; `cancelled` libera también provisionalmente.
-- [ ] La cobertura de Agenda permanece intacta y no se crea una segunda disponibilidad persistida.
+- [x] La exclusión retira únicamente la cita indicada del cálculo de ocupación.
+- [x] `scheduled`, `confirmed`, `completed` y `no_show` ocupan; `cancelled` libera también provisionalmente.
+- [x] La cobertura de Agenda permanece intacta y no se crea una segunda disponibilidad persistida.
+
+**Evidencia 2026-11-08 (T06):**
+
+- `scheduling/application.rs`: `AvailabilityRequest` amplía con `exclude_appointment_id: Option<String>` (aditivo; no se envía a la API — la validación compartida la hace el servidor con el estado completo) y `validate_availability_request` exige UUIDv7 canónico cuando está presente. Seis sitios de construcción actualizados con `None` (IPC, tests, remoto, integración).
+- `scheduling/adapters/outbound.rs`: `local_availability` valida el exclusión y filtra **solo** la cita indicada antes de restar la ocupación; la cobertura por cursor y el resto del cálculo no cambian (no se persiste ninguna segunda disponibilidad).
+- `appointments/adapters/outbound.rs`: `SqliteScheduleOccupancyQuery` combina la vista aceptada con la ocupación provisional de `appointment_local`: el último borrador local por cita define el estado provisional (pendiente bloquea, cancelación provisional libera); intenciones con operaciones `conflict`/`rejected`/revisión excluidas; la vista aceptada gana ante duplicados; borradores ilegibles se ignoran de forma defensiva; resultado ordenado por inicio.
+- `appointments/occupancy_tests.rs` (3 pruebas, intención + Outbox en la misma transacción vía `record_operation`): cita pendiente bloquea y su cancelación provisional libera; profesional distinto aislado; operación en conflicto excluye; aceptada + provisional combinan sin duplicados y sobreviven a reapertura.
+- `scheduling/availability_query_tests.rs` (+1): reprogramar excluyendo la propia cita devuelve su hueco (12:00–14:00Z) mientras la otra cita sigue ocupando (el hueco 14:00–14:30Z no reaparece); exclusión de cita desconocida no cambia nada; exclusión no canónica rechazada.
+- Puntos de integración por el registro de la migración 10 (esperados): `identity/activation_tests.rs` (`localSchemaVersion` 9→10), `scheduling/repository_tests.rs` (`user_version` 9→10) y `tests/core_persistence.rs` (conteo de migraciones 9→10). `0001`–`0009` intactas.
+- Verificación: `cargo test --workspace --locked` → **331 passed, 0 failed** (325 lib + 5 core_persistence + 1 bin/doc), 8 ignored preexistentes; `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings` y `git diff --check` OK.
 
 **Verification:**
 - [ ] Focused tests: `cargo test --workspace --locked components::scheduling` y `cargo test --workspace --locked components::appointments`.
@@ -171,6 +233,16 @@
 - [ ] El usuario revisa snapshots, provisionales, exclusión y cobertura.
 - [ ] No hay escrituras de Citas ni cambios en contratos o migraciones anteriores.
 - [ ] `git diff --check` pasa.
+
+**Evidencia 2026-11-08 (C01, pendiente de revisión del usuario):**
+
+- `cargo test --workspace --locked`: **331 passed, 0 failed** (325 lib + 5 core_persistence + 1 bin/doc), 8 ignored preexistentes (pruebas de desarrollo con entorno real). Citas 20/20 (8 dominio, 6 repositorio, 3 ocupación, 3 proyectores previos de Agenda), Patients 72/72 (incl. 3 booking), Services 23/23 (incl. 4 booking), Scheduling 53/53 (incl. exclusión), plataforma 19/19.
+- `pnpm build:desktop`: OK (`target/debug/nightingale.exe`). `cargo fmt --all -- --check` y `cargo clippy --workspace --all-targets --locked -- -D warnings`: OK. `git diff --check`: OK.
+- **Huellas del bundle:** las cinco SHA-256 de `manifest.json` verificadas contra los cinco archivos → todas OK; contrato importado sin ediciones.
+- **Archivos creados en esta fase:** migración `0010_appointments.sql`, `appointments/domain.rs`, `appointments/occupancy_tests.rs`, `patients/booking_tests.rs`, `services/booking_tests.rs` y evidencia en el todo del plan. Sin logs, bases temporales ni artefactos huérfanos en Git. Lo demás no rastreado (`scheduling/*`, `projector.rs`, fixtures, `features/scheduling/`, etc.) es trabajo sin commit del plan de Agenda, preservado intacto.
+- **Puertos booking demostrados con aceptados y provisionales:** adulto aceptado (versión 2, documento `declared`, responsable activo con teléfono) y paciente offline (`Provisional{operationId, expectedVersion:0}`); oferta aceptada (`Accepted{version, serviceVersion}`, duración efectiva) y servicio+oferta creados offline (override 45 encadenado); conflictos excluyen en ambos puertos (`None`).
+- **Exclusión al reprogramar demostrada:** excluir la propia cita devuelve su hueco (12:00–14:00Z) y la otra cita sigue ocupando (14:00–14:30Z no reaparece); exclusión de cita desconocida no altera; exclusión inválida rechazada. Ocupación provisional: pendiente bloquea, cancelación provisional libera, conflicto excluye, aceptada+provisional sin duplicados tras reapertura.
+- **Límites explícitos:** sin escrituras de Citas (CreateAppointment empieza en T08); la exclusión no se envía a la API; `C06` de Agenda sigue pendiente de revisión del usuario por decisión expresada.
 
 ## T07: Secuencias y dependencias de operaciones
 

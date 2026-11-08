@@ -166,6 +166,43 @@ pub trait CatalogQuery {
     ) -> Result<Option<ProfessionalView>>;
 }
 
+/// How a booking offer is anchored: an accepted offer keeps both the offer
+/// version and the catalog `serviceVersion`; a provisional one keeps the
+/// pending operation a new appointment can declare as dependency.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum CatalogReference {
+    Accepted { version: i64, service_version: i64 },
+    Provisional { operation_id: String },
+}
+
+/// Booking view of one offered service: professional, effective reference
+/// duration for snapshots and both versions. Rows whose local changes are
+/// rejected or in conflict are excluded: they cannot be chained.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookingOffer {
+    pub professional_id: String,
+    pub service_id: String,
+    pub service_name: String,
+    pub professional_name: String,
+    pub effective_duration_minutes: i64,
+    pub status: String,
+    pub service_status: String,
+    pub reference: CatalogReference,
+}
+
+/// Public booking read owned by services. Implementations reuse the merged
+/// accepted/provisional catalog screen and expose no storage details.
+pub trait CatalogBookingQuery {
+    fn booking_offer(
+        &mut self,
+        access: &AccountAccess,
+        professional: &ProfessionalId,
+        service: &ServiceId,
+    ) -> Result<Option<BookingOffer>>;
+}
+
 pub enum CatalogMutation {
     CreateService {
         professional: ProfessionalId,

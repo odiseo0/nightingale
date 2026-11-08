@@ -477,3 +477,219 @@ fn operation_payload_absence_null_extra_and_sse_examples_match_fixed_artifacts()
         check(&sse, &sse, &event, "sse").unwrap();
     }
 }
+
+#[test]
+fn scheduling_actions_payload_models_and_keys_match_fixed_bundle() {
+    let capabilities: Value = serde_json::from_str(include_str!(
+        "../../../../docs/contracts/api-v1/capabilities.json"
+    ))
+    .unwrap();
+    let schema: Value = serde_json::from_str(include_str!(
+        "../../../../docs/contracts/api-v1/accepted-operations.schema.json"
+    ))
+    .unwrap();
+    let fixtures: Vec<Value> =
+        serde_json::from_str(include_str!("fixtures/scheduling-operations.json")).unwrap();
+    assert_eq!(fixtures.len(), 9);
+    let mut actions = std::collections::BTreeSet::new();
+    for fixture in fixtures {
+        let operation = &fixture["operation"];
+        let action = operation["action"].as_str().unwrap();
+        assert!(actions.insert(action.to_owned()));
+        assert!(
+            capabilities["operationCatalog"]
+                .as_array()
+                .unwrap()
+                .contains(&json!(action))
+        );
+        let model = capabilities["payloadModels"][action].as_str().unwrap();
+        assert_eq!(model.rsplit('.').next().unwrap(), fixture["payloadModel"]);
+        check(&schema, &schema, operation, action).unwrap();
+        let envelope: OperationEnvelope = serde_json::from_value(operation.clone()).unwrap();
+        assert_eq!(serde_json::to_value(envelope).unwrap(), *operation);
+        assert!(
+            !capabilities["onlineOnlyActions"]
+                .as_array()
+                .unwrap()
+                .contains(&json!(action)),
+            "{action} must stay offline-capable"
+        );
+        crate::shared_kernel::id::canonical_uuid_v7(operation["entityKey"].as_str().unwrap())
+            .unwrap();
+        // The local domain accepts the same values the contract fixture carries.
+        let payload = &operation["payload"];
+        match action {
+            "CreateScheduleRule" => {
+                crate::components::scheduling::domain::RuleValue::new(
+                    payload["professionalId"]
+                        .as_str()
+                        .unwrap()
+                        .to_owned()
+                        .try_into()
+                        .unwrap(),
+                    payload["isoWeekday"].as_i64().unwrap(),
+                    payload["localStartMinute"].as_i64().unwrap(),
+                    payload["localEndMinute"].as_i64().unwrap(),
+                    crate::components::scheduling::domain::parse_local_date(
+                        payload["validFrom"].as_str().unwrap(),
+                    )
+                    .unwrap(),
+                    payload["validUntil"]
+                        .as_str()
+                        .map(crate::components::scheduling::domain::parse_local_date)
+                        .transpose()
+                        .unwrap(),
+                )
+                .unwrap();
+            }
+            "CreateScheduleException" => {
+                crate::components::scheduling::domain::ExceptionValue::new(
+                    payload["professionalId"]
+                        .as_str()
+                        .unwrap()
+                        .to_owned()
+                        .try_into()
+                        .unwrap(),
+                    crate::components::scheduling::domain::parse_local_date(
+                        payload["localDate"].as_str().unwrap(),
+                    )
+                    .unwrap(),
+                    crate::components::scheduling::domain::ExceptionKind::try_from(
+                        payload["kind"].as_str().unwrap(),
+                    )
+                    .unwrap(),
+                    payload["localStartMinute"].as_i64(),
+                    payload["localEndMinute"].as_i64(),
+                )
+                .unwrap();
+            }
+            "CreateScheduleBlock" => {
+                crate::components::scheduling::domain::BlockValue::new(
+                    payload["professionalId"]
+                        .as_str()
+                        .unwrap()
+                        .to_owned()
+                        .try_into()
+                        .unwrap(),
+                    payload["accountId"]
+                        .as_str()
+                        .map(|value| value.to_owned().try_into().unwrap()),
+                    crate::components::scheduling::domain::Instant::parse(
+                        payload["startsAt"].as_str().unwrap(),
+                    )
+                    .unwrap(),
+                    crate::components::scheduling::domain::Instant::parse(
+                        payload["endsAt"].as_str().unwrap(),
+                    )
+                    .unwrap(),
+                    crate::components::scheduling::domain::ReasonCode::try_from(
+                        payload["reasonCode"].as_str().unwrap(),
+                    )
+                    .unwrap(),
+                )
+                .unwrap();
+            }
+            _ => {}
+        }
+        let mut invalid = operation.clone();
+        invalid["payload"]["unexpected"] = json!(true);
+        assert!(check(&schema, &schema, &invalid, action).is_err());
+    }
+}
+
+#[test]
+fn scheduling_agenda_occupancy_and_availability_states_match_fixed_bundle() {
+    use super::adapters::remote_models::RemoteState;
+
+    // The three agenda states parse with their typed models and versions.
+    for (entity, state) in [
+        (
+            "schedule_rule",
+            json!({"accountId":"019a1234-0000-7000-8000-000000000001","id":"019a1234-0000-7000-8000-000000000030","professionalId":"019a1234-0000-7000-8000-000000000008","isoWeekday":3,"localStartMinute":480,"localEndMinute":720,"validFrom":"2026-01-01","validUntil":null,"status":"active","createdAt":null,"updatedAt":null,"version":1}),
+        ),
+        (
+            "schedule_exception",
+            json!({"accountId":"019a1234-0000-7000-8000-000000000001","id":"019a1234-0000-7000-8000-000000000031","professionalId":"019a1234-0000-7000-8000-000000000008","localDate":"2026-05-06","kind":"replacement","localStartMinute":540,"localEndMinute":600,"status":"active","createdAt":null,"updatedAt":null,"version":1}),
+        ),
+        (
+            "schedule_block",
+            json!({"accountId":null,"id":"019a1234-0000-7000-8000-000000000032","professionalId":"019a1234-0000-7000-8000-000000000008","startsAt":"2026-04-01T13:00:00Z","endsAt":"2026-04-01T17:00:00Z","reasonCode":null,"status":"active","createdAt":null,"updatedAt":null,"version":1}),
+        ),
+    ] {
+        let parsed: RemoteState =
+            serde_json::from_value(json!({"entityType": entity, "state": state})).unwrap();
+        assert_eq!(parsed.version(), 1);
+        assert!(parsed.key().is_string());
+    }
+
+    // Occupancy: occupying states are accepted by the public interval, cancelled is not.
+    for (status, occupies) in [
+        ("scheduled", true),
+        ("confirmed", true),
+        ("completed", true),
+        ("no_show", true),
+        ("cancelled", false),
+    ] {
+        let result = crate::components::appointments::application::OccupancyInterval::new(
+            "019a1234-0000-7000-8000-000000000040".into(),
+            "2026-05-06T13:30:00Z".parse().unwrap(),
+            "2026-05-06T14:00:00Z".parse().unwrap(),
+            status,
+        );
+        assert_eq!(result.is_ok(), occupies, "occupancy for {status}");
+    }
+
+    // Availability response: no structural drift against the fixed bundle.
+    let public_models: Value = serde_json::from_str(include_str!(
+        "../../../../docs/contracts/api-v1/public-models.schema.json"
+    ))
+    .unwrap();
+    let availability = public_models["$defs"]["AvailabilityResponse"]["required"]
+        .as_array()
+        .unwrap();
+    let fixture: Value =
+        serde_json::from_str(include_str!("fixtures/scheduling-availability.json")).unwrap();
+    for field in availability {
+        assert!(fixture["response"].get(field.as_str().unwrap()).is_some());
+    }
+    let response: crate::components::scheduling::adapters::api::RemoteAvailabilityResponse =
+        serde_json::from_value(fixture["response"].clone()).unwrap();
+    assert_eq!(response.requested_duration_minutes, 45);
+    assert_eq!(response.available_intervals.len(), 2);
+    let query = &fixture["query"];
+    for field in ["professionalId", "serviceId", "from", "until"] {
+        assert!(query.get(field).is_some(), "query {field}");
+    }
+}
+
+#[test]
+fn contract_bundle_fingerprints_stay_intact() {
+    let manifest: Value = serde_json::from_str(include_str!(
+        "../../../../docs/contracts/api-v1/manifest.json"
+    ))
+    .unwrap();
+    for (file, fingerprint) in manifest["files"].as_object().unwrap() {
+        let bytes = match file.as_str() {
+            "accepted-operations.schema.json" => {
+                include_bytes!("../../../../docs/contracts/api-v1/accepted-operations.schema.json")
+                    .as_slice()
+            }
+            "capabilities.json" => {
+                include_bytes!("../../../../docs/contracts/api-v1/capabilities.json").as_slice()
+            }
+            "openapi.json" => {
+                include_bytes!("../../../../docs/contracts/api-v1/openapi.json").as_slice()
+            }
+            "public-models.schema.json" => {
+                include_bytes!("../../../../docs/contracts/api-v1/public-models.schema.json")
+                    .as_slice()
+            }
+            "sse.schema.json" => {
+                include_bytes!("../../../../docs/contracts/api-v1/sse.schema.json").as_slice()
+            }
+            other => panic!("unexpected bundle file {other}"),
+        };
+        let digest = format!("{:x}", Sha256::digest(bytes));
+        assert_eq!(&digest, fingerprint, "fingerprint drift in {file}");
+    }
+}

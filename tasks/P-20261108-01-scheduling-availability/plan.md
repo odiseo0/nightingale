@@ -195,31 +195,31 @@ El detalle verificable de cada tarea está en [todo.md](todo.md).
 - [ ] Usuario revisa semántica y mensajes de disponibilidad.
 
 ### Fase 4: proyección y conciliación
-- [ ] T12: Proyectores de agenda y ocupación.
-- [ ] T13: Conciliación de provisionales.
+- [x] T12: Proyectores de agenda y ocupación.
+- [x] T13: Conciliación de provisionales.
 
 ### C04: Sincronización completa del componente
 - [ ] Proyección, captura, remove, recibos parciales y reapertura conservan trabajo.
 - [ ] `cargo test --workspace --locked` y `pnpm build:desktop` pasan.
-- [ ] Usuario revisa conciliación antes de IPC/UI.
+- [x] Usuario revisa conciliación antes de IPC/UI.
 
 ### Fase 5: IPC e interfaz
-- [ ] T14: Comandos de escritura.
-- [ ] T15: Comandos de consulta.
-- [ ] T16: Registro y cliente TypeScript.
-- [ ] T17: UI de Agenda.
-- [ ] T18: UI de Disponibilidad.
+- [x] T14: Comandos de escritura.
+- [x] T15: Comandos de consulta.
+- [x] T16: Registro y cliente TypeScript.
+- [x] T17: UI de Agenda.
+- [x] T18: UI de Disponibilidad.
 
 ### C05: Vertical usable desde escritorio
 - [ ] Los 14 comandos y permisos son coherentes; UI local/remota funciona con datos sintéticos.
 - [ ] `pnpm quality` y `pnpm build:desktop` pasan; revisión manual Windows registrada.
-- [ ] Usuario revisa la vertical antes de pruebas finales.
+- [x] Usuario revisa la vertical antes de pruebas finales.
 
 ### Fase 6: contrato, integración y aceptación
-- [ ] T19: Fixtures del consumidor.
-- [ ] T20: Integración loopback de dos perfiles.
-- [ ] T21: Guías y calidad.
-- [ ] T22: API/OIDC real de desarrollo.
+- [x] T19: Fixtures del consumidor.
+- [x] T20: Integración loopback de dos perfiles.
+- [x] T21: Guías y calidad.
+- [ ] T22: API/OIDC real de desarrollo (pendiente de entorno).
 
 ### C06: Aceptación de Agenda y Disponibilidad
 - [ ] Suite, contrato, integración loopback, calidad y build de escritorio pasan.

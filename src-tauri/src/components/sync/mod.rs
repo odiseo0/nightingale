@@ -15,6 +15,8 @@ mod contract_tests;
 mod catalog_integration_tests;
 #[cfg(test)]
 mod patients_integration_tests;
+#[cfg(test)]
+mod scheduling_integration_tests;
 
 #[cfg(test)]
 mod matrix_tests;

@@ -357,6 +357,43 @@ pub trait PatientQuery {
     ) -> Result<Vec<Accepted<IdentifierState>>>;
 }
 
+/// How a booking view is anchored: an accepted version or a provisional
+/// operation that a new appointment can declare as dependency.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum BookingReference {
+    Accepted {
+        version: i64,
+    },
+    Provisional {
+        operation_id: String,
+        expected_version: i64,
+    },
+}
+
+/// Booking view of one patient: profile, documents and responsible contacts
+/// with accepted/provisional separation, for the appointments component to
+/// validate a reservation while offline. Rows whose operations are rejected
+/// or in conflict are excluded: they cannot be chained.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookingPatient {
+    pub profile: EntityRow<ProfileState>,
+    pub reference: BookingReference,
+    pub identifiers: Vec<EntityRow<IdentifierState>>,
+    pub responsible_contacts: Vec<EntityRow<RelationshipView>>,
+}
+
+/// Public booking read owned by patients. Implementations reuse the merged
+/// accepted/provisional reads and expose no storage details.
+pub trait PatientBookingQuery {
+    fn booking_patient(
+        &mut self,
+        access: &AccountAccess,
+        patient: &PatientId,
+    ) -> Result<Option<BookingPatient>>;
+}
+
 pub trait PatientRepository {
     fn identifiers(
         &mut self,

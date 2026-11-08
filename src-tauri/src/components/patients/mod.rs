@@ -5,6 +5,8 @@ pub mod domain;
 #[cfg(test)]
 mod application_tests;
 #[cfg(test)]
+mod booking_tests;
+#[cfg(test)]
 pub(crate) mod test_support;
 
 #[cfg(test)]

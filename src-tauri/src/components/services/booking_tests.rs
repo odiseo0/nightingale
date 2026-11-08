@@ -165,7 +165,7 @@ fn conflicted_offer_is_excluded_from_booking() {
     let mut connection = test_support::database();
     let access = test_support::access();
 
-    // Servicio y oferta creados offline; el envío devuelve conflicto.
+    // Service and offer created offline; dispatch returns conflict.
     let created = {
         let mut repository = SqliteCatalogRepository {
             connection: &mut connection,

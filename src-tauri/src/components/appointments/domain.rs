@@ -539,7 +539,7 @@ mod tests {
                 AppointmentStatus::NoShow
             );
         }
-        // acción sin cita
+        // action without an appointment
         assert!(apply_transition(AppointmentTransition::Cancel, None).is_err());
     }
 
@@ -556,16 +556,16 @@ mod tests {
             "2026-04-01T13:00:00Z"
         );
 
-        // segundos no nulos
+        // non-zero seconds
         assert!(MinuteInstant::parse("2026-04-01T09:00:30Z").is_err());
         assert!(MinuteInstant::parse("2026-04-01T09:00:00.500Z").is_err());
         // inicio >= fin
         assert!(AppointmentInterval::new(end, start).is_err());
-        // duración 0 y >1440
+        // zero and over-1440 durations
         assert!(AppointmentInterval::new(start, start).is_err());
         let too_long_end = MinuteInstant::parse("2026-04-03T13:01:00Z").unwrap();
         assert!(AppointmentInterval::new(start, too_long_end).is_err());
-        // 1440 exactos válidos
+        // exactly 1440 is valid
         let day_end = MinuteInstant::parse("2026-04-02T13:00:00Z").unwrap();
         assert_eq!(
             AppointmentInterval::new(start, day_end)
@@ -667,18 +667,18 @@ mod tests {
 
     #[test]
     fn age_on_uses_local_date_and_february_29_rule() {
-        // adulto simple
+        // simple adult
         assert_eq!(age_on(date("1990-06-15"), date("2026-06-15")), 36);
         assert_eq!(age_on(date("1990-06-15"), date("2026-06-14")), 35);
-        // menor límite: cumple 18 el día de la cita → ya no es menor
+        // boundary minor: turns 18 on the appointment day
         assert!(!is_minor_at(date("2008-03-10"), date("2026-03-10")));
         assert!(is_minor_at(date("2008-03-11"), date("2026-03-10")));
-        // 29 de febrero: cumple el 1 de marzo en años no bisiestos
+        // Feb 29 birthday falls on Mar 1 in non-leap years
         let feb29 = date("2008-02-29");
         assert!(is_minor_at(feb29, date("2026-02-28")));
         assert!(!is_minor_at(feb29, date("2026-03-01")));
         assert_eq!(age_on(feb29, date("2026-03-01")), 18);
-        // año bisiesto sí cumple el 29
+        // leap year keeps the Feb 29 birthday
         assert_eq!(age_on(feb29, date("2028-02-29")), 20);
     }
 

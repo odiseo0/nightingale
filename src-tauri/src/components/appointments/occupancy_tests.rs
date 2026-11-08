@@ -156,7 +156,7 @@ fn pending_appointment_blocks_and_provisional_cancel_frees() {
     let database = Database::new();
     let mut connection = sqlite::open(&database.0).unwrap();
 
-    // Cita provisional 13:00–13:30Z: bloquea localmente.
+    // Provisional appointment 13:00-13:30Z blocks locally.
     persist_intent(
         &mut connection,
         1,
@@ -180,7 +180,7 @@ fn pending_appointment_blocks_and_provisional_cancel_frees() {
         )]
     );
 
-    // Cancelación provisional: el último borrador libera el hueco.
+    // Provisional cancellation: the latest draft frees the slot.
     persist_intent(
         &mut connection,
         2,
@@ -200,7 +200,7 @@ fn pending_appointment_blocks_and_provisional_cancel_frees() {
         .is_empty()
     );
 
-    // Otra profesional no ve la cita provisional.
+    // Another professional does not see the provisional appointment.
     persist_intent(
         &mut connection,
         3,
@@ -259,7 +259,7 @@ fn accepted_and_provisional_appointments_combine_without_duplicates() {
     let mut connection = sqlite::open(&database.0).unwrap();
     let scope = scope();
 
-    // Ocupación aceptada contigua con la provisional; ambas ocupan.
+    // Accepted occupancy contiguous with the provisional one; both occupy.
     connection
         .execute(
             "INSERT INTO appointment_occupancy_view (account_id,user_id,device_id,appointment_id,professional_id,starts_at,ends_at,status,version) VALUES (?1,?2,?3,?4,?5,'2026-05-04T12:00:00Z','2026-05-04T13:00:00Z','confirmed',1)",
@@ -292,7 +292,7 @@ fn accepted_and_provisional_appointments_combine_without_duplicates() {
     assert_eq!(rows[0].0, OTHER_APPOINTMENT);
     assert_eq!(rows[1].0, APPOINTMENT);
 
-    // Reapertura conserva la ocupación provisional.
+    // Reopening keeps the provisional occupancy.
     drop(connection);
     let connection = sqlite::open(&database.0).unwrap();
     assert_eq!(

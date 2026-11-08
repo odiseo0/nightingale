@@ -687,7 +687,7 @@ impl CatalogBookingQuery for SqliteCatalogRepository<'_> {
                 }
             }
             None => {
-                // Oferta creada offline: nombre y duración desde el servicio.
+                // Offer created offline: name and duration come from the service.
                 let draft = offer_row.provisional.as_ref().unwrap();
                 BookingOffer {
                     professional_id: professional.as_str().into(),

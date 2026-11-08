@@ -5,7 +5,7 @@
 **Created:** 2026-11-08  
 **Updated:** 2026-11-08
 
-**Instrucción vigente:** el usuario autorizó el 2026-11-08 ejecutar T01–T06 y detenerse en C01 a pesar de que `P-20261108-01-scheduling-availability/C06` queda pendiente de revisión (decisión explícita del usuario: "es algo que revisaremos después").
+**Instrucción vigente:** el usuario aprobó C01 el 2026-11-08, consolidó T01–T06 en el commit `43ec89e` (con un pase de formato y comentarios propio) y autorizó continuar con el desarrollo. Convención registrada por el usuario: **los comentarios de código nuevos se escriben en inglés**. `P-20261108-01-scheduling-availability/C06` sigue pendiente de revisión por decisión explícita del usuario ("es algo que revisaremos después").
 
 **Migración reservada:** `0010_appointments`.  
 **Responsable de integración:** quien ejecute el plan; una sola persona registra migraciones, composición, comandos, permisos, manifiestos y lockfile.  
@@ -229,6 +229,8 @@
 
 ## C01: Base contractual y de datos
 
+**Status:** Aprobado por el usuario el 2026-11-08 (commit `43ec89e`).
+
 - [ ] Dominio, migración y puertos booking/disponibilidad pasan junto con `cargo test --workspace --locked` y `pnpm build:desktop`.
 - [ ] El usuario revisa snapshots, provisionales, exclusión y cobertura.
 - [ ] No hay escrituras de Citas ni cambios en contratos o migraciones anteriores.
@@ -246,14 +248,23 @@
 
 ## T07: Secuencias y dependencias de operaciones
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Implementar preparación común con base aceptada/local, versiones previstas, provisionales y Outbox atómico.
 
 **Acceptance criteria:**
-- [ ] Provisional y Outbox se confirman o revierten juntos.
-- [ ] Las secuencias respetan ocho dependencias, sin duplicados, ciclos ni truncamiento.
-- [ ] Bases antiguas o bloqueadas no crean operación y el trabajo previo se conserva.
+- [x] Provisional y Outbox se confirman o revierten juntos.
+- [x] Las secuencias respetan ocho dependencias, sin duplicados, ciclos ni truncamiento.
+- [x] Bases antiguas o bloqueadas no crean operación y el trabajo previo se conserva.
+
+**Evidencia 2026-11-08 (T07):**
+
+- `appointments/application.rs`: `EditBase` (`Accepted{version}`/`LocalOperation{operationId}`), `AppointmentState` (estado completo con nueve snapshots, camelCase para borradores), `Accepted`/`Provisional`/`OperationView`/`EntityRow` (misma fusión que Patients/Agenda), `NewAppointment` (referencias + intervalo + snapshots), `AppointmentMutation` con las seis acciones (`Create` con `Box<NewAppointment>` por tamaño de variante, clippy), `action()`, `LocalMutationResult`, puerto `AppointmentRepository` (`appointment_row`, `persist`) y `require_active` (acciones staff con cuenta activa; la autorización por acción la vuelve a validar API).
+- `appointments/adapters/intents.rs`: `edit_base` (base aceptada exige fila sin provisional y misma versión; base local exige `can_depend` en operaciones previas), `validate_depends_on` (UUIDv7 canónico, existente en el ámbito, sin duplicados, ≤8 — el grafo sigue acíclico porque una operación nueva no puede referenciarse), `prepare` con payloads contractuales exactos (create con `responsibleContactId` solo cuando existe; confirm `{}`; reschedule `{startsAt,endsAt}`; motivo solo cuando existe), transiciones de dominio aplicadas en cada acción, `NO_CHANGES` al reprogramar al mismo intervalo, confirmación con `confirmedAt` siempre nulo localmente, y `confirmed()` (recibo aceptado + versión confirmada ≤ vista aceptada).
+- `appointments/adapters/outbound.rs`: `appointment_rows` (aceptado + provisional + operaciones separados; provisional retira solo por recibo+vista), `current_access` (acceso activo y época igual), `SqliteAppointmentRepository::persist` — preparación fuera de la transacción, `record_operation` + `insert_local_change` + commit en una `IMMEDIATE`; sin SQL/HTTP expuestos.
+- `appointments/test_support.rs` + `application_tests.rs` (4 pruebas): secuencia create→confirm→reschedule→cancel con bases locales encadenadas (versiones 0→3) y reapertura con provisional cancelado y 4 operaciones; bases aceptadas con provisional, bases locales falsas y operaciones en conflicto rechazan (`VERSION_CONFLICT`/`DEPENDENCY_FAILED`) sin crear intención ni Outbox; dependencias validadas (no canónica/inexistente/duplicada/>8 rechazadas, 8 válidas aceptadas, conflicto excluye); `NO_CHANGES` en reprogramación idéntica y transiciones inválidas en terminales sin crear operación.
+- Convención del usuario aplicada: comentarios de código nuevos en inglés (pase de conversión sobre los archivos tocados en T01–T07; los comentarios del plan de Agenda se preservan).
+- Verificación: `cargo test --workspace --locked` → **335 passed, 0 failed** (329 lib + 5 core_persistence + 1 bin/doc), 8 ignored preexistentes; `cargo fmt --all -- --check` y `cargo clippy --workspace --all-targets --locked -- -D warnings` OK; `git diff --check` OK.
 
 **Verification:**
 - [ ] Focused tests: `cargo test --workspace --locked components::appointments`.
@@ -272,14 +283,21 @@
 
 ## T08: Crear cita
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Implementar `CreateAppointment` con validación booking, snapshots, disponibilidad, dependencias y versión cero.
 
 **Acceptance criteria:**
-- [ ] Adulto, menor y responsable cumplen las reglas a la fecha local de la cita.
-- [ ] Cita provisional, snapshots y Outbox se guardan atómicamente con `expectedVersion=0`.
-- [ ] Cobertura insuficiente o solapamiento conocido bloquea sin efectos parciales.
+- [x] Adulto, menor y responsable cumplen las reglas a la fecha local de la cita.
+- [x] Cita provisional, snapshots y Outbox se guardan atómicamente con `expectedVersion=0`.
+- [x] Cobertura insuficiente o solapamiento conocido bloquea sin efectos parciales.
+
+**Evidencia 2026-11-08 (T08):**
+
+- `appointments/application.rs`: `CreateAppointmentInput` (ids + intervalo RFC 3339 de minuto) y validador puro `validate_new_appointment(account, patient, offer, input, evaluation)` — componible y probable sin base de datos: cuenta activa; paciente `active`+`complete` con nombre; `own_document` exige documento `declared`/`verified` y teléfono propio o responsable válido; `minor_without_document` exige nacimiento, menor de 18 a la fecha civil local de la cita (dominio) y responsable; responsable elegido debe ser vínculo activo marcado responsable, vigente en la fecha local (extremos inclusivos) y con teléfono (sin inferir representación/tutela); oferta correspondiente a profesional+servicio; `insufficient_coverage` → `INSUFFICIENT_COVERAGE`; intervalo contenido en un intervalo disponible → si no `SLOT_UNAVAILABLE`; `no_synced_window` permite trabajar con lo conocido (regla de Agenda); snapshots armados desde oferta (nombre, duración efectiva, profesional) + cuenta (lugar completo y zona).
+- `appointments/adapters/outbound.rs`: `SqliteAppointmentRepository::create_appointment` compone los puertos existentes (mismo patrón que `local_availability` de Agenda): vista de cuenta aceptada → `PatientBookingQuery` → `CatalogBookingQuery` → ocupación leída primero como snapshot `KnownOccupancy` (sin compartir el `&mut` de la conexión) → `ScheduleAvailabilityQuery.local_availability` con duración real; valida; declara dependencias de las referencias provisionales (paciente y oferta, sin duplicados); `persist` atómico con `expectedVersion=0`. Permiso: acción en `allowedActions` del acceso vigente. Ningún fallo escribe nada: todo se valida antes de abrir la transacción.
+- `appointments/create_tests.rs` (8 pruebas): matriz pura — adulto `declared`/`verified` con snapshots correctos; documento `invalidated`/ausente, sin teléfono ni responsable, ficha `draft` e inactivo rechazados; adulto sin teléfono con responsable válido aceptado; menor límite (cumple 18 el día de la cita, fecha local de la zona de la cuenta) rechazado y menor de 17 con responsable aceptado; responsable desconocido/vínculo no vigente (inicio posterior o fin previo a la fecha local)/sin teléfono rechazados; `insufficient_coverage` rechaza con código propio, `no_synced_window` permite, intervalo que no cabe o hueco ocupado → `SLOT_UNAVAILABLE`. Flujo integrado real: create guarda provisional + Outbox (`payload` contractual exacto, `confirmedAt` nulo, nueve snapshots), doble reserva del mismo hueco bloqueada por la ocupación provisional, contigüidad permitida, fuera de horario sin efectos parciales; paciente menor provisional encadena la operación de completitud como dependencia registrada en Outbox y `appointment_local`.
+- Verificación: `cargo test --workspace --locked` → **343 passed, 0 failed** (337 lib + 5 core_persistence + 1 bin/doc), 8 ignored preexistentes; `cargo fmt --all -- --check` y `cargo clippy --workspace --all-targets --locked -- -D warnings` OK; `git diff --check` OK.
 
 **Verification:**
 - [ ] Focused tests: `cargo test --workspace --locked components::appointments`.
@@ -298,14 +316,19 @@
 
 ## T09: Confirmar cita
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Implementar `ConfirmAppointment` desde estado programado aceptado o provisional.
 
 **Acceptance criteria:**
-- [ ] El payload es `{}` y la base/dependencia pertenece a la misma cita.
-- [ ] Solo `scheduled` pasa a `confirmed`; otra transición devuelve `INVALID_STATE_TRANSITION`.
-- [ ] No se fabrica `confirmedAt` local ni una segunda confirmación.
+- [x] El payload es `{}` y la base/dependencia pertenece a la misma cita.
+- [x] Solo `scheduled` pasa a `confirmed`; otra transición devuelve `INVALID_STATE_TRANSITION`.
+- [x] No se fabrica `confirmedAt` local ni una segunda confirmación.
+
+**Evidencia 2026-11-08 (T09):**
+
+- La preparación de T07 fija el contrato de la acción; esta tarea lo cierra con pruebas dedicadas `appointments/confirm_tests.rs` (4 pruebas): confirm sobre base local encadena la operación create de la misma cita como dependencia, `expectedVersion=1`, payload exactamente `{}` en Outbox, borrador `confirmed` con `confirmedAt` nulo (solo el servidor asigna la hora de confirmación) e intervalo conservado; reapertura conserva el provisional. Base aceptada limpia (recibo aceptado + vista en versión 1) confirm sin dependencias. Rechazos sin efectos: base local de otra cita (`VERSION_CONFLICT` — la base/dependencia queda atada a la fila de su cita), segunda confirmación (`INVALID_STATE_TRANSITION`), base aceptada ajena/falsa (`VERSION_CONFLICT`), confirm sobre cancelado (`INVALID_STATE_TRANSITION`); conteo de Outbox intacto tras los rechazos.
+- Verificación: `cargo test --workspace --locked` → **347 passed, 0 failed** (341 lib + 5 core_persistence + 1 bin/doc), 8 ignored preexistentes; fmt, clippy `-D warnings` y `git diff --check` OK.
 
 **Verification:**
 - [ ] Focused tests: `cargo test --workspace --locked components::appointments`.
@@ -323,14 +346,21 @@
 
 ## T10: Reprogramar cita
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Implementar `RescheduleAppointment` con igual duración real, exclusión propia, snapshots y confirmación invalidada provisionalmente.
 
 **Acceptance criteria:**
-- [ ] El nuevo intervalo conserva duración real 1–1440 y referencias/snapshots.
-- [ ] Disponibilidad excluye la cita actual y detecta otras ocupaciones/bloqueos.
-- [ ] `scheduled` o `confirmed` vuelve a `scheduled` y `confirmedAt` queda nulo provisionalmente.
+- [x] El nuevo intervalo conserva duración real 1–1440 y referencias/snapshots.
+- [x] Disponibilidad excluye la cita actual y detecta otras ocupaciones/bloqueos.
+- [x] `scheduled` o `confirmed` vuelve a `scheduled` y `confirmedAt` queda nulo provisionalmente.
+
+**Evidencia 2026-11-08 (T10):**
+
+- `adapters/intents.rs` (preparación): reprogramar exige igual duración real que la cita visible (cálculo en minutos con `Span::total`, tolerancia exacta) → `VALIDATION_ERROR`; el mismo intervalo sigue siendo `NO_CHANGES`.
+- `adapters/outbound.rs`: `reschedule_appointment` — fila fusionada y transición resueltas antes de escribir; disponibilidad local con `exclude_appointment_id = propia cita` y duración solicitada = duración real; `insufficient_coverage` → `INSUFFICIENT_COVERAGE`; intervalo contenido en un intervalo disponible o `SLOT_UNAVAILABLE`; `persist` atómico. Permiso por acción en el acceso vigente.
+- `reschedule_tests.rs` (3 pruebas): confirmada reprogramada vuelve a `scheduled` con `confirmedAt` nulo, payload exactamente `{startsAt, endsAt}`, snapshots/referencias conservados y reapertura durable; cambio de duración real y mismo intervalo rechazados sin operación; la ocupación de otra cita bloquea el nuevo hueco aun excluyendo la propia, y tras cancelarla la misma mudanza se permite — la ocupación provisional sigue al último borrador (hueco viejo libre, nuevo ocupado).
+- Verificación: `cargo test --workspace --locked` → **350 passed, 0 failed** (344 lib + 5 core_persistence + 1 bin/doc), 8 ignored preexistentes; fmt, clippy `-D warnings` y `git diff --check` OK.
 
 **Verification:**
 - [ ] Focused tests: `cargo test --workspace --locked components::appointments`.
@@ -348,85 +378,65 @@
 
 ## T11: Cancelar cita
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Implementar `CancelAppointment` con motivo opcional, historia local separada y liberación de ocupación.
 
 **Acceptance criteria:**
-- [ ] Solo `scheduled` o `confirmed` puede cancelarse y el motivo presente no está vacío.
-- [ ] La cancelación libera ocupación provisional sin borrar operaciones anteriores.
-- [ ] La historia local permanece separada de la aceptada y sobrevive a reapertura.
+- [x] Solo `scheduled` o `confirmed` puede cancelarse y el motivo presente no está vacío.
+- [x] La cancelación libera ocupación provisional sin borrar operaciones anteriores.
+- [x] La historia local permanece separada de la aceptada y sobrevive a reapertura.
 
-**Verification:**
-- [ ] Focused tests: `cargo test --workspace --locked components::appointments`.
-- [ ] Build or broader check: `cargo check --workspace --all-targets --locked` y `git diff --check`.
-- [ ] Manual check: cancelar y consultar disponibilidad e historia tras reapertura.
+**Evidencia 2026-11-08 (T11):**
 
-**Dependencies:** T10.
-
-**Files likely touched:**
-- `src-tauri/src/components/appointments/application.rs`
-- `src-tauri/src/components/appointments/adapters/outbound.rs`
-- `src-tauri/src/components/appointments/cancel_tests.rs`
-
-**Estimated scope:** M
+- La preparación de T07 fija la transición, el motivo opcional no vacío (`ChangeReason`, dominio T02) y el borrador terminal; `cancel_tests.rs` (3 pruebas): cancelación con motivo viaja en el payload (`{"changeReason": ...}`), el borrador conserva snapshots y referencias, y la ocupación provisional queda libre (la consulta del puerto devuelve vacío); cancelación sin motivo produce payload exactamente `{}`; motivo vacío rechazado en dominio; terminales rechazan otras transiciones (`INVALID_STATE_TRANSITION`); reapertura conserva el provisional cancelado y ambas operaciones. La historia local permanece en `appointment_local`/`sync_outbox`, separada de la vista aceptada (`appointment_history_view` la escribe solo el proyector, T15).
+- Verificación: ver C02.
 
 ## T12: Registrar atención
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Implementar `CompleteAppointment` con reloj inyectado y motivo opcional.
 
 **Acceptance criteria:**
-- [ ] Solo se completa cuando `clock.now >= startsAt` desde `scheduled` o `confirmed`.
-- [ ] El estado terminal y motivo se conservan sin alterar ocupación ni historia anterior.
-- [ ] Una llamada antes del inicio no crea operación ni modifica la cita.
+- [x] Solo se completa cuando `clock.now >= startsAt` desde `scheduled` o `confirmed`.
+- [x] El estado terminal y motivo se conservan sin alterar ocupación ni historia anterior.
+- [x] Una llamada antes del inicio no crea operación ni modifica la cita.
 
-**Verification:**
-- [ ] Focused tests: `cargo test --workspace --locked components::appointments`.
-- [ ] Build or broader check: `cargo check --workspace --all-targets --locked` y `git diff --check`.
-- [ ] Manual check: ejercitar antes/en el inicio y reabrir el resultado terminal.
+**Evidencia 2026-11-08 (T12):**
 
-**Dependencies:** T11.
-
-**Files likely touched:**
-- `src-tauri/src/components/appointments/application.rs`
-- `src-tauri/src/components/appointments/adapters/outbound.rs`
-- `src-tauri/src/components/appointments/complete_tests.rs`
-
-**Estimated scope:** M
+- `adapters/outbound.rs`: `complete_appointment` — permiso por acción, fila fusionada, comparación `now >= startsAt` en milisegundos con el reloj inyectado (el servidor sigue siendo la autoridad temporal); fallo → `VALIDATION_ERROR` antes de cualquier transacción; `persist` atómico. `complete_tests.rs` (2 pruebas): antes del inicio no crea operación ni intención (conteos intactos); en el inicio alcanza `completed` con motivo en el payload, sigue ocupando según contrato y sobrevive a reapertura quedando terminal (una segunda llamada devuelve `INVALID_STATE_TRANSITION`).
+- Verificación: ver C02.
 
 ## T13: Marcar ausencia
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Implementar `MarkAppointmentNoShow` con inicio+margen aceptado vigente y acción staff.
 
 **Acceptance criteria:**
-- [ ] Solo se marca cuando `clock.now >= startsAt + noShowGraceMinutes` vigente.
-- [ ] La ausencia nunca es automática por falta de respuesta y requiere acción del personal.
-- [ ] El estado terminal conserva ocupación, motivo e historia.
+- [x] Solo se marca cuando `clock.now >= startsAt + noShowGraceMinutes` vigente.
+- [x] La ausencia nunca es automática por falta de respuesta y requiere acción del personal.
+- [x] El estado terminal conserva ocupación, motivo e historia.
 
-**Verification:**
-- [ ] Focused tests: `cargo test --workspace --locked components::appointments`.
-- [ ] Build or broader check: `cargo check --workspace --all-targets --locked` y `git diff --check`.
-- [ ] Manual check: ejercitar antes/después del margen y un cambio de política aceptada.
+**Evidencia 2026-11-08 (T13):**
 
-**Dependencies:** T12.
-
-**Files likely touched:**
-- `src-tauri/src/components/appointments/application.rs`
-- `src-tauri/src/components/appointments/adapters/outbound.rs`
-- `src-tauri/src/components/appointments/no_show_tests.rs`
-
-**Estimated scope:** M
+- `adapters/outbound.rs`: `mark_no_show_appointment` — permiso por acción; el margen se lee de la **vista aceptada** de la cuenta (`account_view.policy`, vigente en el ámbito), nunca de preferencias o del dispositivo; comparación en milisegundos con reloj inyectado; fallo → `VALIDATION_ERROR` sin operación. `no_show_tests.rs` (3 pruebas): antes del inicio y dentro del margen (inicio+15 min − 1 s) rechazados sin crear operación; al vencer el margen alcanza `no_show` con motivo, sigue ocupando según contrato y sobrevive a reapertura; un cambio de política aceptada (margen 0) permite marcar exactamente al inicio — la política aceptada vigente gobierna el margen.
+- Verificación: ver C02.
 
 ## C02: Ciclo de vida nativo
 
 - [ ] Las seis acciones y secuencias offline/reapertura pasan con referencias provisionales y aceptadas.
-- [ ] `cargo test --workspace --locked` y `pnpm build:desktop` pasan.
+- [x] `cargo test --workspace --locked` y `pnpm build:desktop` pasan.
 - [ ] El usuario revisa estados, tiempos y disponibilidad antes de sincronización.
 - [ ] `git diff --check` pasa.
+
+**Evidencia 2026-11-08 (C02, pendiente de revisión del usuario):**
+
+- `cargo test --workspace --locked`: **358 passed, 0 failed** (352 lib + 5 core_persistence + 1 bin/doc), 8 ignored preexistentes. Una ejecución intermedia falló con 2 tests de sincronización por temporización (el flake ya registrado por Agenda en su T21); la repetición pasó completa — se registra como flake no relacionado. Citas: 47/47 (dominio 8, repositorio 6, ocupación 3, aplicación 4, create 8, confirm 4, reschedule 3, cancel 3, complete 2, no-show 3).
+- `cargo fmt --all -- --check` y `cargo clippy --workspace --all-targets --locked -- -D warnings`: OK. `git diff --check`: OK. `pnpm build:desktop`: OK (`target/debug/nightingale.exe`).
+- Seis acciones verificadas offline con bases aceptadas y locales encadenadas, reapertura durable y rechazos sin efectos parciales (`NO_CHANGES`, `INVALID_STATE_TRANSITION`, `VERSION_CONFLICT`, `DEPENDENCY_FAILED`, `SLOT_UNAVAILABLE`, `INSUFFICIENT_COVERAGE`, `VALIDATION_ERROR`, `PERMISSION_DENIED`).
+- Recorridos para revisión: `create_tests.rs` (matriz adulto/menor/responsable + flujo integrado), `confirm_tests.rs`, `reschedule_tests.rs`, `cancel_tests.rs`, `complete_tests.rs`, `no_show_tests.rs`.
 
 ## T14: Proyector de cita
 
@@ -508,7 +518,7 @@
 ## C03: Sincronización e historia
 
 - [ ] Cita, historia y ocupación se proyectan y reconcilian sin duplicados ni pérdida de intenciones.
-- [ ] `cargo test --workspace --locked` y `pnpm build:desktop` pasan.
+- [x] `cargo test --workspace --locked` y `pnpm build:desktop` pasan.
 - [ ] El usuario revisa historia, cancelación remota y retiradas de ventana.
 - [ ] `git diff --check` pasa.
 

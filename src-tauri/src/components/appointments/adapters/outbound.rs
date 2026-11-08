@@ -468,3 +468,668 @@ pub fn read_local_changes(
         )?
         .collect()
 }
+
+use super::super::application::{
+    Accepted, AppointmentMutation, AppointmentRepository, AppointmentState, EntityRow,
+    LocalMutationResult, OperationView, Provisional,
+};
+use super::intents;
+use crate::components::account::application::AccountViewQuery as _;
+use crate::components::identity::domain::AccountAccess;
+use crate::components::identity::repository::{AccessStore, SqliteAccessStore};
+use crate::components::patients::application::PatientBookingQuery as _;
+use crate::components::scheduling::application::ScheduleAvailabilityQuery as _;
+use crate::components::services::application::CatalogBookingQuery as _;
+use crate::components::sync::{
+    adapters::outbound::SqliteOperationStore, application::record_operation, domain::NewOperation,
+};
+use crate::shared_kernel::id::OperationId;
+use crate::shared_kernel::{Clock, IdGenerator};
+use rusqlite::TransactionBehavior;
+use serde_json::Value;
+
+fn state_of(record: &AppointmentRecord) -> AppointmentState {
+    AppointmentState {
+        appointment_id: record.appointment_id.clone(),
+        patient_id: record.patient_id.clone(),
+        professional_id: record.professional_id.clone(),
+        service_id: record.service_id.clone(),
+        responsible_contact_id: record.responsible_contact_id.clone(),
+        starts_at: record.starts_at.clone(),
+        ends_at: record.ends_at.clone(),
+        status: record.status.clone(),
+        confirmed_at: record.confirmed_at.clone(),
+        service_name: record.snapshots.service_name.clone(),
+        offered_duration_minutes: record.snapshots.offered_duration_minutes,
+        professional_name: record.snapshots.professional_name.clone(),
+        location_name: record.snapshots.location_name.clone(),
+        location_address: record.snapshots.location_address.clone(),
+        location_country: record.snapshots.location_country.clone(),
+        location_state: record.snapshots.location_state.clone(),
+        location_city: record.snapshots.location_city.clone(),
+        time_zone: record.snapshots.time_zone.clone(),
+    }
+}
+
+fn operation_view(
+    connection: &Connection,
+    scope: &OperationContext,
+    local: &LocalChange,
+) -> super::super::application::AppResult<OperationView> {
+    let result = SqliteOperationStore
+        .operation_result(
+            connection,
+            scope,
+            &OperationId::try_from(local.operation_id.clone())
+                .map_err(|_| NightingaleError::internal("operación local inválida"))?,
+        )
+        .map_err(|_| NightingaleError::internal("resultado de operación no disponible"))?;
+    let mut view = OperationView {
+        operation_id: local.operation_id.clone(),
+        depends_on: serde_json::from_str(&local.depends_on)
+            .map_err(|_| NightingaleError::internal("dependencias locales inválidas"))?,
+        status: "review_required".into(),
+        error: None,
+    };
+
+    if let Some(result) = result {
+        view.status = if result.review_code.is_some() {
+            "review_required"
+        } else {
+            result.status.as_str()
+        }
+        .into();
+        view.error = result
+            .result
+            .as_ref()
+            .and_then(|v| v.get("error"))
+            .and_then(|e| e.get("code"))
+            .and_then(Value::as_str)
+            .map(str::to_owned);
+    }
+
+    Ok(view)
+}
+
+/// Merged accepted/provisional appointment rows of one scope. A provisional
+/// retires only when its receipt and the accepted view confirm it.
+pub fn appointment_rows(
+    connection: &Connection,
+    scope: &OperationContext,
+) -> super::super::application::AppResult<Vec<EntityRow<AppointmentState>>> {
+    use std::collections::BTreeMap;
+
+    let mut rows: BTreeMap<String, EntityRow<AppointmentState>> = BTreeMap::new();
+
+    for record in read_appointments(connection, scope).map_err(storage_error)? {
+        let version = record.version;
+        let state = state_of(&record);
+        rows.insert(
+            state.appointment_id.clone(),
+            EntityRow {
+                accepted: Some(Accepted { state, version }),
+                provisional: None,
+                operations: vec![],
+            },
+        );
+    }
+
+    for local in intents::appointment_changes(connection, scope)? {
+        let state: AppointmentState = serde_json::from_str(&local.draft)
+            .map_err(|_| NightingaleError::internal("borrador de cita inválido"))?;
+        let accepted_version = rows
+            .get(&state.appointment_id)
+            .and_then(|row| row.accepted.as_ref().map(|accepted| accepted.version));
+        let row = rows
+            .entry(state.appointment_id.clone())
+            .or_insert_with(|| EntityRow {
+                accepted: None,
+                provisional: None,
+                operations: vec![],
+            });
+        row.operations
+            .push(operation_view(connection, scope, &local)?);
+
+        if !intents::confirmed(connection, scope, accepted_version, &local)? {
+            row.provisional = Some(Provisional {
+                state,
+                operation_id: local.operation_id,
+                expected_version: local.expected_version,
+            });
+        }
+    }
+
+    Ok(rows.into_values().collect())
+}
+
+fn current_access(
+    connection: &Connection,
+    access: &AccountAccess,
+) -> super::super::application::AppResult<()> {
+    let scope = &access.context;
+    let current = SqliteAccessStore
+        .access(
+            connection,
+            &scope.account_id,
+            &scope.user_id,
+            &scope.device_id,
+        )
+        .map_err(|_| NightingaleError::internal("autorización local no disponible"))?
+        .ok_or_else(|| {
+            super::super::domain::AppointmentsError::new(
+                "PERMISSION_DENIED",
+                "no hay permiso local",
+            )
+        })?;
+
+    super::super::application::require_active(&current)?;
+
+    if current.context.permission_epoch != scope.permission_epoch {
+        return Err(super::super::domain::AppointmentsError::new(
+            "PERMISSION_DENIED",
+            "los permisos locales cambieron",
+        ));
+    }
+
+    Ok(())
+}
+
+/// Write-side repository: the provisional draft and the Outbox record commit
+/// or roll back together.
+pub struct SqliteAppointmentRepository<'a> {
+    pub connection: &'a mut Connection,
+}
+
+impl AppointmentRepository for SqliteAppointmentRepository<'_> {
+    fn appointment_row(
+        &mut self,
+        access: &AccountAccess,
+        appointment: &super::super::domain::AppointmentId,
+    ) -> super::super::application::AppResult<EntityRow<AppointmentState>> {
+        current_access(self.connection, access)?;
+        appointment_rows(self.connection, &access.context)?
+            .into_iter()
+            .find(|row| {
+                row.visible()
+                    .is_some_and(|v| v.appointment_id == appointment.as_str())
+            })
+            .ok_or_else(|| {
+                super::super::domain::AppointmentsError::new(
+                    "NOT_FOUND",
+                    "cita no disponible en este ámbito",
+                )
+            })
+    }
+
+    fn persist(
+        &mut self,
+        access: &AccountAccess,
+        mutation: AppointmentMutation,
+        ids: &impl IdGenerator,
+        clock: &impl Clock,
+    ) -> super::super::application::AppResult<LocalMutationResult> {
+        super::super::application::require_active(access)?;
+        let scope = access.context.clone();
+
+        // Validation reads happen before the IMMEDIATE transaction opens.
+        let prepared = intents::prepare(self.connection, &scope, mutation, ids)?;
+
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(storage_error)?;
+        current_access(&tx, access)?;
+        let now = clock
+            .now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .ok()
+            .and_then(|value| i64::try_from(value.as_millis()).ok())
+            .ok_or_else(|| {
+                super::super::domain::AppointmentsError::internal("reloj local inválido")
+            })?;
+        let operation_id = record_operation(
+            &tx,
+            &SqliteOperationStore,
+            ids,
+            clock,
+            NewOperation {
+                context: scope.clone(),
+                depends_on: prepared.base.depends_on.clone(),
+                action: prepared.action.into(),
+                entity_type: "appointment".into(),
+                entity_key: prepared.key.clone(),
+                expected_version: prepared.base.version,
+                payload: prepared.payload.clone(),
+                occurred_at_local: None,
+            },
+        )
+        .map_err(|_| {
+            super::super::domain::AppointmentsError::internal("no se pudo registrar la operación")
+        })?;
+        insert_local_change(
+            &tx,
+            &scope,
+            &LocalChange {
+                operation_id: operation_id.to_string(),
+                appointment_id: prepared.appointment_id.clone(),
+                action: prepared.action.into(),
+                expected_version: prepared.base.version,
+                base_operation_id: prepared
+                    .base
+                    .operation_id
+                    .as_ref()
+                    .map(|id| id.as_str().to_owned()),
+                depends_on: serde_json::to_string(
+                    &prepared
+                        .base
+                        .depends_on
+                        .iter()
+                        .map(|id| id.as_str().to_owned())
+                        .collect::<Vec<_>>(),
+                )
+                .map_err(|_| {
+                    super::super::domain::AppointmentsError::internal("dependencias inválidas")
+                })?,
+                payload: prepared.payload.to_string(),
+                draft: prepared.draft.to_string(),
+                created_at: now,
+            },
+        )
+        .map_err(storage_error)?;
+        tx.commit().map_err(storage_error)?;
+
+        Ok(LocalMutationResult {
+            operation_id: operation_id.to_string(),
+            entity_type: "appointment".into(),
+            entity_key: prepared.key,
+            expected_version: prepared.base.version,
+            depends_on: prepared
+                .base
+                .depends_on
+                .iter()
+                .map(|id| id.as_str().to_owned())
+                .collect(),
+            provisional: prepared.draft,
+            provisional_operation_id: operation_id.to_string(),
+        })
+    }
+}
+
+impl SqliteAppointmentRepository<'_> {
+    /// Creates an appointment against the local booking context. Every
+    /// validation failure returns before any transaction opens, so nothing
+    /// partial is ever stored.
+    pub fn create_appointment(
+        &mut self,
+        access: &AccountAccess,
+        input: super::super::application::CreateAppointmentInput,
+        ids: &impl IdGenerator,
+        clock: &impl Clock,
+    ) -> super::super::application::AppResult<LocalMutationResult> {
+        use super::super::application as app;
+
+        app::require_active(access)?;
+
+        if !access.allows_offline("CreateAppointment") {
+            return Err(super::super::domain::AppointmentsError::new(
+                "PERMISSION_DENIED",
+                "la acción CreateAppointment no está permitida para este acceso",
+            ));
+        }
+
+        let scope = access.context.clone();
+        let interval = input.interval()?;
+
+        // Accepted account view: zone, location snapshots and policy.
+        let account = crate::components::account::adapters::outbound::SqliteAccountRepository {
+            connection: &mut *self.connection,
+            clock: &crate::shared_kernel::SystemClock,
+        }
+        .account_view(&scope)
+        .map_err(|error| super::super::domain::AppointmentsError::new(&error.code, &error.message))?
+        .ok_or_else(|| {
+            super::super::domain::AppointmentsError::new("NOT_FOUND", "cuenta no disponible")
+        })?;
+
+        // Booking references: accepted or chainable provisional rows only.
+        let patient_id: crate::components::patients::domain::PatientId =
+            input.patient_id.clone().try_into().map_err(|_| {
+                super::super::domain::AppointmentsError::validation("patientId inválido")
+            })?;
+        let patient = crate::components::patients::adapters::outbound::SqlitePatientRepository {
+            connection: &mut *self.connection,
+        }
+        .booking_patient(access, &patient_id)
+        .map_err(|error| super::super::domain::AppointmentsError::new(&error.code, &error.message))?
+        .ok_or_else(|| {
+            super::super::domain::AppointmentsError::new(
+                "NOT_FOUND",
+                "paciente no disponible para reservar",
+            )
+        })?;
+
+        let professional_id: crate::components::services::domain::ProfessionalId =
+            input.professional_id.clone().try_into().map_err(|_| {
+                super::super::domain::AppointmentsError::validation("professionalId inválido")
+            })?;
+        let service_id: crate::components::services::domain::ServiceId =
+            input.service_id.clone().try_into().map_err(|_| {
+                super::super::domain::AppointmentsError::validation("serviceId inválido")
+            })?;
+        let offer = crate::components::services::adapters::outbound::SqliteCatalogRepository {
+            connection: &mut *self.connection,
+        }
+        .booking_offer(access, &professional_id, &service_id)
+        .map_err(|error| super::super::domain::AppointmentsError::new(&error.code, &error.message))?
+        .ok_or_else(|| {
+            super::super::domain::AppointmentsError::new(
+                "NOT_FOUND",
+                "oferta de servicio no disponible para reservar",
+            )
+        })?;
+
+        // Local availability with explicit coverage. The occupancy snapshot is
+        // read first so the scheduling repository never shares its &mut borrow.
+        let request = crate::components::scheduling::application::AvailabilityRequest {
+            professional_id: input.professional_id.clone(),
+            service_id: input.service_id.clone(),
+            from: interval.starts_at.timestamp(),
+            until: interval.ends_at.timestamp(),
+            duration_minutes: Some(interval.duration_minutes()),
+            exclude_appointment_id: None,
+        };
+        let known = SqliteScheduleOccupancyQuery {
+            connection: &*self.connection,
+            scope: &scope,
+        }
+        .list_occupancy(&input.professional_id, request.from, request.until)
+        .map_err(super::super::domain::AppointmentsError::from)?;
+        let known = crate::components::scheduling::adapters::outbound::KnownOccupancy(
+            known
+                .into_iter()
+                .map(|interval| (input.professional_id.clone(), interval))
+                .collect(),
+        );
+        let evaluation =
+            crate::components::scheduling::adapters::outbound::SqliteSchedulingRepository {
+                connection: &mut *self.connection,
+            }
+            .local_availability(
+                access,
+                &request,
+                &known,
+                &crate::components::sync::adapters::control::SqliteSyncControlStore,
+            )
+            .map_err(|error| {
+                super::super::domain::AppointmentsError::new(&error.code, &error.message)
+            })?;
+
+        let validated =
+            app::validate_new_appointment(&account, &patient, &offer, &input, &evaluation)?;
+
+        // Provisional references become causal dependencies of the new operation.
+        let mut depends_on: Vec<String> = vec![];
+
+        if let crate::components::patients::application::BookingReference::Provisional {
+            operation_id,
+            ..
+        } = &patient.reference
+        {
+            depends_on.push(operation_id.clone());
+        }
+
+        if let crate::components::services::application::CatalogReference::Provisional {
+            operation_id,
+        } = &offer.reference
+            && !depends_on.contains(operation_id)
+        {
+            depends_on.push(operation_id.clone());
+        }
+
+        self.persist(
+            access,
+            AppointmentMutation::Create {
+                data: Box::new(validated),
+                depends_on,
+            },
+            ids,
+            clock,
+        )
+    }
+}
+
+impl SqliteAppointmentRepository<'_> {
+    /// Reschedules an appointment to a new interval of the same real
+    /// duration. The availability check excludes the appointment itself so it
+    /// never blocks its own move, while every other known occupancy still
+    /// applies. All validation happens before any transaction opens.
+    pub fn reschedule_appointment(
+        &mut self,
+        access: &AccountAccess,
+        appointment: super::super::domain::AppointmentId,
+        base: super::super::application::EditBase,
+        interval: super::super::domain::AppointmentInterval,
+        ids: &impl IdGenerator,
+        clock: &impl Clock,
+    ) -> super::super::application::AppResult<LocalMutationResult> {
+        use super::super::application as app;
+
+        app::require_active(access)?;
+        if !access.allows_offline("RescheduleAppointment") {
+            return Err(super::super::domain::AppointmentsError::new(
+                "PERMISSION_DENIED",
+                "la acción RescheduleAppointment no está permitida para este acceso",
+            ));
+        }
+        let scope = access.context.clone();
+
+        // The merged row resolves the base and the transition before any write.
+        let row = self.appointment_row(access, &appointment)?;
+        let current = row.visible().ok_or_else(|| {
+            super::super::domain::AppointmentsError::new("NOT_FOUND", "cita no disponible")
+        })?;
+        let next = super::super::domain::apply_transition(
+            super::super::domain::AppointmentTransition::Reschedule,
+            Some(current.status()?),
+        )?;
+        let _ = next; // the prepared draft recomputes the same transition
+
+        // Local availability excluding the appointment being moved.
+        let request = crate::components::scheduling::application::AvailabilityRequest {
+            professional_id: current.professional_id.clone(),
+            service_id: current.service_id.clone(),
+            from: interval.starts_at.timestamp(),
+            until: interval.ends_at.timestamp(),
+            duration_minutes: Some(interval.duration_minutes()),
+            exclude_appointment_id: Some(appointment.as_str().into()),
+        };
+        let known = SqliteScheduleOccupancyQuery {
+            connection: &*self.connection,
+            scope: &scope,
+        }
+        .list_occupancy(&current.professional_id, request.from, request.until)
+        .map_err(super::super::domain::AppointmentsError::from)?;
+        let known = crate::components::scheduling::adapters::outbound::KnownOccupancy(
+            known
+                .into_iter()
+                .map(|occupancy| (current.professional_id.clone(), occupancy))
+                .collect(),
+        );
+        let evaluation =
+            crate::components::scheduling::adapters::outbound::SqliteSchedulingRepository {
+                connection: &mut *self.connection,
+            }
+            .local_availability(
+                access,
+                &request,
+                &known,
+                &crate::components::sync::adapters::control::SqliteSyncControlStore,
+            )
+            .map_err(|error| {
+                super::super::domain::AppointmentsError::new(&error.code, &error.message)
+            })?;
+
+        if evaluation.coverage == "insufficient_coverage" {
+            return Err(super::super::domain::AppointmentsError::new(
+                "INSUFFICIENT_COVERAGE",
+                "la ventana de ocupación descargada no cubre el intervalo; sincronice antes de reprogramar",
+            ));
+        }
+        let start = interval.starts_at.timestamp().to_string();
+        let end = interval.ends_at.timestamp().to_string();
+        let fits = evaluation
+            .intervals
+            .iter()
+            .any(|available| available.starts_at <= start && end <= available.ends_at);
+
+        if !fits {
+            return Err(super::super::domain::AppointmentsError::new(
+                "SLOT_UNAVAILABLE",
+                "el intervalo queda fuera del horario disponible o dentro de una ocupación",
+            ));
+        }
+
+        self.persist(
+            access,
+            AppointmentMutation::Reschedule {
+                appointment,
+                base,
+                interval,
+            },
+            ids,
+            clock,
+        )
+    }
+}
+
+impl SqliteAppointmentRepository<'_> {
+    /// Completes an appointment whose start has been reached. The injected
+    /// clock is the only local time source; the server stays authoritative.
+    pub fn complete_appointment(
+        &mut self,
+        access: &AccountAccess,
+        appointment: super::super::domain::AppointmentId,
+        base: super::super::application::EditBase,
+        reason: Option<super::super::domain::ChangeReason>,
+        ids: &impl IdGenerator,
+        clock: &impl Clock,
+    ) -> super::super::application::AppResult<LocalMutationResult> {
+        use super::super::application as app;
+
+        app::require_active(access)?;
+
+        if !access.allows_offline("CompleteAppointment") {
+            return Err(super::super::domain::AppointmentsError::new(
+                "PERMISSION_DENIED",
+                "la acción CompleteAppointment no está permitida para este acceso",
+            ));
+        }
+
+        let row = self.appointment_row(access, &appointment)?;
+        let current = row.visible().ok_or_else(|| {
+            super::super::domain::AppointmentsError::new("NOT_FOUND", "cita no disponible")
+        })?;
+
+        // Completing before the start never creates an operation.
+        let starts_millis = jiff::Timestamp::from_str(&current.starts_at)
+            .map_err(|_| {
+                super::super::domain::AppointmentsError::internal("intervalo local inválido")
+            })?
+            .as_millisecond();
+        let now_millis = clock_millis(clock)?;
+
+        if now_millis < starts_millis {
+            return Err(super::super::domain::AppointmentsError::validation(
+                "aún no se alcanza el inicio de la cita",
+            ));
+        }
+
+        self.persist(
+            access,
+            AppointmentMutation::Complete {
+                appointment,
+                base,
+                reason,
+            },
+            ids,
+            clock,
+        )
+    }
+
+    /// Marks a no-show after the start plus the accepted account grace
+    /// window. A missed response never marks absence by itself: this is an
+    /// explicit staff action gated by the injected clock.
+    pub fn mark_no_show_appointment(
+        &mut self,
+        access: &AccountAccess,
+        appointment: super::super::domain::AppointmentId,
+        base: super::super::application::EditBase,
+        reason: Option<super::super::domain::ChangeReason>,
+        ids: &impl IdGenerator,
+        clock: &impl Clock,
+    ) -> super::super::application::AppResult<LocalMutationResult> {
+        use super::super::application as app;
+
+        app::require_active(access)?;
+
+        if !access.allows_offline("MarkAppointmentNoShow") {
+            return Err(super::super::domain::AppointmentsError::new(
+                "PERMISSION_DENIED",
+                "la acción MarkAppointmentNoShow no está permitida para este acceso",
+            ));
+        }
+
+        let scope = access.context.clone();
+        let row = self.appointment_row(access, &appointment)?;
+        let current = row.visible().ok_or_else(|| {
+            super::super::domain::AppointmentsError::new("NOT_FOUND", "cita no disponible")
+        })?;
+
+        // The accepted, currently valid account policy owns the grace window.
+        let account = crate::components::account::adapters::outbound::SqliteAccountRepository {
+            connection: &mut *self.connection,
+            clock: &crate::shared_kernel::SystemClock,
+        }
+        .account_view(&scope)
+        .map_err(|error| super::super::domain::AppointmentsError::new(&error.code, &error.message))?
+        .ok_or_else(|| {
+            super::super::domain::AppointmentsError::new("NOT_FOUND", "cuenta no disponible")
+        })?;
+        let grace_minutes = account.policy.no_show_grace_minutes();
+
+        let starts_millis = jiff::Timestamp::from_str(&current.starts_at)
+            .map_err(|_| {
+                super::super::domain::AppointmentsError::internal("intervalo local inválido")
+            })?
+            .as_millisecond();
+        let now_millis = clock_millis(clock)?;
+        let grace_millis = i128::from(grace_minutes) * 60_000;
+
+        if i128::from(now_millis) < i128::from(starts_millis) + grace_millis {
+            return Err(super::super::domain::AppointmentsError::validation(
+                "aún no vence el margen de ausencia de la cita",
+            ));
+        }
+
+        self.persist(
+            access,
+            AppointmentMutation::NoShow {
+                appointment,
+                base,
+                reason,
+            },
+            ids,
+            clock,
+        )
+    }
+}
+
+fn clock_millis(clock: &impl Clock) -> super::super::application::AppResult<i64> {
+    let millis = clock
+        .now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()
+        .and_then(|value| i64::try_from(value.as_millis()).ok())
+        .ok_or_else(|| super::super::domain::AppointmentsError::internal("reloj local inválido"))?;
+    Ok(millis)
+}

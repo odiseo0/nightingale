@@ -109,7 +109,7 @@ fn accepted_patient_resolves_with_version_and_responsible_contact() {
             .verification_status,
         "declared"
     );
-    // Solo el vínculo responsable aparece; incluye el teléfono actual del contacto.
+    // Only the responsible relationship appears, with the contact's current phone.
     assert_eq!(view.responsible_contacts.len(), 1);
     let relationship = &view.responsible_contacts[0]
         .accepted
@@ -201,7 +201,7 @@ fn conflicted_provisional_is_excluded_from_booking() {
             .unwrap()
     });
 
-    // Un ciclo de envío devolvió conflicto: la referencia deja de ser encadenable.
+    // A dispatch cycle returned conflict: the reference stops being chainable.
     connection
         .execute(
             "UPDATE sync_outbox SET status='conflict', last_error='\"VERSION_CONFLICT\"' WHERE operation_id=?1",

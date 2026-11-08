@@ -411,7 +411,7 @@ fn migration_ten_check_constraints_reject_contract_violations() {
     let mut connection = sqlite::open(&database.0).unwrap();
     let scope = scope();
 
-    // estado ajeno al contrato en la vista de cita
+    // contract-foreign status in the appointment view
     let mut bad = appointment_record(
         "019a1234-0000-7000-8000-000000000010",
         "reschedule_requested",
@@ -420,14 +420,14 @@ fn migration_ten_check_constraints_reject_contract_violations() {
         .unwrap_err();
     assert!(err.to_string().contains("CHECK"), "{err}");
 
-    // país de snapshot de tres letras
+    // three-letter snapshot country
     bad = appointment_record("019a1234-0000-7000-8000-000000000010", "scheduled");
     bad.snapshots.location_country = "VEN".into();
     let err = sqlite::in_transaction(&mut connection, |tx| save_appointment(tx, &scope, &bad))
         .unwrap_err();
     assert!(err.to_string().contains("CHECK"), "{err}");
 
-    // intervalo invertido
+    // reversed interval
     bad = appointment_record("019a1234-0000-7000-8000-000000000010", "scheduled");
     bad.starts_at = "2026-05-04T14:00:00Z".into();
     bad.ends_at = "2026-05-04T13:00:00Z".into();
@@ -435,7 +435,7 @@ fn migration_ten_check_constraints_reject_contract_violations() {
         .unwrap_err();
     assert!(err.to_string().contains("CHECK"), "{err}");
 
-    // acción de historia inválida
+    // invalid history action
     let err = sqlite::in_transaction(&mut connection, |tx| {
         save_history_entry(
             tx,
@@ -446,7 +446,7 @@ fn migration_ten_check_constraints_reject_contract_violations() {
     .unwrap_err();
     assert!(err.to_string().contains("CHECK"), "{err}");
 
-    // acción de intención inválida y dependencias con más de ocho entradas
+    // invalid intention action and more than eight dependencies
     let bad_change = LocalChange {
         operation_id: "019a1234-0000-7000-8000-000000000030".into(),
         appointment_id: "019a1234-0000-7000-8000-000000000010".into(),
@@ -475,7 +475,7 @@ fn migration_ten_check_constraints_reject_contract_violations() {
     .unwrap_err();
     assert!(err.to_string().contains("CHECK"), "{err}");
 
-    // Un guardado válido tras los rechazos.
+    // A valid save after the rejections.
     let ok = appointment_record("019a1234-0000-7000-8000-000000000010", "scheduled");
     sqlite::in_transaction(&mut connection, |tx| save_appointment(tx, &scope, &ok)).unwrap();
     assert_eq!(read_appointments(&connection, &scope).unwrap().len(), 1);

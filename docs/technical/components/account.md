@@ -41,7 +41,7 @@ El usuario decidió mantener los DTO sin expectedAccountId: la sesión Rust
 al ejecutar fija el destino; un formulario previo no tiene una guardia atómica que
 lo vincule con la cuenta que mostraba.
 
-Pruebas: `cargo test --workspace --locked components::account` (HTTP loopback para
+Pruebas: `cargo test --workspace --locked tests::components::account` (HTTP loopback para
 los tres casos online, sin escritura local),
 `cargo test --workspace --locked catalog_integration_tests`, pruebas del runner,
 `pnpm quality` y `pnpm build:desktop`.

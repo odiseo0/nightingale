@@ -2,9 +2,9 @@
 
 Esta guía cubre la base local y el motor transversal de Nightingale. Los casos locales no requieren servicios web, PostgreSQL, n8n, Docker ni configuración privada; el acceso y la sincronización remota sí requieren Nightingale API y OIDC de desarrollo. SQLite conserva esquema, identidad/acceso, Outbox/Inbox, cursor y vista remota aceptada. Pacientes, Servicios, Agenda/Disponibilidad y Citas con historia están implementados como componentes.
 
-Prueba real de Pacientes (opt-in, requiere Nightingale API y OIDC de desarrollo y un login por navegador): `$env:NIGHTINGALE_API_BASE_URL = "<url>"; cargo test --workspace --locked -- --ignored components::patients::development_tests`. Crea solo datos sintéticos; un bloqueo no cuenta como éxito.
+Prueba real de Pacientes (opt-in, requiere Nightingale API y OIDC de desarrollo y un login por navegador): `$env:NIGHTINGALE_API_BASE_URL = "<url>"; cargo test --workspace --locked -- --ignored tests::components::patients::development_tests`. Crea solo datos sintéticos; un bloqueo no cuenta como éxito.
 
-Prueba real de Agenda y Disponibilidad (opt-in, mismo entorno; la guía del componente es [docs/technical/components/scheduling.md](../technical/components/scheduling.md)): `$env:NIGHTINGALE_API_BASE_URL = "<url>"; cargo test --workspace --locked -- --ignored components::scheduling::development_tests`. Prueba real de Citas (opt-in, mismo entorno; la guía del componente es [docs/technical/components/appointments.md](../technical/components/appointments.md)): `$env:NIGHTINGALE_API_BASE_URL = "<url>"; cargo test --workspace --locked -- --ignored components::appointments::development_tests`. Si no se ejecuta, el límite queda explícito y el plan permanece abierto sin verificación externa declarada.
+Prueba real de Agenda y Disponibilidad (opt-in, mismo entorno; la guía del componente es [docs/technical/components/scheduling.md](../technical/components/scheduling.md)): `$env:NIGHTINGALE_API_BASE_URL = "<url>"; cargo test --workspace --locked -- --ignored tests::components::scheduling::development_tests`. Prueba real de Citas (opt-in, mismo entorno; la guía del componente es [docs/technical/components/appointments.md](../technical/components/appointments.md)): `$env:NIGHTINGALE_API_BASE_URL = "<url>"; cargo test --workspace --locked -- --ignored tests::components::appointments::development_tests`. Si no se ejecuta, el límite queda explícito y el plan permanece abierto sin verificación externa declarada.
 
 **Revisión documental del 2026-10-23:** alineación de permisos, sin cambiar las rutas del escritorio ni repetir sus comprobaciones de ejecución.
 
@@ -125,7 +125,7 @@ Un 404 de consulta o `RESULT_EXPIRED` conserva `unknown` y guarda `review_code` 
 Para revisar la demostración local de C03:
 
 ```powershell
-cargo test --workspace --locked components::sync::dispatch::tests::reconciliation -- --nocapture
+cargo test --workspace --locked tests::components::sync::dispatch_tests::reconciliation -- --nocapture
 ```
 
 Las diez pruebas de esa matriz cubren todos los resultados originales y duplicados, recibos parciales, rollback, respuestas tardías, reintentos, reinicio tras confirmación remota con respuesta perdida, recuperación por GET y repetición del POST idéntico tras un timeout HTTP real. Ese timeout usa el mismo constructor de transporte con un plazo breve para la prueba. El servidor ficticio cuenta un solo efecto en ambas rutas de recuperación. También verifican 404/recibo vencido, conservación de intención/estado remoto y campos obligatorios ausentes. Esta evidencia usa datos sintéticos y HTTP loopback; no acredita API real ni revisión del usuario. El 2026-10-30 el usuario autorizó continuar con C02 y C03 pendientes hasta disponer de entorno manual. Esa excepción no aprueba esos checkpoints. La UI de diagnóstico y las revisiones se describen en T14/T15.
@@ -149,12 +149,12 @@ La instalación retira la vista remota e Inbox anteriores de esa instalación, e
 Para revisar la matriz local con datos sintéticos:
 
 ```powershell
-cargo test --workspace --locked components::sync::remote::tests
-cargo test --workspace --locked components::sync::download::tests
-cargo test --workspace --locked components::sync::snapshot::tests
-cargo test --workspace --locked components::scheduling
-cargo test --workspace --locked components::appointments
-cargo test --workspace --locked components::sync::contract_tests
+cargo test --workspace --locked tests::components::sync::remote_tests
+cargo test --workspace --locked tests::components::sync::download_tests
+cargo test --workspace --locked tests::components::sync::snapshot_tests
+cargo test --workspace --locked tests::components::scheduling
+cargo test --workspace --locked tests::components::appointments
+cargo test --workspace --locked tests::components::sync::contract_tests
 cargo test --workspace --locked scheduling_integration_tests
 cargo test --workspace --locked appointments_integration_tests
 pnpm quality
@@ -180,7 +180,7 @@ Ante una época nueva se usa el acceso recién confirmado, sin cambiar el contex
 Comprobación local:
 
 ```powershell
-cargo test --workspace --locked components::sync::coordinator::tests
+cargo test --workspace --locked tests::components::sync::coordinator_tests
 pnpm quality
 git diff --check
 ```
@@ -226,8 +226,8 @@ Para el recorrido Tauri con trabajo pendiente, `manual_c05_save_offline_probe` e
 Verifica guardado/reapertura, conexión rechazada sin detener la API del usuario, respuesta confirmada descartada antes de reconciliar, recuperación por GET tras reapertura, duplicado desde el otro dispositivo, versión en conflicto, reconstrucción por cursor de firma inválida, aviso SSE de revocación y conservación del conflicto. La respuesta descartada modela la pérdida entre HTTP y el commit local; no corta la conexión del servidor tras su commit. El cursor inválido ejerce `CURSOR_EXPIRED`, no espera 90 días. El vencimiento temporal de capturas y la caída del servicio SSE siguen en las matrices automáticas locales, salvo evidencia externa adicional. Al terminar, el logout local elimina los secretos en memoria y se revisan los archivos SQLite en busca de los tokens de esa ejecución; el arnés no escribe tokens en sus mensajes.
 
 ```powershell
-cargo test --workspace --locked components::sync::contract_tests
-cargo test --workspace --locked components::sync::matrix_tests
+cargo test --workspace --locked tests::components::sync::contract_tests
+cargo test --workspace --locked tests::components::sync::matrix_tests
 ```
 
 ### Observabilidad y colaboración (T18/T19)

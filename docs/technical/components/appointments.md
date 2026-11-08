@@ -68,9 +68,9 @@ lo que Rust devuelve: provisionales y conflictos marcados, historia aceptada
 separada de operaciones locales, y la hora local jamás como confirmación del
 servidor.
 
-Verificación: `cargo test --workspace --locked components::appointments`,
+Verificación: `cargo test --workspace --locked tests::components::appointments`,
 `cargo test --workspace --locked appointments_integration_tests` y
-`cargo test --workspace --locked components::sync::contract_tests`; prueba real
+`cargo test --workspace --locked tests::components::sync::contract_tests`; prueba real
 opt-in de desarrollo en `development_tests` (mismo entorno que Agenda). La
 reserva concurrente real y una respuesta HTTP perdida real quedan como límites
 documentados cuando el entorno no permite forzarlas.

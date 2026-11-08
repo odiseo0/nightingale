@@ -11,15 +11,16 @@ The product uses a **native light visual system**. Its canvas is an intentionall
 
 The design should convey **trust, calm, clarity, privacy, and precision**. It should feel appropriate for reviewing appointments, personal health information, activity metrics, and care tasks, while avoiding sterile hospital cues, decorative gradients, or excessive visual urgency. Color reinforces the hierarchy but must not be the sole carrier of a health-related meaning.
 
-Typography remains rooted in **Inter Variable** with OpenType features `"cv01"` and `"ss03"` enabled. The signature weights remain 400 for reading, 510 for product UI emphasis, and 590 for strong emphasis; 300 is limited to intentionally de-emphasized content. Display sizes preserve the compact negative letter-spacing of the source system. **Berkeley Mono** remains the companion for code and technical labels, with system monospace fallbacks.
+Typography uses a deliberate **Anek Latin + Aileron** pairing. Anek Latin gives titles and headings a distinct, controlled voice; Aileron handles general interface text, sustained reading, and technical information. The shared weight roles are 400 for reading, 500 for product UI emphasis, and 600 for strong emphasis; 300 is limited to intentionally de-emphasized content. Display sizes preserve compact negative letter-spacing. **Phosphor Icons** is the single interface icon set.
 
 The chromatic identity is a **controlled blue accent**: `#2563EB` for primary actions and interactive emphasis; `#1D4ED8` for hover and text on pale blue; `#1E40AF` for pressed interactions; and `#DBEAFE` for selected backgrounds. Blues should appear with intent, rather than covering large background areas. Green is retained **only as a semantic status color**, never as a second brand accent.
 
 **Key Characteristics:**
 - Light-mode-native surfaces: `#F8FAFC` canvas, `#F1F5F9` panels, `#FCFDFE` elevated cards.
 - Soft but visible edge separation: `#DCE5EE` standard borders, plus very subtle translucent dark strokes where appropriate.
-- Inter Variable with `"cv01", "ss03"` enabled globally; Berkeley Mono for technical information.
-- Signature 510 weight for navigation, controls, and ordinary emphasis.
+- Anek Latin for titles and headings; Aileron for general and technical text.
+- Phosphor Icons with consistent style, weight, and sizing.
+- Signature 500 weight for navigation, controls, and ordinary emphasis.
 - Negative display letter-spacing (for example, -1.584px at 72px, -1.056px at 48px).
 - Brand blue: `#2563EB`; hover `#1D4ED8`; pressed `#1E40AF`; selected fill `#DBEAFE`.
 - Foreground hierarchy based on dark navy-gray text rather than pure black.
@@ -114,53 +115,60 @@ These examples meet WCAG AA **text contrast** thresholds for normal-sized text. 
 
 ### Font Family
 
-- **Primary:** `Inter Variable`, with fallbacks: `SF Pro Display, -apple-system, system-ui, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue`.
-- **Monospace:** `Berkeley Mono`, with fallbacks: `ui-monospace, SF Mono, Menlo`.
-- **OpenType Features:** `"cv01", "ss03"` enabled globally. These are retained from the supplied Linear-inspired system for its geometric, controlled character.
+- **Titles and headings:** `Anek Latin`, with fallbacks: `SF Pro Display, -apple-system, system-ui, Segoe UI, Roboto, Helvetica Neue, sans-serif`. Use it for display text, page titles, section headings, and card headers, not for general body copy.
+- **General interface and reading text:** `Aileron`, with the same system sans-serif fallbacks. Use it for body copy, navigation, controls, forms, tables, captions, links, technical values, units, and code. Use `font-variant-numeric: tabular-nums` when numerical alignment matters; do not introduce a separate monospace family.
+- **OpenType Features:** Do not carry over Inter-specific features such as `"cv01"` or `"ss03"`. Use each font's defaults; enable an optional feature only when the bundled font supports it and rendered text has been checked.
 - **Default Font Color:** `#111827`; secondary, tertiary, link, and inverted text use semantic tokens instead of arbitrary opacity changes.
 
 ### Hierarchy
 
-The original typographic scale is preserved. Roles of 10–12px are appropriate only for noncritical micro-labels where reading conditions allow; **do not use micro type for key clinical values, safety instructions, medication information, or essential form labels**.
+The original size and spacing scale is preserved. Roles of 10–12px are appropriate only for noncritical micro-labels where reading conditions allow; **do not use micro type for key clinical values, safety instructions, medication information, or essential form labels**. The weight roles now use values available in Aileron: 400, 500, and 600.
 
 | Role | Font | Size | Weight | Line Height | Letter Spacing | Notes |
 |------|------|------|--------|-------------|----------------|-------|
-| Display XL | Inter Variable | 72px (4.50rem) | 510 | 1.00 (tight) | -1.584px | Hero headlines, maximum impact |
-| Display Large | Inter Variable | 64px (4.00rem) | 510 | 1.00 (tight) | -1.408px | Secondary hero text |
-| Display | Inter Variable | 48px (3.00rem) | 510 | 1.00 (tight) | -1.056px | Section headlines |
-| Heading 1 | Inter Variable | 32px (2.00rem) | 400 | 1.13 (tight) | -0.704px | Major section titles |
-| Heading 2 | Inter Variable | 24px (1.50rem) | 400 | 1.33 | -0.288px | Sub-section headings |
-| Heading 3 | Inter Variable | 20px (1.25rem) | 590 | 1.33 | -0.24px | Feature titles, card headers |
-| Body Large | Inter Variable | 18px (1.13rem) | 400 | 1.60 (relaxed) | -0.165px | Introduction text, explanations |
-| Body Emphasis | Inter Variable | 17px (1.06rem) | 590 | 1.60 (relaxed) | normal | Emphasized body, content subheadings |
-| Body | Inter Variable | 16px (1.00rem) | 400 | 1.50 | normal | Standard reading text |
-| Body Medium | Inter Variable | 16px (1.00rem) | 510 | 1.50 | normal | Navigation, labels |
-| Body Semibold | Inter Variable | 16px (1.00rem) | 590 | 1.50 | normal | Strong emphasis |
-| Small | Inter Variable | 15px (0.94rem) | 400 | 1.60 (relaxed) | -0.165px | Secondary body text |
-| Small Medium | Inter Variable | 15px (0.94rem) | 510 | 1.60 (relaxed) | -0.165px | Emphasized small text |
-| Small Semibold | Inter Variable | 15px (0.94rem) | 590 | 1.60 (relaxed) | -0.165px | Strong small text |
-| Small Light | Inter Variable | 15px (0.94rem) | 300 | 1.47 | -0.165px | Noncritical de-emphasized body |
-| Caption Large | Inter Variable | 14px (0.88rem) | 510–590 | 1.50 | -0.182px | Category and supplemental headers |
-| Caption | Inter Variable | 13px (0.81rem) | 400–510 | 1.50 | -0.13px | Noncritical metadata and timestamps |
-| Label | Inter Variable | 12px (0.75rem) | 400–590 | 1.40 | normal | Compact button or auxiliary labels only |
-| Micro | Inter Variable | 11px (0.69rem) | 510 | 1.40 | normal | Nonessential micro labels |
-| Tiny | Inter Variable | 10px (0.63rem) | 400–510 | 1.50 | -0.15px | Auxiliary overline labels |
-| Link Large | Inter Variable | 16px (1.00rem) | 400 | 1.50 | normal | Standard links |
-| Link Medium | Inter Variable | 15px (0.94rem) | 510 | 2.67 | normal | Spaced navigation links |
-| Link Small | Inter Variable | 14px (0.88rem) | 510 | 1.50 | normal | Compact links |
-| Link Caption | Inter Variable | 13px (0.81rem) | 400–510 | 1.50 | -0.13px | Footer, auxiliary links |
-| Mono Body | Berkeley Mono | 14px (0.88rem) | 400 | 1.50 | normal | Technical text, units, code |
-| Mono Caption | Berkeley Mono | 13px (0.81rem) | 400 | 1.50 | normal | Code labels |
-| Mono Label | Berkeley Mono | 12px (0.75rem) | 400 | 1.40 | normal | Noncritical technical metadata |
+| Display XL | Anek Latin | 72px (4.50rem) | 500 | 1.00 (tight) | -1.584px | Hero headlines, maximum impact |
+| Display Large | Anek Latin | 64px (4.00rem) | 500 | 1.00 (tight) | -1.408px | Secondary hero text |
+| Display | Anek Latin | 48px (3.00rem) | 500 | 1.00 (tight) | -1.056px | Section headlines |
+| Heading 1 | Anek Latin | 32px (2.00rem) | 500 | 1.13 (tight) | -0.704px | Major section titles |
+| Heading 2 | Anek Latin | 24px (1.50rem) | 500 | 1.33 | -0.288px | Sub-section headings |
+| Heading 3 | Anek Latin | 20px (1.25rem) | 600 | 1.33 | -0.24px | Feature titles, card headers |
+| Body Large | Aileron | 18px (1.13rem) | 400 | 1.60 (relaxed) | -0.165px | Introduction text, explanations |
+| Body Emphasis | Aileron | 17px (1.06rem) | 600 | 1.60 (relaxed) | normal | Emphasized body, content subheadings |
+| Body | Aileron | 16px (1.00rem) | 400 | 1.50 | normal | Standard reading text |
+| Body Medium | Aileron | 16px (1.00rem) | 500 | 1.50 | normal | Navigation, labels |
+| Body Semibold | Aileron | 16px (1.00rem) | 600 | 1.50 | normal | Strong emphasis |
+| Small | Aileron | 15px (0.94rem) | 400 | 1.60 (relaxed) | -0.165px | Secondary body text |
+| Small Medium | Aileron | 15px (0.94rem) | 500 | 1.60 (relaxed) | -0.165px | Emphasized small text |
+| Small Semibold | Aileron | 15px (0.94rem) | 600 | 1.60 (relaxed) | -0.165px | Strong small text |
+| Small Light | Aileron | 15px (0.94rem) | 300 | 1.47 | -0.165px | Noncritical de-emphasized body |
+| Caption Large | Aileron | 14px (0.88rem) | 500–600 | 1.50 | -0.182px | Category and supplemental headers |
+| Caption | Aileron | 13px (0.81rem) | 400–500 | 1.50 | -0.13px | Noncritical metadata and timestamps |
+| Label | Aileron | 12px (0.75rem) | 400–600 | 1.40 | normal | Compact button or auxiliary labels only |
+| Micro | Aileron | 11px (0.69rem) | 500 | 1.40 | normal | Nonessential micro labels |
+| Tiny | Aileron | 10px (0.63rem) | 400–500 | 1.50 | -0.15px | Auxiliary overline labels |
+| Link Large | Aileron | 16px (1.00rem) | 400 | 1.50 | normal | Standard links |
+| Link Medium | Aileron | 15px (0.94rem) | 500 | 2.67 | normal | Spaced navigation links |
+| Link Small | Aileron | 14px (0.88rem) | 500 | 1.50 | normal | Compact links |
+| Link Caption | Aileron | 13px (0.81rem) | 400–500 | 1.50 | -0.13px | Footer, auxiliary links |
+| Technical Body | Aileron | 14px (0.88rem) | 400 | 1.50 | normal | Technical text, units, code |
+| Technical Caption | Aileron | 13px (0.81rem) | 400 | 1.50 | normal | Code labels |
+| Technical Label | Aileron | 12px (0.75rem) | 400 | 1.40 | normal | Noncritical technical metadata |
 
 ### Principles
 
-- **510 is the signature weight:** Preserve the source system's restrained UI emphasis, between standard regular and medium.
+- **Font roles are explicit:** Anek Latin provides the title and heading voice; Aileron carries general reading and product UI. Do not swap these roles to solve a local styling problem.
+- **500 is the signature UI weight:** Preserve restrained emphasis between regular and semibold. Anek Latin and Aileron share the 400/500/600 role hierarchy.
 - **Compression at scale:** Use -1.584px at 72px, -1.408px at 64px, -1.056px at 48px, and -0.704px at 32px. Relax letter-spacing toward normal for smaller text.
-- **OpenType as identity:** Keep `"cv01", "ss03"` for Inter throughout the product.
-- **Three-tier weight system:** 400 (read), 510 (navigate/emphasize), 590 (strong). Use 300 only where readability is not compromised.
+- **Three-tier weight system:** 400 (read), 500 (navigate/emphasize), 600 (strong). Use 300 only where readability is not compromised.
 - **Health data legibility:** Present measurements with unambiguous units, dates, and context; give critical values at least body-sized typography rather than micro-label styling.
 - **No opacity-only text hierarchy:** Prefer the defined foreground tokens. Dimming important text reduces readability, particularly against light panels.
+
+### Iconography
+
+- Use **[Phosphor Icons](https://phosphoricons.com/)** as the only interface icon set. Do not mix it with another icon library or use emojis as interface icons.
+- Default to the **Regular** style and a consistent optical size within each region. Use another Phosphor weight only for a deliberate, documented hierarchy; do not mix filled, duotone, and outlined treatments decoratively.
+- Keep icons visually aligned with the Aileron UI label they accompany. Prefer text labels for unfamiliar actions and provide an accessible name for every icon-only control.
+- Icon color follows the same semantic foreground tokens as text; color never carries meaning by itself.
 
 ## 4. Component Stylings
 
@@ -221,7 +229,7 @@ The original typographic scale is preserved. Roles of 10–12px are appropriate 
 - Radius: 2px (original compact-control geometry).
 - Border: `1px solid #DCE5EE`.
 - Shadow: `rgba(17,24,39,0.03) 0px 1px 2px`.
-- Font: 12px weight 510 for supplementary toolbar labels only.
+- Font: 12px weight 500 for supplementary toolbar labels only.
 - Hover: `#E9EFF5`.
 - Use: Toolbar actions, quick-access controls.
 
@@ -274,7 +282,7 @@ The original typographic scale is preserved. Roles of 10–12px are appropriate 
 - Background: `#DCFCE7` for a textual success badge; a standalone status dot may use `#10B981`.
 - Text: `#166534`.
 - Radius: 9999px for a text pill, 50% for a dot.
-- Font: 12–13px weight 510 for readable status labels; 10px is reserved for nonessential technical tagging.
+- Font: 12–13px weight 500 for readable status labels; 10px is reserved for nonessential technical tagging.
 - Use: Administrative completion, connected state, finished tasks. Do not imply medical normality without context.
 
 **Neutral Pill**
@@ -283,7 +291,7 @@ The original typographic scale is preserved. Roles of 10–12px are appropriate 
 - Padding: 0px 10px 0px 5px.
 - Radius: 9999px.
 - Border: `1px solid #DCE5EE`.
-- Font: 12px weight 510 for auxiliary category tags; use larger text where meaning is important.
+- Font: 12px weight 500 for auxiliary category tags; use larger text where meaning is important.
 - Use: Tags, filter chips, category labels.
 
 **Subtle Badge**
@@ -292,7 +300,7 @@ The original typographic scale is preserved. Roles of 10–12px are appropriate 
 - Padding: 0px 8px 0px 2px.
 - Radius: 2px.
 - Border: `1px solid #DCE5EE`.
-- Font: 10px weight 510 only for low-priority, nonessential labels.
+- Font: 10px weight 500 only for low-priority, nonessential labels.
 - Use: Version tags, auxiliary inline labels.
 
 **Selected / Informational Badge**
@@ -305,7 +313,7 @@ The original typographic scale is preserved. Roles of 10–12px are appropriate 
 
 - Light sticky header on `#F8FAFC`; sidebar or grouped navigation region on `#F1F5F9` where useful.
 - Product-specific HealthTech logomark left-aligned. Do not reuse Linear's trademarked logomark as the identity of this application.
-- Links: Inter Variable 13–14px weight 510, `#475569` for secondary navigation.
+- Links: Aileron 13–14px weight 500, `#475569` for secondary navigation.
 - Active/selected: `#DBEAFE` background and `#1D4ED8` text; selected state must also be conveyed semantically.
 - Hover: `#E9EFF5` on neutral navigation surfaces, or a text shift toward `#111827`.
 - CTA: `#2563EB` primary button or a bordered ghost button.
@@ -341,7 +349,7 @@ The original typographic scale is preserved. Roles of 10–12px are appropriate 
 ### Whitespace Philosophy
 
 - **Light as space:** Off-white negative space creates calm and breathing room. The page background remains visible between structured content blocks.
-- **Compressed headlines, expanded surroundings:** Retain display weight 510, narrow tracking, and large surrounding margins without making practical health data feel decorative.
+- **Compressed headlines, expanded surroundings:** Retain display weight 500, narrow tracking, and large surrounding margins without making practical health data feel decorative.
 - **Section isolation:** Separate feature sections using generous vertical padding (80px+ on roomy layouts), soft panel shifts, or subtle `#DCE5EE` lines only when needed.
 - **Reading clarity:** Dense records, tables, and forms can use tighter component spacing, but primary health details need enough whitespace to prevent accidental associations.
 
@@ -377,8 +385,9 @@ The original typographic scale is preserved. Roles of 10–12px are appropriate 
 
 ### Do
 
-- Use Inter Variable with `"cv01", "ss03"` globally to retain the source system's typographic character.
-- Use weight 510 for restrained default emphasis and preserve the 400/510/590 hierarchy.
+- Use Anek Latin for titles and headings, and Aileron for general interface and reading text.
+- Use weight 500 for restrained default emphasis and preserve the 400/500/600 hierarchy.
+- Use Phosphor Icons consistently, with labels or accessible names wherever meaning would otherwise be ambiguous.
 - Apply negative display letter-spacing (for example -1.584px at 72px, -1.056px at 48px).
 - Build on `#F8FAFC` for the canvas, `#F1F5F9` for panels, and `#FCFDFE` for elevated surfaces.
 - Use `#DCE5EE` for most visible structural borders; use subtler translucent strokes only where the edge remains perceivable.
@@ -398,7 +407,8 @@ The original typographic scale is preserved. Roles of 10–12px are appropriate 
 - Don't use light-gray placeholders or disabled text for essential medical or administrative information.
 - Don't apply decorative blue to every card, chart, border, or status.
 - Don't use positive tracking on large display headlines.
-- Don't omit the OpenType features or replace the 510 signature weight with default 700 bold.
+- Don't apply Inter-specific OpenType features, use Anek Latin for body copy, or replace the 500 signature weight with default 700 bold.
+- Don't mix Phosphor with another icon set or combine its styles without a clear purpose.
 - Don't use heavy dark shadows as the primary elevation language.
 - Don't use green status dots without text/icon/context, or conflate a completed workflow with a clinically normal reading.
 - Don't introduce additional clinical warning/error colors without defining their meaning, accessible contrast, and consistency across the product.
@@ -470,24 +480,25 @@ Keep the original responsive breakpoints. The mobile ranges intentionally overla
 
 ### Example Component Prompts
 
-- **Hero section:** "Create a HealthTech hero on `#F8FAFC`. Set the headline in Inter Variable 48px, weight 510, line-height 1.00, letter-spacing -1.056px, color `#111827`, with `font-feature-settings: 'cv01', 'ss03'`. Use an 18px weight-400 subtitle in `#475569`, line-height 1.60. Add a `#2563EB` primary button with `#F8FAFC` text, 6px radius, 8px 16px padding, and a ghost secondary button with `1px solid #DCE5EE` border."
-- **Card:** "Design a patient-friendly summary card on `#F8FAFC`: `#FCFDFE` surface, `1px solid #DCE5EE` border, 8px radius, subtle dark-on-light shadow. Title at 20px Inter Variable weight 590, letter-spacing -0.24px, color `#111827`. Supporting body at 15px weight 400, color `#475569`, letter-spacing -0.165px. Give any displayed measurement an explicit unit."
-- **Pill badge:** "Build a neutral pill with `#F1F5F9` background, `#475569` text, 9999px radius, 0px 10px horizontal padding, `1px solid #DCE5EE` border, 12px Inter Variable weight 510. Use `#DBEAFE` and `#1D4ED8` when selected."
-- **Navigation:** "Create a light sticky header on `#F8FAFC`. Use Inter Variable 13px weight 510 for navigation labels in `#475569`; apply `#DBEAFE` and `#1D4ED8` for the selected entry. Use a right-aligned `#2563EB` CTA with 6px radius, and a `1px solid #DCE5EE` bottom divider."
-- **Command palette:** "Create a command palette with `#FCFDFE` background, `1px solid #DCE5EE` border, 12px radius, and a soft layered shadow. Input at 16px Inter Variable weight 400 and `#111827`. Results use 13–15px weight 510 labels in `#475569` with readable `#5B6778` metadata; preserve keyboard focus indicators."
+- **Hero section:** "Create a HealthTech hero on `#F8FAFC`. Set the headline in Anek Latin 48px, weight 500, line-height 1.00, letter-spacing -1.056px, color `#111827`. Use an 18px Aileron weight-400 subtitle in `#475569`, line-height 1.60. Add a `#2563EB` primary button with `#F8FAFC` text, 6px radius, 8px 16px padding, and a ghost secondary button with `1px solid #DCE5EE` border."
+- **Card:** "Design a patient-friendly summary card on `#F8FAFC`: `#FCFDFE` surface, `1px solid #DCE5EE` border, 8px radius, subtle dark-on-light shadow. Title at 20px Anek Latin weight 600, letter-spacing -0.24px, color `#111827`. Supporting body at 15px Aileron weight 400, color `#475569`, letter-spacing -0.165px. Give any displayed measurement an explicit unit."
+- **Pill badge:** "Build a neutral pill with `#F1F5F9` background, `#475569` text, 9999px radius, 0px 10px horizontal padding, `1px solid #DCE5EE` border, 12px Aileron weight 500. Use `#DBEAFE` and `#1D4ED8` when selected."
+- **Navigation:** "Create a light sticky header on `#F8FAFC`. Use Aileron 13px weight 500 for navigation labels in `#475569`; apply `#DBEAFE` and `#1D4ED8` for the selected entry. Use Phosphor Regular icons and a right-aligned `#2563EB` CTA with 6px radius, and a `1px solid #DCE5EE` bottom divider."
+- **Command palette:** "Create a command palette with `#FCFDFE` background, `1px solid #DCE5EE` border, 12px radius, and a soft layered shadow. Input at 16px Aileron weight 400 and `#111827`. Results use 13–15px weight 500 labels in `#475569` with readable `#5B6778` metadata and consistent Phosphor icons; preserve keyboard focus indicators."
 - **Metric panel:** "Create a simple health activity summary using `#FCFDFE` for the card, `#111827` for the value, `#475569` for its label, and `#2563EB` only for a progress indicator. Show the unit, time range, and descriptive status as text; do not infer clinical thresholds from the brand color."
 
 ### Iteration Guide
 
-1. Apply `font-feature-settings: "cv01", "ss03"` to all Inter text.
+1. Use Anek Latin for titles and headings, and Aileron for general interface and technical text. Use tabular numerals when alignment matters instead of introducing another font family.
 2. Scale letter-spacing with font size: -1.584px at 72px, -1.056px at 48px, -0.704px at 32px, normal for small text unless specified by the type scale.
-3. Preserve weights 400 (read), 510 (emphasize/navigate), 590 (announce).
+3. Preserve weights 400 (read), 500 (emphasize/navigate), 600 (announce).
 4. Use native light surface hierarchy: `#F8FAFC` page → `#F1F5F9` panels → `#FCFDFE` elevated cards, with `#DCE5EE` edges where needed.
 5. Use `#2563EB` only for primary interactive emphasis; keep hover `#1D4ED8`, pressed `#1E40AF`, and selection background `#DBEAFE`.
 6. Use fine dark-on-light borders and subtle shadows, not translucent light-on-dark effects.
-7. Keep Berkeley Mono for technical strings and Inter Variable for the product interface.
+7. Use Phosphor Icons with consistent style, weight, and optical sizing.
 8. Test text contrast whenever foreground/background combinations change, especially on selected, disabled, and tinted surfaces.
 9. Keep semantic health-status messaging separate from brand styling and never communicate important medical meaning by color alone.
+10. Apply `.agents/laws-of-ux/SKILL.md` to every UI build, change, or review; select only laws relevant to the current task and ground each decision in the actual flow.
 
 ## 10. Implementation Tokens & Accessibility Notes
 
@@ -521,13 +532,14 @@ This reference token block translates the approved palette into a light-mode-fir
   --color-status-success-bg: #DCFCE7;
   --color-status-success-indicator: #10B981;
 
-  /* Typography and geometry inherited from Linear-inspired source */
-  --font-sans: "Inter Variable", "SF Pro Display", -apple-system,
+  /* Font pairing and geometry */
+  --font-display: "Anek Latin", "SF Pro Display", -apple-system,
     system-ui, "Segoe UI", Roboto, Helvetica, sans-serif;
-  --font-mono: "Berkeley Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: "Aileron", "SF Pro Display", -apple-system,
+    system-ui, "Segoe UI", Roboto, Helvetica, sans-serif;
   --font-weight-regular: 400;
-  --font-weight-medium: 510;
-  --font-weight-semibold: 590;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
   --radius-control: 6px;
   --radius-card: 8px;
   --radius-panel: 12px;
@@ -545,8 +557,11 @@ body {
   background: var(--color-bg);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
-  font-feature-settings: "cv01", "ss03";
   font-weight: var(--font-weight-regular);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
 }
 
 .surface-card {
@@ -588,7 +603,26 @@ body {
 - **Motion and feedback:** Communicate state changes in text where appropriate; honor reduced-motion preferences for transitions.
 - **Testing:** Review actual screens on mobile, desktop, and varied display settings. Ratios documented above apply to the specified solid color pairs, not automatically to translucent overlays, shadows, icons, or images.
 
+## 11. Visual References & UX Governance
+
+### Reference Products
+
+- **[Attio](https://attio.com/):** inspiration for administrative clarity, dense information presentation, quiet structure, and contextual actions.
+- **[Linear](https://linear.app/):** inspiration for precision, typographic rhythm, compact geometry, restrained hierarchy, and focused workflows.
+
+These products serve different purposes, but their administrative interfaces inform Nightingale's visual craft. They are references, not templates: do not copy their branding, trademarks, proprietary layouts, or functionality. Nightingale keeps its own HealthTech administrative scope, Anek Latin + Aileron pairing, Phosphor iconography, and approved light palette.
+
+### Required UX Process
+
+Always apply [`.agents/laws-of-ux/SKILL.md`](.agents/laws-of-ux/SKILL.md) to every UI/UX design, build, change, or review. Establish the user's task first, select only the laws relevant to that task, and connect each decision to a concrete behavior or code change. Prioritize confirmed usability violations over optional suggestions, verify the running UI when behavior or presentation matters, and never turn the laws or their examples into a generic checklist of arbitrary limits.
+
+### Asset References
+
+- [Anek Latin by Ek Type](https://ektype.in/anek-latin.html) for titles and headings.
+- [Aileron by Sora Sagano / Dot Colon](https://www.dotcolon.net/font/aileron/) for general interface and reading text.
+- [Phosphor Icons](https://phosphoricons.com/) for interface iconography.
+
 ---
 
-**Design intent:** Maintain Linear's and Attio precision and restraint while making a light, blue-accented HealthTech product feel calm, readable, and trustworthy. The palette intentionally excludes pure-white surfaces and foregrounds.
-Follow `DESIGN-RULES.md` too
+**Design intent:** Maintain Attio's and Linear's precision and restraint while making a light, blue-accented HealthTech product feel calm, readable, and trustworthy. The palette intentionally excludes pure-white surfaces and foregrounds.
+Follow `DESIGN-RULES.md` too.

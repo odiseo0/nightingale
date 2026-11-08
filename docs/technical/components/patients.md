@@ -66,14 +66,14 @@ de la sesión seleccionada. Las salidas no exponen payload remoto, época,
 fingerprint ni identificadores de cuenta/dispositivo. No hay pantalla React en
 este plan.
 
-Pruebas: `cargo test --workspace --locked components::patients`,
+Pruebas: `cargo test --workspace --locked tests::components::patients`,
 `cargo test --workspace --locked patients_integration_tests`,
-`cargo test --workspace --locked components::sync::contract_tests`,
+`cargo test --workspace --locked tests::components::sync::contract_tests`,
 `pnpm quality` y `pnpm build:desktop`. Las fixtures de contrato contrastan las
 once acciones, sus payloadModels y la clave compuesta con el bundle fijo; se
 comprueban sus cinco hashes. La prueba HTTP loopback recorre registro de menor con
 responsable, reapertura, envío, accepted, descarga, conflicto, retiro y captura.
-La prueba de desarrollo real (`components::patients::development_tests`, opt-in con
+La prueba de desarrollo real (`tests::components::patients::development_tests`, opt-in con
 `--ignored`) queda pendiente de entorno y no se acredita aquí.
 
 Fuentes: [transacciones rusqlite 0.40.2](https://docs.rs/rusqlite/0.40.2/rusqlite/struct.Transaction.html),

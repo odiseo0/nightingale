@@ -18,11 +18,11 @@ Users care about the result. Guide them toward it and remove anything that gets 
 
 6. **Use `DESIGN.md` as the source of truth.** Define the type scale, spacing, colors, borders, corners, icons, and component states.
 7. **Use one name for each action.** Do not use “Delete,” “Remove,” and “Trash” for the same result.
-8. **Keep text styles consistent.** Define clear styles for titles, body text, labels, and supporting details.
+8. **Keep text styles consistent.** Use Anek Latin for titles and headings, and Aileron for general interface and reading text. Define clear styles for body text, labels, and supporting details.
 9. **Use strong type contrast.** Important text must stand apart from supporting text, but small text must remain easy to read.
-10. **Use monospaced text with care.** Reserve it for IDs, dates, metrics, and other short data.
+10. **Use technical text styles with care.** Keep IDs, dates, metrics, units, and code in Aileron; use tabular numerals when alignment matters instead of introducing another font family.
 11. **Keep corner shapes consistent.** Use a small set of corner sizes and give each one a purpose.
-12. **Use one icon set.** Keep icon size, weight, and style consistent. Do not use emojis as interface icons.
+12. **Use Phosphor Icons as the one icon set.** Keep icon size, weight, and style consistent. Do not mix icon libraries or use emojis as interface icons.
 
 ## 3. Keep the interface quiet
 
@@ -74,6 +74,10 @@ Users care about the result. Guide them toward it and remove anything that gets 
 43. **Keep calls to action consistent.** The same label should lead to the same place.
 44. **Describe outcomes, not only features.** Explain how the product helps the customer.
 45. **Include only useful sections.** Use the promise, proof, process, price, questions, and final action as a base.
+
+## 9. Always apply UX laws
+
+46. **Use `.agents/laws-of-ux/SKILL.md` for every UI/UX design, build, change, or review.** Establish the user's task, select only the relevant laws, and tie each decision to concrete behavior or code. Put confirmed violations before optional suggestions and verify the running UI when layout, focus, motion, or timing matters. Do not list all laws indiscriminately or treat their examples as universal requirements.
 
 ## Visual direction
 

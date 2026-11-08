@@ -56,8 +56,8 @@ normal y SSE de identity usan esa misma composición. Cada llamada delega con la
 transacción recibida; no cambia el envío, los recibos, el cursor ni la recuperación.
 La consulta de services resuelve sus provisionales después de recibo y proyección.
 
-Pruebas: `cargo test --workspace --locked components::services`,
-`cargo test --workspace --locked components::sync::contract_tests` y
+Pruebas: `cargo test --workspace --locked tests::components::services`,
+`cargo test --workspace --locked tests::components::sync::contract_tests` y
 `cargo test --workspace --locked catalog_integration_tests`; `pnpm quality` y
 `pnpm build:desktop`. Las fixtures contrastan las diez acciones y sus payloadModels
 con el bundle fijo; se comprueban sus cinco hashes y los modelos de estado existentes.

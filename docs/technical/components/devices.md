@@ -6,4 +6,4 @@ La clave segura distingue entorno, perfil, identidad, clase de secreto y disposi
 
 La API pública es `DeviceCredentials::{ensure,load,forget}` y el resultado `DeviceCredential` para composición Rust. Usa los puertos `SecretStore` y `APITransport`, con adaptadores del almacén del SO e `IdentityAPI`; no publica eventos de dominio propios.
 
-No añadas tokens a DTO, Debug, SQLite, fixtures reales o logs. Pruebas de activación: `cargo test --workspace --locked components::identity::application::tests`. Almacenes nativos: [desarrollo](../../operations/development.md); macOS/Linux todavía necesitan prueba real.
+No añadas tokens a DTO, Debug, SQLite, fixtures reales o logs. Pruebas de activación: `cargo test --workspace --locked tests::components::identity::activation_tests`. Almacenes nativos: [desarrollo](../../operations/development.md); macOS/Linux todavía necesitan prueba real.

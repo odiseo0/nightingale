@@ -1,4 +1,4 @@
-use super::availability::{Interval, available_intervals, fitting, merge, subtract};
+use super::availability::{AgendaInput, Interval, available_intervals, fitting, merge, subtract};
 use super::{
     application::{BlockState, ExceptionState, RuleState},
     domain::{ExceptionKind, ReasonCode, Status},
@@ -10,7 +10,13 @@ fn ts(value: &str) -> Timestamp {
     Timestamp::from_str(value).unwrap()
 }
 
-fn rule(weekday: i64, start: i64, end: i64, valid_from: &str, valid_until: Option<&str>) -> RuleState {
+fn rule(
+    weekday: i64,
+    start: i64,
+    end: i64,
+    valid_from: &str,
+    valid_until: Option<&str>,
+) -> RuleState {
     RuleState {
         rule_id: "019a1234-0000-7000-8000-0000000000a1".into(),
         professional_id: "019a1234-0000-7000-8000-000000000008".into(),
@@ -127,22 +133,29 @@ fn rules_union_exceptions_precedence_and_duration_filter() {
     ];
     let result = available_intervals(
         &caracas(),
-        &rules,
-        &[],
-        &[],
+        &AgendaInput {
+            rules: &rules,
+            exceptions: &[],
+            blocks: &[],
+        },
         &[],
         ts("2026-05-06T04:00:00Z"),
         ts("2026-05-07T04:00:00Z"),
         360,
     )
     .unwrap();
-    assert_eq!(result, [interval("2026-05-06T12:00:00Z", "2026-05-06T18:00:00Z")]);
+    assert_eq!(
+        result,
+        [interval("2026-05-06T12:00:00Z", "2026-05-06T18:00:00Z")]
+    );
 
     let result = available_intervals(
         &caracas(),
-        &rules,
-        &[],
-        &[],
+        &AgendaInput {
+            rules: &rules,
+            exceptions: &[],
+            blocks: &[],
+        },
         &[],
         ts("2026-05-06T04:00:00Z"),
         ts("2026-05-07T04:00:00Z"),
@@ -154,9 +167,11 @@ fn rules_union_exceptions_precedence_and_duration_filter() {
     // closed vacía el día aunque haya reglas.
     let result = available_intervals(
         &caracas(),
-        &rules,
-        &[closed("2026-05-06")],
-        &[],
+        &AgendaInput {
+            rules: &rules,
+            exceptions: &[closed("2026-05-06")],
+            blocks: &[],
+        },
         &[],
         ts("2026-05-06T04:00:00Z"),
         ts("2026-05-07T04:00:00Z"),
@@ -168,16 +183,21 @@ fn rules_union_exceptions_precedence_and_duration_filter() {
     // replacement sustituye el horario habitual.
     let result = available_intervals(
         &caracas(),
-        &rules,
-        &[replacement("2026-05-06", 540, 600)],
-        &[],
+        &AgendaInput {
+            rules: &rules,
+            exceptions: &[replacement("2026-05-06", 540, 600)],
+            blocks: &[],
+        },
         &[],
         ts("2026-05-06T04:00:00Z"),
         ts("2026-05-07T04:00:00Z"),
         30,
     )
     .unwrap();
-    assert_eq!(result, [interval("2026-05-06T13:00:00Z", "2026-05-06T14:00:00Z")]);
+    assert_eq!(
+        result,
+        [interval("2026-05-06T13:00:00Z", "2026-05-06T14:00:00Z")]
+    );
 }
 
 #[test]
@@ -191,9 +211,11 @@ fn blocks_and_occupancy_subtract_with_half_open_edges() {
     let blocks = [block("2026-05-06T16:00:00Z", "2026-05-06T17:00:00Z")];
     let result = available_intervals(
         &caracas(),
-        &rules,
-        &[],
-        &blocks,
+        &AgendaInput {
+            rules: &rules,
+            exceptions: &[],
+            blocks: &blocks,
+        },
         &occupancy,
         ts("2026-05-06T04:00:00Z"),
         ts("2026-05-07T04:00:00Z"),
@@ -217,9 +239,11 @@ fn validity_windows_and_multi_day_ranges() {
     let rules = [rule(2, 480, 600, "2026-05-05", Some("2026-05-06"))];
     let result = available_intervals(
         &caracas(),
-        &rules,
-        &[],
-        &[],
+        &AgendaInput {
+            rules: &rules,
+            exceptions: &[],
+            blocks: &[],
+        },
         &[],
         ts("2026-05-05T04:00:00Z"),
         ts("2026-05-08T04:00:00Z"),
@@ -238,9 +262,11 @@ fn dst_gap_and_fold_are_rejected_not_resolved() {
     let rules = [rule(7, 120, 180, "2026-01-01", None)];
     let result = available_intervals(
         &new_york,
-        &rules,
-        &[],
-        &[],
+        &AgendaInput {
+            rules: &rules,
+            exceptions: &[],
+            blocks: &[],
+        },
         &[],
         ts("2026-03-08T05:00:00Z"),
         ts("2026-03-09T04:00:00Z"),
@@ -252,9 +278,11 @@ fn dst_gap_and_fold_are_rejected_not_resolved() {
     let rules = [rule(7, 60, 120, "2026-01-01", None)];
     let result = available_intervals(
         &new_york,
-        &rules,
-        &[],
-        &[],
+        &AgendaInput {
+            rules: &rules,
+            exceptions: &[],
+            blocks: &[],
+        },
         &[],
         ts("2026-11-01T04:00:00Z"),
         ts("2026-11-02T05:00:00Z"),
@@ -269,24 +297,31 @@ fn end_1440_lands_on_next_day_and_day_length_follows_dst() {
     let rules = [rule(7, 0, 1440, "2026-01-01", None)];
     let result = available_intervals(
         &caracas(),
-        &rules,
-        &[],
-        &[],
+        &AgendaInput {
+            rules: &rules,
+            exceptions: &[],
+            blocks: &[],
+        },
         &[],
         ts("2026-05-03T04:00:00Z"),
         ts("2026-05-04T04:00:00Z"),
         1440,
     )
     .unwrap();
-    assert_eq!(result, [interval("2026-05-03T04:00:00Z", "2026-05-04T04:00:00Z")]);
+    assert_eq!(
+        result,
+        [interval("2026-05-03T04:00:00Z", "2026-05-04T04:00:00Z")]
+    );
 
     // En Nueva York el domingo del cambio (gap de 1h) el día mide 23h: 1440 no cabe.
     let new_york = TimeZone::get("America/New_York").unwrap();
     let result = available_intervals(
         &new_york,
-        &rules,
-        &[],
-        &[],
+        &AgendaInput {
+            rules: &rules,
+            exceptions: &[],
+            blocks: &[],
+        },
         &[],
         ts("2026-03-08T05:00:00Z"),
         ts("2026-03-09T04:00:00Z"),
@@ -299,15 +334,48 @@ fn end_1440_lands_on_next_day_and_day_length_follows_dst() {
 fn invalid_range_and_duration_are_rejected() {
     let rules = [rule(3, 480, 720, "2026-01-01", None)];
     assert!(
-        available_intervals(&caracas(), &rules, &[], &[], &[], ts("2026-05-07T04:00:00Z"), ts("2026-05-06T04:00:00Z"), 30)
-            .is_err()
+        available_intervals(
+            &caracas(),
+            &AgendaInput {
+                rules: &rules,
+                exceptions: &[],
+                blocks: &[]
+            },
+            &[],
+            ts("2026-05-07T04:00:00Z"),
+            ts("2026-05-06T04:00:00Z"),
+            30
+        )
+        .is_err()
     );
     assert!(
-        available_intervals(&caracas(), &rules, &[], &[], &[], ts("2026-05-06T04:00:00Z"), ts("2026-05-07T04:00:00Z"), 0)
-            .is_err()
+        available_intervals(
+            &caracas(),
+            &AgendaInput {
+                rules: &rules,
+                exceptions: &[],
+                blocks: &[]
+            },
+            &[],
+            ts("2026-05-06T04:00:00Z"),
+            ts("2026-05-07T04:00:00Z"),
+            0
+        )
+        .is_err()
     );
     assert!(
-        available_intervals(&caracas(), &rules, &[], &[], &[], ts("2026-05-06T04:00:00Z"), ts("2026-05-07T04:00:00Z"), 1441)
-            .is_err()
+        available_intervals(
+            &caracas(),
+            &AgendaInput {
+                rules: &rules,
+                exceptions: &[],
+                blocks: &[]
+            },
+            &[],
+            ts("2026-05-06T04:00:00Z"),
+            ts("2026-05-07T04:00:00Z"),
+            1441
+        )
+        .is_err()
     );
 }

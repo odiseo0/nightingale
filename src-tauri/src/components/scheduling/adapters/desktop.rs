@@ -13,9 +13,7 @@ fn current_session(connection: &Connection) -> Result<(String, Option<String>)> 
             [],
             |row| Ok((row.get(0)?, row.get(1)?)),
         )
-        .map_err(|_| {
-            SchedulingError::new("PERMISSION_DENIED", "no hay sesión local activa")
-        })
+        .map_err(|_| SchedulingError::new("PERMISSION_DENIED", "no hay sesión local activa"))
 }
 
 /// Snapshot of the desktop session taken before an online call.

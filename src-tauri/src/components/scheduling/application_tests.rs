@@ -2,15 +2,17 @@ use super::{
     adapters::outbound::SqliteSchedulingRepository,
     application::{EditBase, LocalMutationResult, SchedulingMutation, SchedulingRepository},
     domain::{RulePatch, RuleValue, Status},
-    test_support::{Ids, NoOccupancy, access, database, repository, seed_account, FixedClock},
+    test_support::{FixedClock, Ids, NoOccupancy, access, database, repository, seed_account},
 };
 use crate::platform::sqlite;
 use serde_json::json;
 
-
 fn rule_value() -> RuleValue {
     RuleValue::new(
-        "019a1234-0000-7000-8000-000000000008".to_owned().try_into().unwrap(),
+        "019a1234-0000-7000-8000-000000000008"
+            .to_owned()
+            .try_into()
+            .unwrap(),
         2,
         540,
         1080,
@@ -20,12 +22,17 @@ fn rule_value() -> RuleValue {
     .unwrap()
 }
 
-fn create(
-    repo: &mut SqliteSchedulingRepository<'_>,
-    ids: &Ids,
-) -> LocalMutationResult {
-    repo.persist(&access(), SchedulingMutation::CreateRule { value: rule_value() }, ids, &FixedClock, &NoOccupancy)
-        .unwrap()
+fn create(repo: &mut SqliteSchedulingRepository<'_>, ids: &Ids) -> LocalMutationResult {
+    repo.persist(
+        &access(),
+        SchedulingMutation::CreateRule {
+            value: rule_value(),
+        },
+        ids,
+        &FixedClock,
+        &NoOccupancy,
+    )
+    .unwrap()
 }
 
 #[test]
@@ -92,7 +99,10 @@ fn successive_edits_survive_reopen_with_ids_bases_and_dependencies() {
                 SchedulingMutation::UpdateRule {
                     rule_id: rule_id.clone(),
                     base: EditBase::LocalOperation {
-                        operation_id: crate::shared_kernel::id::OperationId::try_from(created.operation_id.clone()).unwrap(),
+                        operation_id: crate::shared_kernel::id::OperationId::try_from(
+                            created.operation_id.clone(),
+                        )
+                        .unwrap(),
                     },
                     patch: RulePatch::new(None, Some(600), None, None, None).unwrap(),
                 },
@@ -107,7 +117,10 @@ fn successive_edits_survive_reopen_with_ids_bases_and_dependencies() {
                 SchedulingMutation::UpdateRule {
                     rule_id: rule_id.clone(),
                     base: EditBase::LocalOperation {
-                        operation_id: crate::shared_kernel::id::OperationId::try_from(edit1.operation_id.clone()).unwrap(),
+                        operation_id: crate::shared_kernel::id::OperationId::try_from(
+                            edit1.operation_id.clone(),
+                        )
+                        .unwrap(),
                     },
                     patch: RulePatch::new(Some(3), None, None, None, None).unwrap(),
                 },
@@ -142,16 +155,19 @@ fn successive_edits_survive_reopen_with_ids_bases_and_dependencies() {
 #[test]
 fn stale_bases_blocked_dependencies_and_no_changes_are_rejected() {
     let mut c = database();
-    let mut repo = repository(&mut c);
     let ids = Ids::default();
 
-    let created = create(&mut repo, &ids);
-    let rule_id = created.entity_key.as_str().unwrap().to_owned();
-    drop(repo);
+    let (rule_id, created_op) = {
+        let mut repo = repository(&mut c);
+        let created = create(&mut repo, &ids);
+        (
+            created.entity_key.as_str().unwrap().to_owned(),
+            created.operation_id,
+        )
+    };
 
     // Base aceptada con provisional pendiente: rechazada.
-    let mut repo = repository(&mut c);
-    let stale = repo.persist(
+    let stale = repository(&mut c).persist(
         &access(),
         SchedulingMutation::SetRuleStatus {
             rule_id: rule_id.clone(),
@@ -165,12 +181,15 @@ fn stale_bases_blocked_dependencies_and_no_changes_are_rejected() {
     assert_eq!(stale.unwrap_err().code, "VERSION_CONFLICT");
 
     // Operación local desconocida como base: rechazada.
-    let unknown = repo.persist(
+    let unknown = repository(&mut c).persist(
         &access(),
         SchedulingMutation::SetRuleStatus {
             rule_id: rule_id.clone(),
             base: EditBase::LocalOperation {
-                operation_id: crate::shared_kernel::id::OperationId::try_from("019a1234-0000-7000-8000-000000000777".to_owned()).unwrap(),
+                operation_id: crate::shared_kernel::id::OperationId::try_from(
+                    "019a1234-0000-7000-8000-000000000777".to_owned(),
+                )
+                .unwrap(),
             },
             status: Status::Inactive,
         },
@@ -181,12 +200,13 @@ fn stale_bases_blocked_dependencies_and_no_changes_are_rejected() {
     assert_eq!(unknown.unwrap_err().code, "VERSION_CONFLICT");
 
     // Sin diferencia: NO_CHANGES sin crear operación.
-    let same = repo.persist(
+    let same = repository(&mut c).persist(
         &access(),
         SchedulingMutation::SetRuleStatus {
             rule_id: rule_id.clone(),
             base: EditBase::LocalOperation {
-                operation_id: crate::shared_kernel::id::OperationId::try_from(created.operation_id.clone()).unwrap(),
+                operation_id: crate::shared_kernel::id::OperationId::try_from(created_op.clone())
+                    .unwrap(),
             },
             status: Status::Active,
         },
@@ -195,7 +215,6 @@ fn stale_bases_blocked_dependencies_and_no_changes_are_rejected() {
         &NoOccupancy,
     );
     assert_eq!(same.unwrap_err().code, "NO_CHANGES");
-    drop(repo);
     let count: i64 = c
         .query_row("SELECT count(*) FROM sync_outbox", [], |r| r.get(0))
         .unwrap();
@@ -204,16 +223,15 @@ fn stale_bases_blocked_dependencies_and_no_changes_are_rejected() {
     // Operación previa en conflicto: DEPENDENCY_FAILED.
     c.execute(
         "UPDATE sync_outbox SET status = 'conflict' WHERE operation_id = ?1",
-        [&created.operation_id],
+        [&created_op],
     )
     .unwrap();
-    let mut repo = repository(&mut c);
-    let blocked = repo.persist(
+    let blocked = repository(&mut c).persist(
         &access(),
         SchedulingMutation::SetRuleStatus {
             rule_id,
             base: EditBase::LocalOperation {
-                operation_id: crate::shared_kernel::id::OperationId::try_from(created.operation_id.clone()).unwrap(),
+                operation_id: crate::shared_kernel::id::OperationId::try_from(created_op).unwrap(),
             },
             status: Status::Inactive,
         },

@@ -1,7 +1,9 @@
 use super::{
     application::{EditBase, SchedulingMutation, SchedulingRepository},
     domain::{ExceptionKind, ExceptionPatch, ExceptionValue, Status},
-    test_support::{FakeOccupancy, Ids, NoOccupancy, PROFESSIONAL, access, database, repository, FixedClock},
+    test_support::{
+        FakeOccupancy, FixedClock, Ids, NoOccupancy, PROFESSIONAL, access, database, repository,
+    },
 };
 use crate::components::appointments::application::OccupancyInterval;
 use jiff::Timestamp;
@@ -126,7 +128,9 @@ fn closed_and_replacement_follow_contract_payloads_and_survive_reopen() {
 fn outbox_payload_of(dir: &std::path::Path, action: &str, row: usize) -> Value {
     let c = rusqlite::Connection::open(dir).unwrap();
     let payloads: Vec<String> = c
-        .prepare("SELECT payload FROM sync_outbox WHERE action = ?1 ORDER BY created_at,operation_id")
+        .prepare(
+            "SELECT payload FROM sync_outbox WHERE action = ?1 ORDER BY created_at,operation_id",
+        )
         .unwrap()
         .query_map([action], |r| r.get(0))
         .unwrap()

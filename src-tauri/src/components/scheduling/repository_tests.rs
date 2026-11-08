@@ -158,11 +158,15 @@ fn queries_isolate_scope_and_views_keep_intentions() {
     assert_eq!(read_local_changes(&connection, &other).unwrap(), []);
 
     // Vaciar vistas no toca intenciones (reset conserva trabajo local).
-    connection.execute("DELETE FROM schedule_rule_view", []).unwrap();
+    connection
+        .execute("DELETE FROM schedule_rule_view", [])
+        .unwrap();
     connection
         .execute("DELETE FROM schedule_exception_view", [])
         .unwrap();
-    connection.execute("DELETE FROM schedule_block_view", []).unwrap();
+    connection
+        .execute("DELETE FROM schedule_block_view", [])
+        .unwrap();
     assert_eq!(read_local_changes(&connection, &s).unwrap(), [change()]);
 }
 
@@ -258,13 +262,9 @@ fn upgrade_from_seven_keeps_data_and_failed_eight_rolls_back() {
         connection
             .pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
             .unwrap(),
-        9
+        10
     );
-    assert!(
-        connection
-            .table_exists(None, "schedule_rule_view")
-            .unwrap()
-    );
+    assert!(connection.table_exists(None, "schedule_rule_view").unwrap());
     assert!(
         connection
             .table_exists(None, "appointment_occupancy_view")

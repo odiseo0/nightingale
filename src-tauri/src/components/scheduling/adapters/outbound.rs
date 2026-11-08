@@ -29,6 +29,34 @@ use std::collections::BTreeMap;
 #[path = "intents.rs"]
 mod intents;
 
+/// In-memory occupancy snapshot for one persist call. The command resolves the
+/// mutation's professional first (under the same connection lock) and hands
+/// the known occupancy to the prevalidation; nothing is read twice elsewhere.
+pub struct KnownOccupancy(
+    pub  Vec<(
+        String,
+        crate::components::appointments::application::OccupancyInterval,
+    )>,
+);
+
+impl ScheduleOccupancyQuery for KnownOccupancy {
+    fn list_occupancy(
+        &self,
+        professional_id: &str,
+        _from: jiff::Timestamp,
+        _until: jiff::Timestamp,
+    ) -> crate::shared_kernel::Result<
+        Vec<crate::components::appointments::application::OccupancyInterval>,
+    > {
+        Ok(self
+            .0
+            .iter()
+            .filter(|(professional, _)| professional == professional_id)
+            .map(|(_, interval)| interval.clone())
+            .collect())
+    }
+}
+
 pub(super) fn storage_error(_: rusqlite::Error) -> SchedulingError {
     SchedulingError::internal("datos locales de agenda no disponibles")
 }
@@ -398,7 +426,16 @@ fn rule_rows(
                 >= (p.expected_version, &p.operation_id)
         });
 
-        if replace {
+        // Conciliación: un provisional se retira solo con recibo aceptado y la
+        // vista aceptada en la versión confirmada; lo demás lo conserva.
+        let retired = replace
+            && intents::confirmed(
+                c,
+                s,
+                row.accepted.as_ref().map(|accepted| accepted.version),
+                &change,
+            )?;
+        if replace && !retired {
             row.provisional = Some(candidate);
         }
     }
@@ -463,7 +500,17 @@ fn exception_rows(
                 >= (p.expected_version, &p.operation_id)
         });
 
-        if replace {
+        // Conciliación: un provisional se retira solo con recibo aceptado y la
+        // vista aceptada en la versión confirmada; lo demás lo conserva.
+        let retired = replace
+            && intents::confirmed(
+                c,
+                s,
+                row.accepted.as_ref().map(|accepted| accepted.version),
+                &change,
+            )?;
+
+        if replace && !retired {
             row.provisional = Some(candidate);
         }
     }
@@ -497,6 +544,7 @@ impl app::SchedulingRepository for SqliteSchedulingRepository<'_> {
             }
             _ => false,
         };
+
         // Reserve the write lock before checking permissions and preparing the change.
         // https://docs.rs/rusqlite/0.40.2/rusqlite/struct.Connection.html#method.transaction_with_behavior
         let tx = self
@@ -705,7 +753,16 @@ fn block_rows(
                 >= (p.expected_version, &p.operation_id)
         });
 
-        if replace {
+        // Conciliación: un provisional se retira solo con recibo aceptado y la
+        // vista aceptada en la versión confirmada; lo demás lo conserva.
+        let retired = replace
+            && intents::confirmed(
+                c,
+                s,
+                row.accepted.as_ref().map(|accepted| accepted.version),
+                &change,
+            )?;
+        if replace && !retired {
             row.provisional = Some(candidate);
         }
     }
@@ -793,12 +850,23 @@ impl app::ScheduleAvailabilityQuery for SqliteSchedulingRepository<'_> {
             .as_second()
             .checked_sub(request.from.as_second())
             .ok_or_else(|| SchedulingError::validation("rango de consulta inválido"))?;
+
         if request.from >= request.until
             || range_seconds > app::MAX_AVAILABILITY_RANGE_DAYS * 86_400
         {
             return Err(SchedulingError::validation(
                 "el rango debe ser un intervalo de hasta 31 días",
             ));
+        }
+
+        if let Some(excluded) = &request.exclude_appointment_id {
+            excluded
+                .clone()
+                .try_into()
+                .map(|_: crate::components::appointments::domain::AppointmentId| ())
+                .map_err(|_| {
+                    SchedulingError::validation("excludeAppointmentId debe ser un UUIDv7 canónico")
+                })?;
         }
 
         // Cuenta (zona + versión) y catálogo (oferta activa + versiones).
@@ -815,16 +883,14 @@ impl app::ScheduleAvailabilityQuery for SqliteSchedulingRepository<'_> {
         let catalog = crate::components::services::adapters::outbound::SqliteCatalogRepository {
             connection: &mut *self.connection,
         };
-        let professional_id: crate::components::services::domain::ProfessionalId = request
-            .professional_id
-            .clone()
-            .try_into()
-            .map_err(|_| SchedulingError::validation("professionalId debe ser un UUIDv7 canónico"))?;
-        let service_id: crate::components::services::domain::ServiceId = request
-            .service_id
-            .clone()
-            .try_into()
-            .map_err(|_| SchedulingError::validation("serviceId debe ser un UUIDv7 canónico"))?;
+        let professional_id: crate::components::services::domain::ProfessionalId =
+            request.professional_id.clone().try_into().map_err(|_| {
+                SchedulingError::validation("professionalId debe ser un UUIDv7 canónico")
+            })?;
+        let service_id: crate::components::services::domain::ServiceId =
+            request.service_id.clone().try_into().map_err(|_| {
+                SchedulingError::validation("serviceId debe ser un UUIDv7 canónico")
+            })?;
         let professional = catalog
             .professional(&access.context, &professional_id)
             .map_err(|error| SchedulingError::new(&error.code, &error.message))?
@@ -834,9 +900,7 @@ impl app::ScheduleAvailabilityQuery for SqliteSchedulingRepository<'_> {
             .offer(&access.context, &professional_id, &service_id)
             .map_err(|error| SchedulingError::new(&error.code, &error.message))?
             .filter(|offer| offer.status == "active" && offer.service_status == "active")
-            .ok_or_else(|| {
-                SchedulingError::new("NOT_FOUND", "oferta de servicio no disponible")
-            })?;
+            .ok_or_else(|| SchedulingError::new("NOT_FOUND", "oferta de servicio no disponible"))?;
 
         let duration = match request.duration_minutes {
             Some(value) => {
@@ -880,18 +944,25 @@ impl app::ScheduleAvailabilityQuery for SqliteSchedulingRepository<'_> {
             .list_occupancy(&professional.professional_id, request.from, request.until)
             .map_err(SchedulingError::from)?
             .into_iter()
-            .map(|interval| {
-                super::super::availability::Interval {
-                    start: interval.starts_at,
-                    end: interval.ends_at,
-                }
+            .filter(|interval| {
+                request
+                    .exclude_appointment_id
+                    .as_deref()
+                    .map(|excluded| excluded != interval.appointment_id)
+                    .unwrap_or(true)
+            })
+            .map(|interval| super::super::availability::Interval {
+                start: interval.starts_at,
+                end: interval.ends_at,
             })
             .collect();
         let intervals = super::super::availability::available_intervals(
             &zone,
-            &rules,
-            &exceptions,
-            &blocks,
+            &super::super::availability::AgendaInput {
+                rules: &rules,
+                exceptions: &exceptions,
+                blocks: &blocks,
+            },
             &known,
             request.from,
             request.until,
@@ -903,8 +974,14 @@ impl app::ScheduleAvailabilityQuery for SqliteSchedulingRepository<'_> {
         let coverage = match cursors.cursor(&tx, &access.context) {
             Ok(Some(stored)) => {
                 let window = stored.window;
-                let from = window.get("appointments_from").and_then(Value::as_str);
-                let until = window.get("appointments_until").and_then(Value::as_str);
+                let from = window
+                    .get("appointmentsFrom")
+                    .or_else(|| window.get("appointments_from"))
+                    .and_then(Value::as_str);
+                let until = window
+                    .get("appointmentsUntil")
+                    .or_else(|| window.get("appointments_until"))
+                    .and_then(Value::as_str);
                 match (from, until) {
                     (Some(from), Some(until))
                         if from <= request.from.to_string().as_str()
@@ -956,16 +1033,19 @@ fn fused_states<T: Clone>(
 ) -> (Vec<T>, Vec<(String, i64)>) {
     let mut states = Vec::with_capacity(rows.len());
     let mut versions = Vec::with_capacity(rows.len());
+
     for row in rows {
         let version = row
             .provisional
             .as_ref()
             .map(|p| p.expected_version + 1)
             .or_else(|| row.accepted.as_ref().map(|a| a.version));
+
         if let (Some(state), Some(version)) = (row.visible().cloned(), version) {
             versions.push((id(&state), version));
             states.push(state);
         }
     }
+
     (states, versions)
 }

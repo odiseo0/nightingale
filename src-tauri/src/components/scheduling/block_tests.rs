@@ -2,8 +2,8 @@ use super::{
     application::{EditBase, SchedulingMutation, SchedulingRepository},
     domain::{BlockPatch, BlockValue, Instant, ReasonCode, Status},
     test_support::{
-        FakeOccupancy, Ids, NoOccupancy, PROFESSIONAL, access, database_with_professional,
-        owner_access, repository, FixedClock,
+        FakeOccupancy, FixedClock, Ids, NoOccupancy, PROFESSIONAL, access,
+        database_with_professional, owner_access, repository,
     },
 };
 use crate::components::appointments::application::OccupancyInterval;
@@ -257,7 +257,7 @@ fn known_appointment_inside_block_blocks_the_write() {
             &occupancy,
         )
         .unwrap();
-    drop(ids0);
+    let _ = &ids0;
 
     // Bloqueo de cuenta sobre la cita conocida: rechazado.
     let overlapping = repository(&mut c).persist(

@@ -16,7 +16,7 @@ pub struct OnlineScheduling<'a> {
     pub scope: &'a OperationContext,
 }
 
-fn remote_error(error: APIFailure) -> SchedulingError {
+pub(crate) fn remote_error(error: APIFailure) -> SchedulingError {
     let code = serde_json::to_value(error.code)
         .ok()
         .and_then(|value| value.as_str().map(str::to_owned))

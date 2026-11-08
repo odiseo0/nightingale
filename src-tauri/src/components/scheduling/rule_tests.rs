@@ -1,7 +1,9 @@
 use super::{
     application::{EditBase, SchedulingMutation, SchedulingRepository},
     domain::{RulePatch, RuleValue, Status},
-    test_support::{FakeOccupancy, Ids, NoOccupancy, PROFESSIONAL, access, database, repository, FixedClock},
+    test_support::{
+        FakeOccupancy, FixedClock, Ids, NoOccupancy, PROFESSIONAL, access, database, repository,
+    },
 };
 use crate::components::appointments::application::OccupancyInterval;
 use jiff::Timestamp;

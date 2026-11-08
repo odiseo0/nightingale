@@ -506,8 +506,49 @@ pub(super) fn prepare(
     }
 }
 
+/// A provisional retires only when its operation was accepted and the accepted
+/// view reached the receipt's confirmed version. A receipt alone never replaces
+/// the download; conflicts, rejections and unknown results keep the provisional.
+pub(super) fn confirmed(
+    c: &Connection,
+    s: &OperationContext,
+    accepted_version: Option<i64>,
+    local: &LocalChange,
+) -> app::Result<bool> {
+    use crate::components::sync::domain::OperationStatus;
+
+    let Some(stored) = SqliteOperationStore.operation_result(
+        c,
+        s,
+        &OperationId::try_from(local.operation_id.clone())?,
+    )?
+    else {
+        return Ok(false);
+    };
+
+    if stored.review_code.is_some() || stored.status != OperationStatus::Accepted {
+        return Ok(false);
+    }
+
+    let Some(confirmed) = stored
+        .result
+        .as_ref()
+        .and_then(|v| v.get("entityVersion"))
+        .and_then(Value::as_i64)
+    else {
+        return Ok(false);
+    };
+
+    let target = local
+        .expected_version
+        .checked_add(1)
+        .ok_or_else(|| SchedulingError::internal("versión local inválida"))?;
+
+    Ok(confirmed >= target && accepted_version.is_some_and(|v| v >= confirmed))
+}
+
 pub(super) fn rule_value(state: &app::RuleState) -> app::Result<dom::RuleValue> {
-    Ok(dom::RuleValue::new(
+    dom::RuleValue::new(
         state.professional_id.clone().try_into()?,
         state.iso_weekday,
         state.local_start_minute,
@@ -518,21 +559,21 @@ pub(super) fn rule_value(state: &app::RuleState) -> app::Result<dom::RuleValue> 
             .as_deref()
             .map(dom::parse_local_date)
             .transpose()?,
-    )?)
+    )
 }
 
 pub(super) fn exception_value(state: &app::ExceptionState) -> app::Result<dom::ExceptionValue> {
-    Ok(dom::ExceptionValue::new(
+    dom::ExceptionValue::new(
         state.professional_id.clone().try_into()?,
         dom::parse_local_date(&state.local_date)?,
         dom::ExceptionKind::try_from(state.kind.as_str())?,
         state.local_start_minute,
         state.local_end_minute,
-    )?)
+    )
 }
 
 pub(super) fn block_value(state: &app::BlockState) -> app::Result<dom::BlockValue> {
-    Ok(dom::BlockValue::new(
+    dom::BlockValue::new(
         state.professional_id.clone().try_into()?,
         state
             .block_account_id
@@ -542,7 +583,7 @@ pub(super) fn block_value(state: &app::BlockState) -> app::Result<dom::BlockValu
         dom::Instant::parse(&state.starts_at)?,
         dom::Instant::parse(&state.ends_at)?,
         dom::ReasonCode::try_from(state.reason_code.as_deref().unwrap_or(""))?,
-    )?)
+    )
 }
 
 fn status_of_block(state: &app::BlockState) -> dom::Status {

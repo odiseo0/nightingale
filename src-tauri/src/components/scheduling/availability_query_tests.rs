@@ -1,11 +1,11 @@
 use super::{
     application::{
-        AvailabilityRequest, EditBase, SchedulingMutation, SchedulingRepository,
-        ScheduleAvailabilityQuery,
+        AvailabilityRequest, EditBase, ScheduleAvailabilityQuery, SchedulingMutation,
+        SchedulingRepository,
     },
     domain::Status,
     test_support::{
-        FakeOccupancy, Ids, NoOccupancy, PROFESSIONAL, access, database, repository, FixedClock,
+        FakeOccupancy, FixedClock, Ids, NoOccupancy, PROFESSIONAL, access, database, repository,
     },
 };
 use crate::components::appointments::application::OccupancyInterval;
@@ -82,6 +82,7 @@ fn request(duration: Option<i64>) -> AvailabilityRequest {
         from: ts("2026-05-06T04:00:00Z"),
         until: ts("2026-05-07T04:00:00Z"),
         duration_minutes: duration,
+        exclude_appointment_id: None,
     }
 }
 
@@ -276,4 +277,75 @@ fn rule_change_updates_the_agenda_versions_used() {
         .unwrap();
     assert!(evaluation.intervals.is_empty());
     assert_eq!(evaluation.agenda_versions[0].1, 2);
+}
+
+const APPOINTMENT_A: &str = "019a1234-0000-7000-8000-0000000000c1";
+const APPOINTMENT_B: &str = "019a1234-0000-7000-8000-0000000000c2";
+
+fn two_appointments() -> FakeOccupancy {
+    FakeOccupancy(vec![
+        (
+            PROFESSIONAL.into(),
+            OccupancyInterval::new(
+                APPOINTMENT_A.into(),
+                ts("2026-05-06T13:00:00Z"),
+                ts("2026-05-06T13:30:00Z"),
+                "confirmed",
+            )
+            .unwrap(),
+        ),
+        (
+            PROFESSIONAL.into(),
+            OccupancyInterval::new(
+                APPOINTMENT_B.into(),
+                ts("2026-05-06T14:00:00Z"),
+                ts("2026-05-06T14:30:00Z"),
+                "scheduled",
+            )
+            .unwrap(),
+        ),
+    ])
+}
+
+#[test]
+fn rescheduling_excludes_own_appointment_but_keeps_other_occupancy() {
+    let mut c = seeded();
+    add_wednesday_rule(&mut c);
+
+    // Sin exclusión: 12:00-13:00, 13:30-14:00 y 14:30-16:00Z.
+    let evaluation = repository(&mut c)
+        .local_availability(&access(), &request(None), &two_appointments(), &windowed())
+        .unwrap();
+    assert_eq!(evaluation.intervals.len(), 3);
+
+    // Excluir la propia cita A devuelve su hueco: 12:00-14:00 y 14:30-16:00Z.
+    let mut excluded = request(None);
+    excluded.exclude_appointment_id = Some(APPOINTMENT_A.into());
+    let evaluation = repository(&mut c)
+        .local_availability(&access(), &excluded, &two_appointments(), &windowed())
+        .unwrap();
+    assert_eq!(evaluation.intervals.len(), 2);
+    assert_eq!(evaluation.intervals[0].starts_at, "2026-05-06T12:00:00Z");
+    assert_eq!(evaluation.intervals[0].ends_at, "2026-05-06T14:00:00Z");
+    // La cita B sigue ocupando: el hueco 14:00-14:30Z no reaparece.
+    assert_eq!(evaluation.intervals[1].starts_at, "2026-05-06T14:30:00Z");
+    assert_eq!(evaluation.intervals[1].ends_at, "2026-05-06T16:00:00Z");
+
+    // Excluir una cita desconocida no cambia nada.
+    let mut unknown = request(None);
+    unknown.exclude_appointment_id = Some(APPOINTMENT_B.into());
+    unknown.exclude_appointment_id = Some("019a1234-0000-7000-8000-0000000000cf".into());
+    let evaluation = repository(&mut c)
+        .local_availability(&access(), &unknown, &two_appointments(), &windowed())
+        .unwrap();
+    assert_eq!(evaluation.intervals.len(), 3);
+
+    // Un id de exclusión no canónico se rechaza.
+    let mut invalid = request(None);
+    invalid.exclude_appointment_id = Some("not-a-uuid".into());
+    assert!(
+        repository(&mut c)
+            .local_availability(&access(), &invalid, &two_appointments(), &windowed())
+            .is_err()
+    );
 }

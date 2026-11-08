@@ -145,13 +145,13 @@ fn daily_minutes(
     let mut merged: Vec<DailyMinutes> = Vec::with_capacity(minutes.len());
 
     for span in minutes {
-        if let Some(last) = merged.last_mut() {
-            if span.start <= last.end {
-                if span.end > last.end {
-                    last.end = span.end;
-                }
-                continue;
+        if let Some(last) = merged.last_mut()
+            && span.start <= last.end
+        {
+            if span.end > last.end {
+                last.end = span.end;
             }
+            continue;
         }
 
         merged.push(span);
@@ -165,11 +165,16 @@ fn daily_minutes(
 /// to UTC and clipped to the query range; blocks and occupancy are subtracted;
 /// results are merged, ordered and only intervals able to contain
 /// `duration_minutes` (1..=1440) survive.
+/// Agenda inputs for one evaluation, grouped to keep the engine signature small.
+pub struct AgendaInput<'a> {
+    pub rules: &'a [RuleState],
+    pub exceptions: &'a [ExceptionState],
+    pub blocks: &'a [BlockState],
+}
+
 pub fn available_intervals(
     zone: &TimeZone,
-    rules: &[RuleState],
-    exceptions: &[ExceptionState],
-    blocks: &[BlockState],
+    agenda: &AgendaInput<'_>,
     occupancy: &[Interval],
     from: Timestamp,
     until: Timestamp,
@@ -192,7 +197,7 @@ pub fn available_intervals(
     let last = until.to_zoned(zone.clone()).date();
 
     while date <= last {
-        for minutes in daily_minutes(date, rules, exceptions) {
+        for minutes in daily_minutes(date, agenda.rules, agenda.exceptions) {
             let (start, end) = civil_interval_to_utc(
                 zone,
                 date,
@@ -214,7 +219,8 @@ pub fn available_intervals(
             .map_err(|_| SchedulingError::internal("fecha civil fuera de rango"))?;
     }
 
-    let cuts: Vec<Interval> = blocks
+    let cuts: Vec<Interval> = agenda
+        .blocks
         .iter()
         .filter(|block| block.status == "active")
         .map(|block| -> Result<Interval> {

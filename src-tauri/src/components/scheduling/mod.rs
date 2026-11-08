@@ -10,14 +10,23 @@ mod availability_query_tests;
 #[cfg(test)]
 mod availability_tests;
 #[cfg(test)]
-mod repository_tests;
-#[cfg(test)]
-#[cfg(test)]
 mod block_tests;
+#[cfg(test)]
+mod development_tests;
 #[cfg(test)]
 mod exception_tests;
 #[cfg(test)]
+mod ipc_query_tests;
+#[cfg(test)]
+mod ipc_registration_tests;
+#[cfg(test)]
+mod ipc_write_tests;
+#[cfg(test)]
 mod online_tests;
+#[cfg(test)]
+mod reconciliation_tests;
+#[cfg(test)]
+mod repository_tests;
 #[cfg(test)]
 mod rule_tests;
 #[cfg(test)]

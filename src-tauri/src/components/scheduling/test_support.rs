@@ -134,6 +134,17 @@ pub fn database_with_professional() -> Connection {
 pub fn seed_account(c: &mut Connection) {
     let tx = c.transaction().unwrap();
     SqliteAccessStore.save_access(&tx, &access()).unwrap();
+    SqliteAccessStore
+        .save_context(
+            &tx,
+            &crate::components::identity::domain::IdentityContext {
+                issuer: "https://synthetic.example".into(),
+                subject: "synthetic".into(),
+                user_id: access().context.user_id,
+                selected_account_id: Some(access().context.account_id),
+            },
+        )
+        .unwrap();
     tx.execute(
         "INSERT INTO account_view (account_id,user_id,device_id,display_name,time_zone,location_name,location_address,location_city,location_state,location_country,no_show_grace_minutes,status,version) VALUES ('019a1234-0000-7000-8000-000000000001','019a1234-0000-7000-8000-000000000002','019a1234-0000-7000-8000-000000000003','Cuenta ficticia','America/Caracas','Consultorio','Calle 0','Caracas','DC','VE',15,'active',1)",
         [],

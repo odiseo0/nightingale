@@ -6,7 +6,10 @@ use super::{
 use crate::components::identity::domain::AccountAccess;
 use crate::platform::{config::APIConfig, http::APITransport, secrets::Secret, test_api::TestApi};
 use serde_json::{Value, json};
-use std::{str::FromStr, sync::{Arc, Mutex}};
+use std::{
+    str::FromStr,
+    sync::{Arc, Mutex},
+};
 
 const SERVICE: &str = "019a1234-0000-7000-8000-0000000000b1";
 
@@ -17,6 +20,7 @@ fn request(duration: Option<i64>) -> AvailabilityRequest {
         from: jiff::Timestamp::from_str("2026-05-06T04:00:00Z").unwrap(),
         until: jiff::Timestamp::from_str("2026-05-07T04:00:00Z").unwrap(),
         duration_minutes: duration,
+        exclude_appointment_id: None,
     }
 }
 
@@ -117,7 +121,10 @@ fn invalid_response_and_server_error_map_to_safe_codes() {
         // 503: fallo temporal seguro.
         let server = TestApi::new(2, |request| {
             if request.contains("/availability") {
-                (503, json!({"code":"retryable_failure","correlationId":null}))
+                (
+                    503,
+                    json!({"code":"retryable_failure","correlationId":null}),
+                )
             } else {
                 (200, access_response())
             }
@@ -162,7 +169,6 @@ fn oversized_range_is_rejected_before_any_http() {
         assert_eq!(*calls.lock().unwrap(), 0, "sin peticiones HTTP");
     });
 }
-
 
 struct Stable;
 

@@ -350,15 +350,21 @@ pub struct AvailabilityRequest {
     pub from: jiff::Timestamp,
     pub until: jiff::Timestamp,
     pub duration_minutes: Option<i64>,
+    /// Additive local extension: while rescheduling, the appointment being
+    /// moved is removed from the known occupancy so it does not block its own
+    /// new interval. Other appointments keep occupying. Not sent to the API.
+    pub exclude_appointment_id: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AvailabilityInterval {
     pub starts_at: String,
     pub ends_at: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AvailabilityEvaluation {
     pub time_zone: String,
     pub reference_duration_minutes: i64,
@@ -417,12 +423,22 @@ pub fn validate_availability_request(request: &AvailabilityRequest) -> Result<()
         ));
     }
 
-    if let Some(duration) = request.duration_minutes {
-        if !(1..=1440).contains(&duration) {
-            return Err(SchedulingError::validation(
-                "la duración debe ser un entero entre 1 y 1440",
-            ));
-        }
+    if let Some(duration) = request.duration_minutes
+        && !(1..=1440).contains(&duration)
+    {
+        return Err(SchedulingError::validation(
+            "la duración debe ser un entero entre 1 y 1440",
+        ));
+    }
+
+    if let Some(excluded) = &request.exclude_appointment_id {
+        excluded
+            .clone()
+            .try_into()
+            .map(|_: crate::components::appointments::domain::AppointmentId| ())
+            .map_err(|_| {
+                SchedulingError::validation("excludeAppointmentId debe ser un UUIDv7 canónico")
+            })?;
     }
 
     Ok(())
@@ -430,7 +446,8 @@ pub fn validate_availability_request(request: &AvailabilityRequest) -> Result<()
 
 /// The current remote view of availability. It refreshes access and never
 /// writes Outbox or accepted views; an error keeps the local state untouched.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RemoteAvailability {
     pub account_id: String,
     pub professional_id: String,

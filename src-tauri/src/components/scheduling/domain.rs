@@ -36,7 +36,8 @@ scheduling_id!(ProfessionalId);
 scheduling_id!(AccountId);
 
 /// Stable machine-readable boundary codes for the scheduling component.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SchedulingError {
     pub code: String,
     pub message: String,
@@ -241,12 +242,12 @@ impl RuleValue {
             ));
         }
 
-        if let Some(until) = valid_until {
-            if until < valid_from {
-                return Err(SchedulingError::validation(
-                    "validUntil debe ser mayor o igual que validFrom",
-                ));
-            }
+        if let Some(until) = valid_until
+            && until < valid_from
+        {
+            return Err(SchedulingError::validation(
+                "validUntil debe ser mayor o igual que validFrom",
+            ));
         }
 
         let start = LocalStartMinute::new(local_start_minute)?;

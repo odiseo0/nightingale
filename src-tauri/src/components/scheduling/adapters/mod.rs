@@ -1,4 +1,10 @@
 pub mod api;
 pub mod desktop;
+pub mod inbound_availability;
+pub mod inbound_blocks;
+pub mod inbound_exceptions;
+pub mod inbound_queries;
+pub mod inbound_rules;
 pub mod online;
 pub mod outbound;
+pub mod projector;

@@ -25,7 +25,7 @@ use std::{sync::Mutex, time::UNIX_EPOCH};
 
 pub(crate) const LEASE_MILLIS: i64 = 60_000;
 
-fn receipt_event(
+pub(crate) fn receipt_event(
     record: &super::adapters::api::OperationRecord,
     correlation: Option<OperationId>,
     duration: std::time::Duration,
@@ -385,7 +385,3 @@ impl OutboxDispatcher<'_> {
         Ok(access)
     }
 }
-
-#[cfg(test)]
-#[path = "dispatch_tests.rs"]
-mod tests;

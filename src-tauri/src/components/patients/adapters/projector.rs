@@ -262,7 +262,3 @@ impl RemoteProjector for PatientsProjector {
         Ok(())
     }
 }
-
-#[cfg(test)]
-#[path = "../projection_tests.rs"]
-mod tests;

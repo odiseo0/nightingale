@@ -370,11 +370,3 @@ impl RemoteProjector for AppointmentProjector {
         Ok(())
     }
 }
-
-#[cfg(test)]
-#[path = "../projection_tests.rs"]
-mod tests;
-
-#[cfg(test)]
-#[path = "../history_projection_tests.rs"]
-mod history_tests;

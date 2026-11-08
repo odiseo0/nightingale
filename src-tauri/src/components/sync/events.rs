@@ -240,15 +240,13 @@ pub(super) async fn listen(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::components::sync::download::tests::scope;
+    use crate::tests::components::sync::download_tests::scope;
 
     #[test]
     fn http_stream_repeats_use_applied_cursor_and_revoke_or_429_stop_safely() {
+        use crate::tests::components::sync::download_tests::{Database, access, credential};
         use crate::{
-            components::sync::{
-                coordinator::SyncCoordinator,
-                download::tests::{Database, access, credential},
-            },
+            components::sync::coordinator::SyncCoordinator,
             platform::{config::APIConfig, http::APITransport},
         };
         use std::{

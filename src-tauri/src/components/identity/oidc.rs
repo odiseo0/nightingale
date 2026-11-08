@@ -65,8 +65,8 @@ impl LoginCancellation {
 }
 
 pub struct OidcProvider {
-    metadata: CoreProviderMetadata,
-    client_id: String,
+    pub(crate) metadata: CoreProviderMetadata,
+    pub(crate) client_id: String,
 }
 
 pub struct LoginAttempt {
@@ -78,12 +78,12 @@ pub struct LoginAttempt {
 }
 
 pub struct OidcSession {
-    issuer: String,
-    subject: String,
-    access: Secret,
-    refresh: Option<Secret>,
-    nonce: Nonce,
-    expires_at: Option<SystemTime>,
+    pub(crate) issuer: String,
+    pub(crate) subject: String,
+    pub(crate) access: Secret,
+    pub(crate) refresh: Option<Secret>,
+    pub(crate) nonce: Nonce,
+    pub(crate) expires_at: Option<SystemTime>,
 }
 
 impl OidcSession {
@@ -348,7 +348,7 @@ impl OidcProvider {
         self.verify(response, nonce, None)
     }
 
-    fn verify(
+    pub(crate) fn verify(
         &self,
         response: CoreTokenResponse,
         nonce: Nonce,
@@ -603,7 +603,3 @@ fn wait_for_callback(
 
     Err(OidcFailure::Cancelled)
 }
-
-#[cfg(test)]
-#[path = "oidc_tests.rs"]
-mod tests;

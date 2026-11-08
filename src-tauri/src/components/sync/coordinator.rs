@@ -89,7 +89,7 @@ struct FlightState {
 }
 
 #[derive(Default)]
-struct Flight {
+pub(crate) struct Flight {
     gate: AsyncMutex<()>,
     events: AsyncMutex<()>,
     state: Mutex<FlightState>,
@@ -100,7 +100,7 @@ fn unavailable() -> NightingaleError {
 }
 
 impl Flight {
-    fn phase(&self, phase: SyncPhase) -> Result<()> {
+    pub(crate) fn phase(&self, phase: SyncPhase) -> Result<()> {
         self.state.lock().map_err(|_| unavailable())?.phase = phase;
 
         Ok(())
@@ -144,7 +144,7 @@ impl SyncCoordinator {
         super::events::listen(engine, credential, scope, projector).await
     }
 
-    fn flight(&self, scope: &OperationContext) -> Result<Arc<Flight>> {
+    pub(crate) fn flight(&self, scope: &OperationContext) -> Result<Arc<Flight>> {
         let key = (
             scope.account_id.as_str().to_owned(),
             scope.user_id.as_str().to_owned(),
@@ -160,7 +160,7 @@ impl SyncCoordinator {
             .clone())
     }
 
-    async fn run_with<F, Fut>(
+    pub(crate) async fn run_with<F, Fut>(
         &self,
         scope: &OperationContext,
         trigger: CycleTrigger,
@@ -471,7 +471,3 @@ impl SyncEngine<'_> {
         Ok(CycleOutcome::Complete)
     }
 }
-
-#[cfg(test)]
-#[path = "coordinator_tests.rs"]
-mod tests;

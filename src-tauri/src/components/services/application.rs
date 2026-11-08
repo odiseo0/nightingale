@@ -428,7 +428,3 @@ impl<R: CatalogRepository, I: IdGenerator, C: Clock> CatalogUseCases<'_, R, I, C
         })
     }
 }
-
-#[cfg(test)]
-#[path = "application_tests.rs"]
-mod tests;

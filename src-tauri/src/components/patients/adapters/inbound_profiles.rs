@@ -111,7 +111,7 @@ pub struct RegisterPatientRequest {
     pub identifiers: Option<Vec<IdentifierInputRequest>>,
 }
 
-fn data(request: &RegisterPatientRequest) -> Result<ProfileData> {
+pub(crate) fn data(request: &RegisterPatientRequest) -> Result<ProfileData> {
     let identification_basis = request
         .identification_basis
         .clone()
@@ -222,7 +222,7 @@ pub struct ListPatientsRequest {
     pub shows: Option<usize>,
 }
 
-fn patient_filter(request: ListPatientsRequest) -> Result<PatientFilter> {
+pub(crate) fn patient_filter(request: ListPatientsRequest) -> Result<PatientFilter> {
     Ok(PatientFilter {
         q: request.q,
         status: request
@@ -348,7 +348,3 @@ pub fn patients_list_patient_identifiers(
         cases.list_patient_identifiers(&patient)
     })
 }
-
-#[cfg(test)]
-#[path = "../ipc_profile_tests.rs"]
-mod tests;

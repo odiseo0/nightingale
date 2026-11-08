@@ -254,7 +254,3 @@ impl RemoteProjector for AccountProjector {
         Ok(())
     }
 }
-
-#[cfg(test)]
-#[path = "../projection_tests.rs"]
-mod tests;

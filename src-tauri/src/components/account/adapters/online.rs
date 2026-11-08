@@ -97,7 +97,3 @@ impl AccountOnlinePort for OnlineAccount<'_> {
         })
     }
 }
-
-#[cfg(test)]
-#[path = "../online_tests.rs"]
-mod tests;

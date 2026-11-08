@@ -379,7 +379,3 @@ pub fn patients_list_contact_patients(
         cases.list_contact_patients(&contact, status)
     })
 }
-
-#[cfg(test)]
-#[path = "../ipc_contact_tests.rs"]
-mod tests;

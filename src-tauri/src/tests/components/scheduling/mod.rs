@@ -1,0 +1,15 @@
+mod application_tests;
+mod availability_query_tests;
+mod availability_tests;
+mod block_tests;
+mod development_tests;
+mod exception_tests;
+mod ipc_query_tests;
+mod ipc_registration_tests;
+mod ipc_write_tests;
+mod online_tests;
+mod projection_tests;
+mod reconciliation_tests;
+mod repository_tests;
+mod rule_tests;
+pub(crate) mod test_support;

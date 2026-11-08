@@ -253,7 +253,3 @@ impl RemoteProjector for SchedulingProjector {
         Ok(())
     }
 }
-
-#[cfg(test)]
-#[path = "../projection_tests.rs"]
-mod tests;

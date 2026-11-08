@@ -2,6 +2,9 @@ pub mod components;
 pub mod platform;
 pub mod shared_kernel;
 
+#[cfg(test)]
+mod tests;
+
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

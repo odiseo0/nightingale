@@ -492,7 +492,3 @@ impl<S: SecretStore> AccountActivation<'_, S> {
         })
     }
 }
-
-#[cfg(test)]
-#[path = "activation_tests.rs"]
-mod tests;

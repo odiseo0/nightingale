@@ -22,7 +22,7 @@ use std::sync::Mutex;
 const PAGE_SIZE: i64 = 100;
 // This value never goes to HTTP. Save it with the cursor commit so a restart
 // after installation retries DELETE without installing the same view again.
-const INSTALLED: i64 = i64::MAX;
+pub(crate) const INSTALLED: i64 = i64::MAX;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -79,10 +79,10 @@ pub struct SnapshotPage {
     pub total: i64,
 }
 
-struct Recovery {
-    snapshot: Snapshot,
+pub(crate) struct Recovery {
+    pub(crate) snapshot: Snapshot,
     epoch: i64,
-    next_page: i64,
+    pub(crate) next_page: i64,
 }
 
 pub enum SnapshotMode {
@@ -110,11 +110,14 @@ fn invalid() -> DispatchFailure {
     DispatchFailure::Remote(APIFailure::local(APICode::InvalidResponse))
 }
 
-fn encode(value: &impl Serialize) -> Result<String, DispatchFailure> {
+pub(crate) fn encode(value: &impl Serialize) -> Result<String, DispatchFailure> {
     serde_json::to_string(value).map_err(|_| invalid())
 }
 
-fn load(c: &Connection, scope: &OperationContext) -> Result<Option<Recovery>, DispatchFailure> {
+pub(crate) fn load(
+    c: &Connection,
+    scope: &OperationContext,
+) -> Result<Option<Recovery>, DispatchFailure> {
     let record = c.query_row(
         "SELECT snapshot_id, base_cursor, window, expires_at, item_count, next_page, permission_epoch FROM sync_snapshot_recovery WHERE account_id = ?1 AND user_id = ?2 AND device_id = ?3",
         params![
@@ -366,7 +369,7 @@ impl SnapshotRecovery<'_> {
         Err(DispatchFailure::Remote(error))
     }
 
-    fn stage(
+    pub(crate) fn stage(
         &self,
         scope: &OperationContext,
         recovery: &Recovery,
@@ -417,7 +420,7 @@ impl SnapshotRecovery<'_> {
         })
     }
 
-    fn install(
+    pub(crate) fn install(
         &self,
         scope: &OperationContext,
         recovery: &Recovery,
@@ -519,7 +522,3 @@ impl SnapshotRecovery<'_> {
         })
     }
 }
-
-#[cfg(test)]
-#[path = "snapshot_tests.rs"]
-mod tests;

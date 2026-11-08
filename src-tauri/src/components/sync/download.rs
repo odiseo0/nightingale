@@ -110,7 +110,7 @@ impl ChangeDownloader<'_> {
         }
     }
 
-    pub(super) fn apply_page(
+    pub(crate) fn apply_page(
         &self,
         scope: &OperationContext,
         previous: &StoredCursor,
@@ -169,7 +169,3 @@ pub(super) fn ensure_access(
         _ => Err(DispatchFailure::AccessChanged),
     }
 }
-
-#[cfg(test)]
-#[path = "download_tests.rs"]
-pub(super) mod tests;

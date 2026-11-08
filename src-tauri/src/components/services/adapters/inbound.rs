@@ -14,7 +14,7 @@ fn locked() -> ServicesError {
     ServicesError::new("INTERNAL_ERROR", "base local no disponible")
 }
 
-fn run<T>(
+pub(crate) fn run<T>(
     c: &mut Connection,
     work: impl FnOnce(
         &mut CatalogUseCases<'_, SqliteCatalogRepository<'_>, UuidV7Generator, SystemClock>,
@@ -224,7 +224,3 @@ pub fn services_update_professional_profile(
         )
     })
 }
-
-#[cfg(test)]
-#[path = "../ipc_tests.rs"]
-mod tests;

@@ -1,0 +1,17 @@
+mod application_tests;
+mod cancel_tests;
+mod complete_tests;
+mod confirm_tests;
+mod create_tests;
+mod development_tests;
+mod history_projection_tests;
+mod ipc_query_tests;
+mod ipc_registration_tests;
+mod ipc_write_tests;
+mod no_show_tests;
+mod occupancy_tests;
+mod projection_tests;
+mod reconciliation_tests;
+mod repository_tests;
+mod reschedule_tests;
+pub(crate) mod test_support;

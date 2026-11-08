@@ -255,7 +255,3 @@ pub(crate) fn apply_group(
 
     Ok(())
 }
-
-#[cfg(test)]
-#[path = "remote_tests.rs"]
-mod tests;

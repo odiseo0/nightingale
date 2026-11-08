@@ -1,0 +1,12 @@
+mod appointments_integration_tests;
+mod catalog_integration_tests;
+mod contract_tests;
+mod coordinator_tests;
+mod development_tests;
+mod dispatch_tests;
+pub(crate) mod download_tests;
+mod matrix_tests;
+mod patients_integration_tests;
+mod remote_tests;
+mod scheduling_integration_tests;
+mod snapshot_tests;

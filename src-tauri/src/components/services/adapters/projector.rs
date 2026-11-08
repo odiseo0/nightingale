@@ -127,7 +127,3 @@ impl RemoteProjector for ServicesProjector {
         Ok(())
     }
 }
-
-#[cfg(test)]
-#[path = "../projection_tests.rs"]
-mod tests;

@@ -22,6 +22,10 @@ El usuario trasladará esta documentación al repositorio original del escritori
 | [Especificación inicial del Hub](specifications/nightingale-patient-hub.md) | 0.1, 2026-10-21 | Ninguno; referencia hasta traslado explícito al repositorio del Hub |
 | [Contrato API v1](contracts/api-v1/nightingale-api.md) | Copia de consulta exportada de `nightingale-api`, revisión `api-v1.1`, corte 2026-10-29 | Ninguno; copia fija, no fuente editable (ver sección siguiente) |
 
+## Diseño e interfaz
+
+- [Plan Maestro de Diseño e Interfaz](design-master-plan.md), versión 0.1, estado **Aprobado**: fuente de verdad UI/UX para superficies, recorridos, componentes, estados, accesibilidad, frontend y planes derivados. Su aprobación no autoriza por sí misma la ejecución de diseño o implementación.
+
 ## Contrato API v1 (`docs/contracts/`)
 
 La carpeta [contracts/](contracts/) conserva la copia de consulta del contrato vigente de Nightingale API, exportada desde `nightingale-api` con `scripts/export_contracts.py` (contrato v1, revisión de modelos `api-v1.1`, head `f572f9c9b3aa4cbd52284853a91e9a66435a1dff`, corte 2026-10-29; 46 rutas, 47 operaciones HTTP, 70 esquemas y 42 acciones de escritura).

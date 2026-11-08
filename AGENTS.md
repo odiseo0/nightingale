@@ -8,6 +8,8 @@ Nightingale helps doctors and specialists manage appointments, contact patients,
 
 The [Master Plan](./docs/master-plan.md) is the project source of truth.
 
+The [Design and Interface Master Plan](./docs/design-master-plan.md) is the approved source of truth for UI/UX, including surfaces, flows, components, interface states, accessibility, frontend rules, and derived design plans. Its approval does not authorize design or implementation work by itself.
+
 The [Nightingale API contract copy](./docs/contracts/api-v1/nightingale-api.md) is the current state of Nightingale API (contract v1, model revision `api-v1.1`, cut 2026-10-29). Its JSON artifacts (`openapi.json`, schemas, `capabilities.json`, `manifest.json`) are generated and fixed: do not edit them by hand. A contract update arrives as a complete new export copied from the `nightingale-api` repository, never as a local edit. Any change that interacts with Nightingale API must read this contract first.
 
 - Read the relevant parts before plans, design choices, or product code changes.
@@ -47,6 +49,7 @@ Available project skills:
 Project:
 
 - [Master Plan](./docs/master-plan.md)
+- [Design and Interface Master Plan](./docs/design-master-plan.md)
 - [Nightingale API contract copy](./docs/contracts/api-v1/nightingale-api.md)
 - [Three projects and sync API](docs/decisions/transactional-sync-three-projects.md)
 - [Nightingale API specification](docs/specifications/nightingale-api.md)

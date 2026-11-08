@@ -1,0 +1,88 @@
+[
+  {
+    "payloadModel": "CreateAppointmentPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000400",
+      "contractVersion": 1,
+      "action": "CreateAppointment",
+      "entityKey": "019a1234-0000-7000-8000-000000000040",
+      "expectedVersion": 0,
+      "payload": {
+        "patientId": "019a1234-0000-7000-8000-000000000009",
+        "professionalId": "019a1234-0000-7000-8000-000000000008",
+        "serviceId": "019a1234-0000-7000-8000-00000000000a",
+        "startsAt": "2026-05-06T13:30:00Z",
+        "endsAt": "2026-05-06T14:00:00Z",
+        "responsibleContactId": null
+      },
+      "dependsOn": []
+    }
+  },
+  {
+    "payloadModel": "EmptyAppointmentPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000401",
+      "contractVersion": 1,
+      "action": "ConfirmAppointment",
+      "entityKey": "019a1234-0000-7000-8000-000000000040",
+      "expectedVersion": 1,
+      "payload": {},
+      "dependsOn": ["019a1234-0000-7000-8000-000000000400"]
+    }
+  },
+  {
+    "payloadModel": "AppointmentInterval",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000402",
+      "contractVersion": 1,
+      "action": "RescheduleAppointment",
+      "entityKey": "019a1234-0000-7000-8000-000000000040",
+      "expectedVersion": 2,
+      "payload": {
+        "startsAt": "2026-05-06T15:00:00Z",
+        "endsAt": "2026-05-06T15:30:00Z"
+      },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000401"]
+    }
+  },
+  {
+    "payloadModel": "AppointmentReasonPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000403",
+      "contractVersion": 1,
+      "action": "CancelAppointment",
+      "entityKey": "019a1234-0000-7000-8000-000000000040",
+      "expectedVersion": 3,
+      "payload": {
+        "changeReason": "paciente canceló con aviso"
+      },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000402"]
+    }
+  },
+  {
+    "payloadModel": "AppointmentReasonPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000404",
+      "contractVersion": 1,
+      "action": "CompleteAppointment",
+      "entityKey": "019a1234-0000-7000-8000-000000000041",
+      "expectedVersion": 1,
+      "payload": {},
+      "dependsOn": ["019a1234-0000-7000-8000-000000000400"]
+    }
+  },
+  {
+    "payloadModel": "AppointmentReasonPayload",
+    "operation": {
+      "operationId": "019a1234-0000-7000-8000-000000000405",
+      "contractVersion": 1,
+      "action": "MarkAppointmentNoShow",
+      "entityKey": "019a1234-0000-7000-8000-000000000042",
+      "expectedVersion": 2,
+      "payload": {
+        "changeReason": null
+      },
+      "dependsOn": ["019a1234-0000-7000-8000-000000000400"]
+    }
+  }
+]

@@ -127,7 +127,11 @@ fn confirm_accepts_a_clean_accepted_base() {
         version: 1,
     };
     crate::platform::sqlite::in_transaction(&mut connection, |tx| {
-        save_appointment(tx, &scope, &record)
+        save_appointment(tx, &scope, &record)?;
+        tx.execute(
+            "INSERT INTO appointment_history_view (account_id,user_id,device_id,appointment_id,version,action,actor_kind,actor_user_id,actor_contact_person_id,change_reason,changed_at,starts_at,ends_at,status,confirmed_at,service_name_snapshot,offered_duration_minutes_snapshot,professional_name_snapshot,location_name_snapshot,location_address_snapshot,location_country_snapshot,location_state_snapshot,location_city_snapshot,time_zone_snapshot) VALUES (?1,?2,?3,?4,1,'created','staff',?2,NULL,NULL,'2026-05-01T10:00:00Z','2026-05-04T13:00:00Z','2026-05-04T13:30:00Z','scheduled',NULL,'Consulta general',30,'Dra. Prueba','Consultorio Central','Av. Principal 1','VE','Distrito Capital','Caracas','America/Caracas')",
+            rusqlite::params![scope.account_id.as_str(), scope.user_id.as_str(), scope.device_id.as_str(), appointment],
+        )
     })
     .unwrap();
 

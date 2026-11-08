@@ -693,3 +693,156 @@ fn contract_bundle_fingerprints_stay_intact() {
         assert_eq!(&digest, fingerprint, "fingerprint drift in {file}");
     }
 }
+
+#[test]
+fn appointments_actions_payload_models_and_keys_match_fixed_bundle() {
+    use crate::components::appointments::domain as appointments_domain;
+
+    let capabilities: Value = serde_json::from_str(include_str!(
+        "../../../../docs/contracts/api-v1/capabilities.json"
+    ))
+    .unwrap();
+    let schema: Value = serde_json::from_str(include_str!(
+        "../../../../docs/contracts/api-v1/accepted-operations.schema.json"
+    ))
+    .unwrap();
+    let fixtures: Vec<Value> =
+        serde_json::from_str(include_str!("fixtures/appointments-operations.json")).unwrap();
+    assert_eq!(fixtures.len(), 6);
+    let mut actions = std::collections::BTreeSet::new();
+    for fixture in fixtures {
+        let operation = &fixture["operation"];
+        let action = operation["action"].as_str().unwrap();
+        assert!(actions.insert(action.to_owned()));
+        assert!(
+            capabilities["operationCatalog"]
+                .as_array()
+                .unwrap()
+                .contains(&json!(action))
+        );
+        let model = capabilities["payloadModels"][action].as_str().unwrap();
+        assert_eq!(model.rsplit('.').next().unwrap(), fixture["payloadModel"]);
+        check(&schema, &schema, operation, action).unwrap();
+        let envelope: OperationEnvelope = serde_json::from_value(operation.clone()).unwrap();
+        assert_eq!(serde_json::to_value(envelope).unwrap(), *operation);
+        assert!(
+            !capabilities["onlineOnlyActions"]
+                .as_array()
+                .unwrap()
+                .contains(&json!(action)),
+            "{action} must stay offline-capable"
+        );
+        crate::shared_kernel::id::canonical_uuid_v7(operation["entityKey"].as_str().unwrap())
+            .unwrap();
+
+        // The local domain accepts the same values the contract fixture carries.
+        let payload = &operation["payload"];
+        match action {
+            "CreateAppointment" => {
+                appointments_domain::AppointmentInterval::new(
+                    appointments_domain::MinuteInstant::parse(
+                        payload["startsAt"].as_str().unwrap(),
+                    )
+                    .unwrap(),
+                    appointments_domain::MinuteInstant::parse(payload["endsAt"].as_str().unwrap())
+                        .unwrap(),
+                )
+                .unwrap();
+                crate::components::patients::domain::PatientId::try_from(
+                    payload["patientId"].as_str().unwrap().to_owned(),
+                )
+                .unwrap();
+            }
+            "RescheduleAppointment" => {
+                appointments_domain::AppointmentInterval::new(
+                    appointments_domain::MinuteInstant::parse(
+                        payload["startsAt"].as_str().unwrap(),
+                    )
+                    .unwrap(),
+                    appointments_domain::MinuteInstant::parse(payload["endsAt"].as_str().unwrap())
+                        .unwrap(),
+                )
+                .unwrap();
+            }
+            "CancelAppointment" | "CompleteAppointment" | "MarkAppointmentNoShow" => {
+                appointments_domain::ChangeReason::new(
+                    payload["changeReason"].as_str().map(str::to_owned),
+                )
+                .unwrap();
+            }
+            "ConfirmAppointment" => {
+                assert!(payload.as_object().unwrap().is_empty());
+            }
+            _ => {}
+        }
+        let mut invalid = operation.clone();
+        invalid["payload"]["unexpected"] = json!(true);
+        assert!(check(&schema, &schema, &invalid, action).is_err());
+    }
+}
+
+#[test]
+fn appointment_history_and_states_match_fixed_bundle() {
+    use super::adapters::remote_models::RemoteState;
+
+    let public_models: Value = serde_json::from_str(include_str!(
+        "../../../../docs/contracts/api-v1/public-models.schema.json"
+    ))
+    .unwrap();
+    let fixture: Value =
+        serde_json::from_str(include_str!("fixtures/appointments-history.json")).unwrap();
+
+    // AppointmentResponse and its aggregated history parse with the typed
+    // models and expose no structural drift against the fixed bundle.
+    for (model, value) in [
+        ("AppointmentResponse", &fixture["appointment"]),
+        (
+            "PaginatedResponse_AppointmentResponse_",
+            &json!({"items": [fixture["appointment"].clone()], "page": 1, "size": 1, "total": 1}),
+        ),
+    ] {
+        let required = public_models["$defs"][model]["required"]
+            .as_array()
+            .unwrap();
+        for field in required {
+            assert!(
+                value.get(field.as_str().unwrap()).is_some(),
+                "{model} requires {field}"
+            );
+        }
+    }
+    let parsed: RemoteState = serde_json::from_value(json!({
+        "entityType": "appointment",
+        "state": fixture["appointment"].clone()
+    }))
+    .unwrap();
+    assert_eq!(parsed.version(), 2);
+    assert!(parsed.key().is_string());
+
+    let history: RemoteState = serde_json::from_value(json!({
+        "entityType": "appointment_history",
+        "state": fixture["history"].clone()
+    }))
+    .unwrap();
+    assert_eq!(history.version(), 2);
+    let required = public_models["$defs"]["AppointmentHistoryProjection"]["required"]
+        .as_array()
+        .unwrap();
+    for field in required {
+        assert!(
+            fixture["history"].get(field.as_str().unwrap()).is_some(),
+            "AppointmentHistoryProjection requires {field}"
+        );
+    }
+
+    // The aggregated items stay consecutive from 1 and end at the aggregate.
+    if let RemoteState::AppointmentHistory(projection) = history {
+        for (index, item) in projection.items.iter().enumerate() {
+            assert_eq!(item.version, (index as i64) + 1);
+        }
+        assert_eq!(projection.items.last().unwrap().version, projection.version);
+        assert_eq!(projection.items.len(), 2);
+    } else {
+        panic!("expected appointment history projection");
+    }
+}

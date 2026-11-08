@@ -5,9 +5,9 @@ use super::super::{
     application as app,
     domain::{self as dom, AppointmentTransition},
 };
-use crate::shared_kernel::id::{onId, OperationId};
+use crate::shared_kernel::id::{OperationId, canonical_uuid_v7};
 use rusqlite::Connection;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::str::FromStr;
 
 #[derive(Clone)]
@@ -480,5 +480,14 @@ pub(super) fn confirmed(
         .checked_add(1)
         .ok_or_else(|| AppointmentsError::internal("versión local inválida"))?;
 
-    Ok(confirmed_version >= target && accepted_version.is_some_and(|v| v >= confirmed_version))
+    // A provisional resolves only when the receipt is accepted and BOTH the
+    // accepted appointment and its history reached the confirmed version.
+    if accepted_version.is_none_or(|v| v < confirmed_version) {
+        return Ok(false);
+    }
+
+    let history_version: i64 = super::outbound::history_version(c, s, &local.appointment_id)
+        .map_err(|_| AppointmentsError::internal("historia local no disponible"))?;
+
+    Ok(confirmed_version >= target && history_version >= confirmed_version)
 }

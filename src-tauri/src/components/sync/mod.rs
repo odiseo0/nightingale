@@ -12,6 +12,8 @@ pub mod snapshot;
 mod contract_tests;
 
 #[cfg(test)]
+mod appointments_integration_tests;
+#[cfg(test)]
 mod catalog_integration_tests;
 #[cfg(test)]
 mod patients_integration_tests;

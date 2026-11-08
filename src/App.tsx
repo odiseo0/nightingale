@@ -7,6 +7,7 @@ import CorePanel from "./CorePanel";
 import SettingsPanel from "./features/settings/SettingsPanel";
 import ServicesPanel from "./features/services/ServicesPanel";
 import SchedulingPanel from "./features/scheduling/SchedulingPanel";
+import AppointmentsPanel from "./features/appointments/AppointmentsPanel";
 
 type DiagnosticState =
   | { status: "idle" | "loading" }
@@ -103,12 +104,13 @@ function App() {
       <SettingsPanel />
       <ServicesPanel />
       <SchedulingPanel />
+      <AppointmentsPanel />
       <section aria-labelledby="scope-heading" className="space-y-2 border-t border-gray-200 pt-6">
         <h2 id="scope-heading" className="text-xl font-semibold">
           Funciones pendientes
         </h2>
         <p>
-          La gestión de pacientes, agenda y citas tendrá sus propios planes.
+          La gestión de pacientes tendrá su propio plan adicional.
         </p>
       </section>
     </main>

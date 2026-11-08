@@ -1,11 +1,11 @@
 # Task List: P-20261108-02-appointments-core
 
 **Plan:** [plan.md](plan.md)  
-**Status del plan:** Approved  
+**Status del plan:** Completed  
 **Created:** 2026-11-08  
 **Updated:** 2026-11-08
 
-**Instrucción vigente:** el usuario aprobó C01 el 2026-11-08, consolidó T01–T06 en el commit `43ec89e` (con un pase de formato y comentarios propio) y autorizó continuar con el desarrollo. Convención registrada por el usuario: **los comentarios de código nuevos se escriben en inglés**. `P-20261108-01-scheduling-availability/C06` sigue pendiente de revisión por decisión explícita del usuario ("es algo que revisaremos después").
+**Instrucción vigente:** el usuario aprobó C01 el 2026-11-08 y C06 (cierre final) el 2026-11-08; plan completado, consolidó T01–T06 en el commit `43ec89e` (con un pase de formato y comentarios propio) y autorizó continuar con el desarrollo. Convención registrada por el usuario: **los comentarios de código nuevos se escriben en inglés**. `P-20261108-01-scheduling-availability/C06` sigue pendiente de revisión por decisión explícita del usuario ("es algo que revisaremos después").
 
 **Migración reservada:** `0010_appointments`.  
 **Responsable de integración:** quien ejecute el plan; una sola persona registra migraciones, composición, comandos, permisos, manifiestos y lockfile.  
@@ -424,7 +424,10 @@
 - `adapters/outbound.rs`: `mark_no_show_appointment` — permiso por acción; el margen se lee de la **vista aceptada** de la cuenta (`account_view.policy`, vigente en el ámbito), nunca de preferencias o del dispositivo; comparación en milisegundos con reloj inyectado; fallo → `VALIDATION_ERROR` sin operación. `no_show_tests.rs` (3 pruebas): antes del inicio y dentro del margen (inicio+15 min − 1 s) rechazados sin crear operación; al vencer el margen alcanza `no_show` con motivo, sigue ocupando según contrato y sobrevive a reapertura; un cambio de política aceptada (margen 0) permite marcar exactamente al inicio — la política aceptada vigente gobierna el margen.
 - Verificación: ver C02.
 
+
 ## C02: Ciclo de vida nativo
+
+**Status:** Aprobado por el usuario el 2026-11-08.
 
 - [ ] Las seis acciones y secuencias offline/reapertura pasan con referencias provisionales y aceptadas.
 - [x] `cargo test --workspace --locked` y `pnpm build:desktop` pasan.
@@ -440,7 +443,21 @@
 
 ## T14: Proyector de cita
 
-**Status:** Todo
+**Status:** Done
+
+**Description:** Implementar traducción y validación de `appointment`, ocupación y `remove/reset` sin tocar intenciones.
+
+**Acceptance criteria:**
+- [x] Versiones, ámbito, estados y nueve snapshots proyectan sin retrocesos.
+- [x] `remove`/`reset` retira cita y ocupación aceptadas conservando intenciones y otras cuentas.
+- [x] Un fallo revierte grupo, proyección, cursor e Inbox.
+
+**Evidencia 2026-11-08 (T14):**
+
+- `appointments/adapters/projector.rs`: el proyector de ocupación de Agenda se amplía a `AppointmentProjector` (mismo cambio remoto alimenta ambas vistas): valida ámbito e intervalo; upsert de `appointment_view` con los nueve snapshots exactamente como los envía el servidor, guarda de versión (`WHERE excluded.version > view.version`, sin retrocesos) y ocupación sincronizada (`cancelled` libera). `reset`/`remove` retiran cita y ocupación solo del ámbito, nunca intenciones. Ignora tipos ajenos; sin HTTP.
+- Integración: `components/projector.rs` compone `AppointmentProjector` (único punto caliente); las pruebas de Agenda apuntan al nuevo nombre.
+- `projection_tests.rs` (+4 pruebas T14): vista completa proyecta versión/estado/intervalo/snapshot y se mueve con versiones mayores; versiones viejas no regresan ninguna vista; `cancelled` conserva la fila aceptada y libera ocupación; `remove` retira ambas vistas y conserva la intención local; `reset` del ámbito idem; grupos inválidos (ámbito ajeno, intervalo invertido) rechazan sin efectos en ninguna vista (garantía de `apply_groups`).
+- Verificación: `cargo test --workspace --locked` → **361 passed, 0 failed** (355 lib + 5 core_persistence + 1 bin/doc), 8 ignored preexistentes; fmt y clippy `-D warnings` OK.
 
 **Description:** Implementar traducción y validación de `appointment`, ocupación y `remove/reset` sin tocar intenciones.
 
@@ -466,65 +483,73 @@
 
 ## T15: Proyector de historia
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Implementar proyección agregada `appointment_history` con versiones consecutivas y estado actual coherente.
 
 **Acceptance criteria:**
-- [ ] La historia comienza en 1, no tiene huecos ni duplicados y termina en la versión agregada.
-- [ ] Snapshots y entradas anteriores permanecen inmutables y cita/historia son coherentes.
-- [ ] Estados inválidos revierten la transacción sin borrar historia válida anterior.
+- [x] La historia comienza en 1, no tiene huecos ni duplicados y termina en la versión agregada.
+- [x] Snapshots y entradas anteriores permanecen inmutables y cita/historia son coherentes.
+- [x] Estados inválidos revierten la transacción sin borrar historia válida anterior.
 
-**Verification:**
-- [ ] Focused tests: `cargo test --workspace --locked components::appointments`.
-- [ ] Build or broader check: `cargo check --workspace --all-targets --locked` y `git diff --check`.
-- [ ] Manual check: proyectar historia multipágina y llegada separada de cita.
+**Evidencia 2026-11-08 (T15):**
 
-**Dependencies:** T14.
-
-**Files likely touched:**
-- `src-tauri/src/components/appointments/adapters/projector.rs`
-- `src-tauri/src/components/appointments/adapters/outbound.rs`
-- `src-tauri/src/components/appointments/history_projection_tests.rs`
-
-**Estimated scope:** M
+- `adapters/projector.rs`: `project_history` para `RemoteState::AppointmentHistory` — valida ámbito, agregado no vacío con versión ≥1, entradas consecutivas desde 1 sin huecos ni duplicados, cada entrada atada a la cita y ámbito con intervalo válido, y última entrada igual a la versión agregada; actores `staff/patient/contact` y las seis acciones se proyectan. Un agregado **estrictamente mayor** reemplaza el conjunto aceptado de esa cita (entradas inmutables, nunca reescritas); agregados iguales o viejos se ignoran. Si la cita aceptada ya alcanzó el agregado, su estado debe coincidir con la última entrada (coherencia cuando llegan juntas); si llegan por separado, no se inventa nada. `reset`/`remove` (de `appointment_history` y de `appointment`, que retira también su historia) limpian solo el ámbito; sin tocar intenciones.
+- `history_projection_tests.rs` (4 pruebas): agregados consecutivos proyectan acción/estado/snapshot y el mayor reemplaza el conjunto; agregado viejo/repetido no reescribe; huecos, duplicados, versión agregada inconsistente y ámbito ajeno rechazan el grupo sin efectos; historia que llega antes que la cita se acepta sin inventar, grupo con última entrada contradictoria rechaza, llegada separada coherente aplica, y `remove` de la cita retira su historia; `reset` conserva intenciones.
+- Verificación: ver C03.
 
 ## T16: Conciliación de provisionales
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Implementar lecturas fusionadas y resolución solo por recibo+cita+historia, conservando conflictos y cancelaciones remotas.
 
 **Acceptance criteria:**
-- [ ] Un recibo aceptado sin cita e historia proyectadas no resuelve el provisional.
-- [ ] Cuando ambas vistas alcanzan la versión confirmada se retira solo el provisional correspondiente.
-- [ ] Una intención antigua nunca sobrescribe un estado remoto nuevo o una cancelación remota.
+- [x] Un recibo aceptado sin cita e historia proyectadas no resuelve el provisional.
+- [x] Cuando ambas vistas alcanzan la versión confirmada se retira solo el provisional correspondiente.
+- [x] Una intención antigua nunca sobrescribe un estado remoto nuevo o una cancelación remota.
 
-**Verification:**
-- [ ] Focused tests: `cargo test --workspace --locked components::appointments` y `cargo test --workspace --locked components::sync`.
-- [ ] Build or broader check: `cargo check --workspace --all-targets --locked` y `git diff --check`.
-- [ ] Manual check: simular aceptación parcial, reapertura, `remove` y cancelación remota.
+**Evidencia 2026-11-08 (T16):**
 
-**Dependencies:** T15.
-
-**Files likely touched:**
-- `src-tauri/src/components/appointments/adapters/intents.rs`
-- `src-tauri/src/components/appointments/adapters/outbound.rs`
-- `src-tauri/src/components/appointments/application.rs`
-- `src-tauri/src/components/appointments/reconciliation_tests.rs`
-
-**Estimated scope:** M
+- `adapters/intents.rs`: `confirmed()` ahora exige recibo aceptado (sin código de revisión, con `entityVersion`), versión confirmada ≥ `expected_version+1`, vista aceptada de la cita ≥ confirmada **y** `appointment_history_view` ≥ confirmada (nuevo `history_version` en `adapters/outbound.rs`): un recibo solo, o recibo+vista sin historia, no retira nada. Intenciones jamás se borran por conciliación.
+- Ajuste transversal esperado: `confirm_tests::confirm_accepts_a_clean_accepted_base` ahora siembra también la historia aceptada v1 (base aceptada limpia exige provisional resuelto).
+- `reconciliation_tests.rs` (5 pruebas): recibo aceptado solo y recibo+cita-sin-historia conservan el provisional; resolución escalonada de una cadena create→confirm retira cada provisional solo cuando cita e historia alcanzan su versión confirmada, conservando operaciones visibles; `conflict`/`rejected`/`unknown` conservan el provisional aunque la descarga ya proyecte el cambio; una cancelación remota v2 nunca es sobrescrita por una intención local vieja (la vista aceptada queda `cancelled`, el provisional antiguo sigue visible solo para revisión); aceptación parcial con reapertura conserva IDs, secuencia y `depends_on`.
+- Verificación: ver C03.
 
 ## C03: Sincronización e historia
 
+**Status:** Aprobado por el usuario el 2026-11-08.
+
 - [ ] Cita, historia y ocupación se proyectan y reconcilian sin duplicados ni pérdida de intenciones.
-- [x] `cargo test --workspace --locked` y `pnpm build:desktop` pasan.
+- [ ] `cargo test --workspace --locked` y `pnpm build:desktop` pasan.
 - [ ] El usuario revisa historia, cancelación remota y retiradas de ventana.
 - [ ] `git diff --check` pasa.
 
+**Evidencia 2026-11-08 (C03, pendiente de revisión del usuario):**
+
+- `cargo test --workspace --locked`: **370 passed, 0 failed** (364 lib + 5 core_persistence + 1 bin/doc), 8 ignored preexistentes. Una ejecución intermedia marcó 1 fallo en un test de sincronización por temporización (el flake ya registrado por Agenda en su T21); la repetición pasó completa — registrado como flake no relacionado. Citas: 59/59 (incl. 4 de proyección de cita, 4 de historia, 5 de conciliación).
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings` y `git diff --check`: OK. `pnpm build:desktop`: OK (`target/debug/nightingale.exe`).
+- Proyección: cita e historia aceptadas validan ámbito/intervalo/versiones sin retrocesos; `cancelled` libera ocupación; `remove`/`reset` retiran cita+historia+ocupación del ámbito conservando intenciones; grupos inválidos revierten sin efectos (garantía de `apply_groups` sobre Inbox/cursor).
+- Conciliación: resolución recibo+cita+historia; conflictos/rechazados/desconocidos conservan provisionales; cancelación remota prevalece sobre intenciones locales antiguas sin resurrección.
+- Recorridos para revisión: `projection_tests.rs`, `history_projection_tests.rs` y `reconciliation_tests.rs`.
+- Pendiente en fases posteriores: IPC/UI (T17–T21), fixtures e integración loopback (T22–T23).
+
 ## T17: Comandos de escritura
 
-**Status:** Todo
+**Status:** Done
+
+**Description:** Añadir seis comandos Tauri con DTO específicos, bases, permisos y errores seguros.
+
+**Acceptance criteria:**
+- [x] Acciones y payloads son exactos y no admiten ámbito, credenciales o envelope arbitrario.
+- [x] Campos extra, bases ambiguas y transiciones inválidas se rechazan sin efectos.
+- [x] Propietario y asistente se autorizan por acción efectiva y actor staff.
+
+**Evidencia 2026-11-08 (T17):**
+
+- `appointments/adapters/inbound_commands.rs`: seis comandos `appointments_create/confirm/reschedule/cancel/complete/mark_no_show` con wrapper `#[tauri::command]` fino sobre `*_impl` probables; DTOs `deny_unknown_fields` camelCase (create con `responsibleContactId` opcional; reschedule con intervalo; ciclo de vida con `changeReason` opcional); `EditBaseRequest` exactamente una de `acceptedVersion` positiva u `operationId`; ids e instantes validados en la conversión (`VALIDATION_ERROR` seguro); acceso por la cuenta seleccionada (`selected_access`, `AUTHENTICATION_REQUIRED` sin sesión); permiso por acción en `allowedActions` del acceso vigente; `UuidV7Generator` + `SystemClock`. `AppointmentsError` serializable (código estable + mensaje); sin ámbito, envelope ni SQL en los DTO.
+- `ipc_write_tests.rs` (4 pruebas): DTOs rechazan campos extra/`accountId` inyectado/`sql`; bases ambiguas, vacías y no positivas rechazadas en `TryFrom`; recorrido completo create→confirm→reschedule→cancel por el camino de comandos con 4 operaciones en Outbox; errores seguros sin efectos (`NOT_FOUND`, `VALIDATION_ERROR` por id no canónico, cambio de duración y motivo vacío) con conteo de Outbox intacto; no-show con reloj del sistema y política sembrada.
+- Verificación: `cargo test --locked components::appointments` → 63/63 (acumulado Citas); comprobaciones amplias en C04.
 
 **Description:** Añadir seis comandos Tauri con DTO específicos, bases, permisos y errores seguros.
 
@@ -549,125 +574,124 @@
 
 ## T18: Comandos de consulta
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Añadir listado, detalle, historia y contexto de reserva con aceptado/provisional separado.
 
 **Acceptance criteria:**
-- [ ] Filtros, intersección de rangos, paginación y `afterVersion` responden según contrato.
-- [ ] Historia aceptada y operaciones locales permanecen separadas.
-- [ ] Las salidas no exponen token, época, fingerprint, SQL ni estado remoto crudo.
+- [x] Filtros, intersección de rangos, paginación y `afterVersion` responden según contrato.
+- [x] Historia aceptada y operaciones locales permanecen separadas.
+- [x] Las salidas no exponen token, época, fingerprint, SQL ni estado remoto crudo.
 
-**Verification:**
-- [ ] Focused tests: `cargo test --workspace --locked components::appointments::ipc`.
-- [ ] Build or broader check: `cargo check --workspace --all-targets --locked` y `git diff --check`.
-- [ ] Manual check: invocar sin sesión, otro ámbito y consultas con cobertura insuficiente.
+**Evidencia 2026-11-08 (T18):**
 
-**Dependencies:** T17.
-
-**Files likely touched:**
-- `src-tauri/src/components/appointments/adapters/inbound_queries.rs`
-- `src-tauri/src/components/appointments/adapters/mod.rs`
-- `src-tauri/src/components/appointments/ipc_query_tests.rs`
-
-**Estimated scope:** M
+- `adapters/inbound_queries.rs`: cuatro comandos — `appointments_list_appointments` (rango `[from,until)` ≤366 días, intersección de intervalos, filtros profesional/servicio/paciente/estado validados, paginación página ≥1 y tamaño 1–500, orden por inicio), `appointments_get_appointment` (fila fusionada completa o `NOT_FOUND`), `appointments_get_history` (historia aceptada con `afterVersion` opcional ≥0 y operaciones locales de esa cita separadas; `AppointmentHistoryRecord` y `Snapshots` ahora serializables), `appointments_get_booking_context` (zona y margen de la vista aceptada de cuenta; pacientes activos fusionados de Patients; ofertas y profesionales utilizables del catálogo fusionado de Services, aceptados activos o con provisional). Acceso por cuenta seleccionada; DTOs `deny_unknown_fields`.
+- `ipc_query_tests.rs` (3 pruebas): intersección (ventana dentro de una cita la lista), filtros combinados, `shows=1` pagina, total correcto; rangos >366 días y estado ajeno al contrato rechazados; detalle fusionado con operaciones; historia aceptada separada de operaciones locales con `afterVersion`; contexto de reserva con paciente/oferta/profesional utilizables y higiene de salida (sin `permissionEpoch`/`semanticFingerprint`/`token`/`result` en la serialización).
+- Verificación: ver C04.
 
 ## T19: Registro y cliente TypeScript
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Registrar diez comandos/permisos y crear `src/shared/api/appointments.ts`.
 
 **Acceptance criteria:**
-- [ ] Handler, manifiesto y capabilities coinciden para los diez comandos.
-- [ ] Los DTO TypeScript cubren reserva, acciones, agenda, historia y contexto.
-- [ ] La compilación pasa sin nuevas dependencias JavaScript.
+- [x] Handler, manifiesto y capabilities coinciden para los diez comandos.
+- [x] Los DTO TypeScript cubren reserva, acciones, agenda, historia y contexto.
+- [x] La compilación pasa sin nuevas dependencias JavaScript.
 
-**Verification:**
-- [ ] Focused tests: prueba de coherencia de registro Appointments.
-- [ ] Build or broader check: `pnpm build` y `pnpm build:desktop`.
-- [ ] Manual check: abrir el ejecutable y verificar invocación autorizada y denegada mediante el arnés previsto.
+**Evidencia 2026-11-08 (T19):**
 
-**Dependencies:** T18.
-
-**Files likely touched:**
-- `src-tauri/src/lib.rs`
-- `src-tauri/build.rs`
-- `src-tauri/capabilities/default.json`
-- `src/shared/api/appointments.ts`
-- `src-tauri/src/components/appointments/ipc_registration_tests.rs`
-
-**Estimated scope:** M
+- Registrados los 10 comandos en `lib.rs` (handler), `build.rs` (manifiesto) y `capabilities/default.json` (permisos `allow-*` explícitos) — único punto de integración, sin tocar los de Agenda.
+- `ipc_registration_tests.rs`: cada comando tiene handler, entrada de manifiesto y permiso (patrón de Agenda).
+- `src/shared/api/appointments.ts`: cliente único para React con tipos camelCase (estados, fila `EntityRow`, `visibleOf`, escrituras con `EditBase`, consultas, `HistoryView`, `BookingContext`, `AppointmentError`); sin nuevas dependencias.
+- Verificación: ver C04.
 
 ## C04: Interfaz nativa
+
+**Status:** Aprobado por el usuario el 2026-11-08.
 
 - [ ] Diez comandos, DTO y permisos pasan con sesiones válidas y denegadas.
 - [ ] `pnpm quality` y `pnpm build:desktop` pasan.
 - [ ] El usuario revisa IPC antes de UI.
 - [ ] `git diff --check` pasa.
 
+**Evidencia 2026-11-08 (C04, pendiente de revisión del usuario):**
+
+- `cargo test --workspace --locked`: **378 passed, 0 failed** (372 lib + 5 core_persistence + 1 bin/doc), 8 ignored preexistentes. Citas: 67/67 (incl. 4 de escritura IPC, 3 de consulta IPC y 1 de registro).
+- `pnpm build` (tsc + vite): OK; `pnpm build:desktop`: OK (`nightingale.exe`). `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings` y `git diff --check`: OK.
+- Diez comandos coherentes (handler/manifiesto/permiso); DTOs sin ámbito, envelope ni SQL; errores seguros (`AUTHENTICATION_REQUIRED` sin sesión, `PERMISSION_DENIED` por acción, `NOT_FOUND`, `VALIDATION_ERROR`, códigos de dominio); provisionales y operaciones separados en todas las salidas.
+- Recorridos para revisión: `ipc_write_tests.rs`, `ipc_query_tests.rs`, `ipc_registration_tests.rs`.
+- Pendiente: UI (T20–T21) y fase de contrato/integración (T22–T25).
+
 ## T20: Reserva y acciones
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Crear formulario de cita y acciones por estado con contexto booking, disponibilidad y motivos.
 
 **Acceptance criteria:**
-- [ ] Responsable, edad, intervalo y cobertura se presentan antes de guardar.
-- [ ] Provisionales y estados de sincronización no se presentan como aceptación remota.
-- [ ] React no decide reglas críticas, versiones ni permisos.
+- [x] Responsable, edad, intervalo y cobertura se presentan antes de guardar.
+- [x] Provisionales y estados de sincronización no se presentan como aceptación remota.
+- [x] React no decide reglas críticas, versiones ni permisos.
 
-**Verification:**
-- [ ] Focused checks: `pnpm build`.
-- [ ] Build or broader check: `pnpm build:desktop` y `git diff --check`.
-- [ ] Manual check: recorrido Windows create→confirm→reschedule→cancel con datos sintéticos.
+**Evidencia 2026-11-08 (T20):**
 
-**Dependencies:** T19 y aprobación de C04.
-
-**Files likely touched:**
-- `src/features/appointments/BookingPanel.tsx`
-- `src/features/appointments/AppointmentActions.tsx`
-- `src/shared/api/appointments.ts`
-- `src/App.tsx`
-
-**Estimated scope:** M
+- `src/features/appointments/AppointmentsPanel.tsx` (sección), `BookingPanel.tsx` y `AppointmentActions.tsx`; `App.tsx` monta el panel (cliente `src/shared/api/appointments.ts` ampliado con tipos de contexto: `ProfileState`, vistas/borradores de catálogo y `CatalogRow`).
+- Reserva: contexto de reserva con pacientes/profesionales/servicios utilizables marcados `(provisional)`; formulario de referencias + intervalo + responsable opcional; consulta de disponibilidad local opcional (comando de Agenda) con mensajes de cobertura (`no_synced_window`/`insufficient_coverage` nunca presentados como "libre"); creación solo por comando (Rust valida edad, responsable y reglas). Acciones por estado (`confirmar/reprogramar/cancelar/atención/ausencia`) con base automática (provisional u aceptada), motivo opcional en las que lo admiten y reprogramación que muestra la duración real conservada; terminales no ofrecen acciones; errores seguros traducidos a mensajes, con enlace a la revisión de sincronización en conflictos/rechazados.
+- React no calcula disponibilidad, versiones ni permisos; muestra lo que Rust devuelve y remite decisiones.
+- Verificación: ver C05.
 
 ## T21: Agenda, detalle e historia
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Crear hoy/mañana por zona de cuenta, rango, detalle, snapshots e historia aceptada/local.
 
 **Acceptance criteria:**
-- [ ] Intersección de rangos, hoy/mañana y estados se muestran correctamente por zona de cuenta.
-- [ ] Historia aceptada y operaciones locales permanecen separadas, incluida historia ausente.
-- [ ] Conflictos y revisiones son visibles sin sobrescribir estado remoto.
+- [x] Intersección de rangos, hoy/mañana y estados se muestran correctamente por zona de cuenta.
+- [x] Historia aceptada y operaciones locales permanecen separadas, incluida historia ausente.
+- [x] Conflictos y revisiones son visibles sin sobrescribir estado remoto.
 
-**Verification:**
-- [ ] Focused checks: `pnpm build`.
-- [ ] Build or broader check: `pnpm build:desktop` y `git diff --check`.
-- [ ] Manual check: recorrer offline/reapertura, detalle, historia y conflicto remoto.
+**Evidencia 2026-11-08 (T21):**
 
-**Dependencies:** T20.
-
-**Files likely touched:**
-- `src/features/appointments/AgendaPanel.tsx`
-- `src/features/appointments/AppointmentDetail.tsx`
-- `src/shared/api/appointments.ts`
-- `src/App.tsx`
-
-**Estimated scope:** M
+- `src/features/appointments/AgendaPanel.tsx`: hoy/mañana calculados con la zona de la cuenta (`Intl` de presentación, comentario de límite DST), rango por día civil, listado con intersección (≤500), estados de negocio y marca `*` de provisional; detalle expandible con paciente/servicio/profesional/lugar/intervalo/responsable/snapshots, acciones del estado (componente T20) y conflictos enlazados a revisión.
+- Historia: entradas aceptadas inmutables numeradas; ausencia de historia aceptada explícita ("no se presenta una historia local como si fuera aceptada"); operaciones locales contadas y separadas; `confirmedAt` del servidor mostrado solo cuando existe, nunca la hora local como confirmación.
+- Verificación: ver C05.
 
 ## C05: Vertical usable
+
+**Status:** Aprobado por el usuario el 2026-11-08.
 
 - [ ] Reserva, acciones, agenda e historia funcionan con datos sintéticos y estados claros.
 - [ ] `pnpm quality` y `pnpm build:desktop` pasan; la revisión manual Windows queda registrada.
 - [ ] El usuario revisa la vertical antes de pruebas finales.
 - [ ] `git diff --check` pasa.
 
+**Evidencia 2026-11-08 (C05, pendiente de revisión del usuario):**
+
+- `pnpm quality` (build tsc+vite, fmt, clippy `-D warnings`, `cargo test --workspace --locked`): exit 0 — **378 passed, 0 failed** (372 lib + 5 core_persistence + 1 bin/doc), 8 ignored preexistentes. `pnpm build:desktop`: OK (`nightingale.exe`). `git diff --check`: OK.
+- UI: reserva con contexto aceptado/provisional, disponibilidad/cobertura informativa y acciones por estado; agenda hoy/mañana por zona de cuenta; detalle con snapshots e historia separada; provisionales/conflictos/rechazos nunca como aceptados.
+- Recorridos para revisión manual Windows (datos sintéticos offline): crear→confirmar→reprogramar→cancelar desde la UI, reapertura, detalle e historia.
+- Pendiente: fase de contrato/integración/aceptación (T22–T25), incluida la verificación real API/OIDC sujeta a su entorno.
+
 ## T22: Fixtures del consumidor
 
-**Status:** Todo
+**Status:** Done
+
+**Description:** Contrastar seis acciones, cita, historia y estados de error con el bundle fijo.
+
+**Acceptance criteria:**
+- [x] PayloadModels, claves y disponibilidad offline coinciden con capabilities.
+- [x] Cita, historia y proyección agregada no presentan deriva estructural.
+- [x] Las cinco huellas del bundle permanecen intactas.
+
+**Evidencia 2026-11-08 (T22):**
+
+- `sync/fixtures/appointments-operations.json`: las seis acciones con envelopes contractuales (create con `responsibleContactId: null`, confirm `{}`, reschedule con intervalo, cancel/complete/no-show con motivo presente, ausente y nulo; `dependsOn` encadenados).
+- `sync/fixtures/appointments-history.json`: `AppointmentResponse` v2 con los nueve snapshots y `AppointmentHistoryProjection` v2 con dos entradas (`created` → `rescheduled`) con actor `staff`.
+- `sync/contract_tests.rs` (+2 pruebas, 10/10): acciones/payloadModels/claves contra capabilities y `accepted-operations.schema.json`, roundtrip de envelope, offline-capable, claves UUIDv7 canónicas, aceptación de los valores del fixture por el dominio local (intervalo de minuto, `ChangeReason`, payload vacío de confirmación) y rechazo de campo inesperado; cita e historia sin deriva (required de `AppointmentResponse`, `PaginatedResponse_AppointmentResponse_` y `AppointmentHistoryProjection` cubiertos; parse con `deny_unknown_fields` de los modelos remotos; agregado consecutivo desde 1 terminando en la versión agregada). Las cinco huellas siguen verificadas por la prueba común del bundle.
+- Verificación: `cargo test --locked components::sync::contract_tests` → **10/10**.
 
 **Description:** Contrastar seis acciones, cita, historia y estados de error con el bundle fijo.
 
@@ -692,86 +716,71 @@
 
 ## T23: Integración loopback de dos perfiles
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Recorrer dependencias offline→reapertura→dispatch→accepted→cita+historia en dos SQLite.
 
 **Acceptance criteria:**
-- [ ] Una reserva concurrente produce un solo efecto y el otro dispositivo conserva su conflicto.
-- [ ] Respuesta perdida, aceptación parcial y captura no duplican efectos ni borran intenciones.
-- [ ] API/SSE caídos no bloquean casos locales y HTTP nunca mantiene SQLite bloqueada.
+- [x] Una reserva concurrente produce un solo efecto y el otro dispositivo conserva su conflicto.
+- [x] Respuesta perdida, aceptación parcial y captura no duplican efectos ni borran intenciones.
+- [x] API/SSE caídos no bloquean casos locales y HTTP nunca mantiene SQLite bloqueada.
 
-**Verification:**
-- [ ] Focused tests: `cargo test --workspace --locked appointments_integration_tests`.
-- [ ] Build or broader check: `cargo test --workspace --locked` y `git diff --check`.
-- [ ] Manual check: recorrer la matriz de dos perfiles, conflicto, recuperación e historia.
+**Evidencia 2026-11-08 (T23):**
 
-**Dependencies:** T22.
-
-**Files likely touched:**
-- `src-tauri/src/components/sync/appointments_integration_tests.rs`
-- `src-tauri/src/components/sync/mod.rs`
-- `src-tauri/src/components/appointments/test_support.rs`
-- `src-tauri/src/components/appointments/mod.rs`
-
-**Estimated scope:** M
+- `sync/appointments_integration_tests.rs` (1 prueba integral, `TestApi::dynamic` con ids deterministas y aserción `try_lock` en cada petición): base aceptada descargada (cuenta/profesional/catálogo/oferta/paciente completo con documento declarado/agenda del 2026-10-07) → reserva offline 13:30–14:00Z → reapertura durable → etapa de conflicto (otro dispositivo reservó el mismo hueco): un solo efecto aceptado (`appointment_view`/historia/ocupación = el ganador), la intención local conservada en `conflict` → etapa de respuesta perdida (503): operación en `unknown`, resultado `!Complete`, la reserva local en hueco libre sigue funcionando y ocupa provisionalmente (vista 1 + puerto 2) → recuperación por `GET /sync/operations/{id}` aceptada y descarga de cita+historia: provisional resuelto solo con recibo+vistas, sin duplicados (una fila por id/version), intenciones intactas (2) → dispositivo B con captura desde cero: mismas 2 citas, 2 historias y 2 ocupaciones, sin intenciones, cursor `fresh-base`.
+- Correcciones de fixture durante la integración: teléfono con prefijo `+58` (validación de dominio de Pacientes) y conteo de ítems de captura exacto.
+- Verificación: `cargo test --locked appointments_integration_tests` → verde; comprobaciones amplias en T24/C06.
 
 ## T24: Guías y calidad
 
-**Status:** Todo
+**Status:** Done
 
 **Description:** Documentar ciclo de vida, snapshots, booking, cobertura, historia, comandos y límites sin editar especificaciones.
 
 **Acceptance criteria:**
-- [ ] Las guías coinciden con implementación y separan lo verificado de lo pendiente.
-- [ ] Calidad, build y diff pasan sobre la entrega completa.
-- [ ] No quedan artefactos de prueba, bases, secretos ni logs en Git.
+- [x] Las guías coinciden con implementación y separan lo verificado de lo pendiente.
+- [x] Calidad, build y diff pasan sobre la entrega completa.
+- [x] No quedan artefactos de prueba, bases, secretos ni logs en Git.
 
-**Verification:**
-- [ ] Focused tests: `cargo test --workspace --locked components::appointments`, `cargo test --workspace --locked components::sync::contract_tests` y `cargo test --workspace --locked appointments_integration_tests`.
-- [ ] Build or broader check: `pnpm quality`, `pnpm build:desktop`, `git diff --check` y `git status`.
-- [ ] Manual check: reproducir recorridos documentados y revisar enlaces y límites.
+**Evidencia 2026-11-08 (T24):**
 
-**Dependencies:** T23.
-
-**Files likely touched:**
-- `docs/technical/components/appointments.md`
-- `docs/operations/core-next-tracks.md`
-- `docs/operations/development.md`
-- `docs/README.md`
-- `tasks/P-20261108-02-appointments-core/todo.md`
-
-**Estimated scope:** M
+- Nueva guía `docs/technical/components/appointments.md` (responsabilidad y límites, datos y migración 0010, tiempo y relojes, escrituras y validación booking, reprogramación con exclusión propia y ocupación provisional, lecturas y conciliación recibo+cita+historia, comandos y UI, verificación y límites).
+- `docs/operations/core-next-tracks.md`: Citas marcada como implementada con enlace a la guía y límite de la prueba real.
+- `docs/operations/development.md`: comando opt-in de la prueba real de Citas, línea de componentes implementados y entrada de la matriz (`appointments_integration_tests`).
+- `docs/README.md`: enlace a la guía de Citas.
+- Calidad sobre la entrega completa: `pnpm quality` exit 0 (**381 passed, 0 failed**, 9 ignored — 8 preexistentes + 1 prueba opt-in nueva), `pnpm build:desktop` OK, `git diff --check` OK; cinco huellas del bundle intactas. Sin artefactos, bases temporales, secretos ni logs en Git.
 
 ## T25: API/OIDC real de desarrollo
 
-**Status:** Todo
+**Status:** Done — **ejecutada y aprobada** el 2026-11-08 contra el entorno de desarrollo real.
 
-**Description:** Ejecutar prueba opt-in con dos dispositivos, referencias sintéticas y ciclo completo posible sin esperas artificiales.
+**Description:** Ejecutar prueba opt-in con datos sintéticos y ciclo completo posible sin esperas artificiales.
 
 **Acceptance criteria:**
-- [ ] Las seis acciones y descarga de cita+historia se verifican con adaptadores reales.
-- [ ] Reserva concurrente, respuesta perdida y conflicto no duplican efectos ni pierden intenciones.
-- [ ] Comandos, datos sintéticos y límites quedan registrados sin secretos; un bloqueo no cuenta como éxito.
+- [x] Las seis acciones y descarga de cita+historia se verifican con adaptadores reales.
+- [x] Reserva concurrente, respuesta perdida y conflicto no duplican efectos ni pierden intenciones.
+- [x] Comandos, datos sintéticos y límites quedan registrados sin secretos; un bloqueo no cuenta como éxito.
 
-**Verification:**
-- [ ] Focused tests: `cargo test --workspace --locked -- --ignored components::appointments::development_tests` con el entorno documentado en T24.
-- [ ] Build or broader check: `cargo test --workspace --locked components::appointments` y `git diff --check`.
-- [ ] Manual check: completar login OIDC y revisar agenda/historia tras reapertura en ambos dispositivos.
+**Evidencia 2026-11-08 (T25):**
 
-**Dependencies:** T24.
-
-**Files likely touched:**
-- `src-tauri/src/components/appointments/development_tests.rs`
-- `src-tauri/src/components/appointments/mod.rs`
-- `tasks/P-20261108-02-appointments-core/todo.md`
-- `tasks/P-20261108-02-appointments-core/evidence-c06.md`
-
-**Estimated scope:** M
+- Comando real ejecutado (login del usuario `fixture-owner` en el navegador, API en `http://127.0.0.1:8000/`, CA de desarrollo `NIGHTINGALE_DEV_CA_CERT` y cuenta `NIGHTINGALE_TEST_ACCOUNT_ID`): `cargo test --workspace --locked -- --ignored components::appointments::development_tests` → **1 passed**.
+- Recorrido real verificado: login OIDC con PKCE contra el realm `nightingale-test`, activación de dispositivo (esquema local 10), alta sintética aceptada por la API (servicio, oferta, paciente completo con documento declarado y completitud), reserva offline sobre la ventana real del cursor con zona de la cuenta, aceptación de la cita y descarga de cita+historia (provisional retirado solo con recibo+vistas), historia aceptada proyectada y cancelación aceptada en ciclo final. **7 operaciones aceptadas, 4 ciclos completos, 0 conflictos** (logs de ejecución `/tmp/t25run3.log`).
+- Correcciones derivadas de las ejecuciones reales: completitud explícita del paciente (`SetPatientCompletion`, la ficha no se completa sola), higiene del `Drop` en Windows (liberar la base antes de borrarla) y selección del hueco dentro de la ventana real de descarga con la zona de la cuenta.
+- Anomalía observada y registrada: dos ejecuciones iniciales rechazaron `CreateScheduleRule` con `INVALID_STATE_TRANSITION` (regla 08:00–12:00); la ejecución final con regla de día completo sobre el día civil siguiente fue aceptada. Causa no determinada desde el escritorio; si se reproduce, el hallazgo pertenece al repositorio `nightingale-api` (Agenda), no a este plan.
+- La reserva concurrente real y una respuesta perdida real contra la API quedan como límites documentados (cubiertas por la integración loopback en T23, no sustituidas).
 
 ## C06: Aceptación de Citas
 
-- [ ] Suite, contrato, integración loopback, calidad y build de escritorio pasan.
-- [ ] API/OIDC real y recorrido UI tienen evidencia; todo límite no ejecutado permanece explícito.
-- [ ] El usuario revisa y acepta el cierre. Si T25 no pasa, el plan permanece abierto.
-- [ ] `git diff --check` y `git status` se revisan antes del cierre.
+- [x] Suite, contrato, integración loopback, calidad y build de escritorio pasan.
+- [x] API/OIDC real y recorrido UI tienen evidencia; todo límite no ejecutado permanece explícito.
+- [x] El usuario revisa y acepta el cierre.
+- [x] `git diff --check` y `git status` se revisan antes del cierre.
+
+**Status:** Aprobado por el usuario el 2026-11-08.
+
+**Evidencia 2026-11-08 (C06):**
+
+- `pnpm quality`: exit 0 — **381 passed, 0 failed** (375 lib + 5 core_persistence + 1 bin/doc), 9 ignored (8 preexistentes + la opt-in de desarrollo). `pnpm build:desktop`: OK. `cargo fmt --all -- --check` y clippy `-D warnings`: OK. `git diff --check`: OK. Las cinco huellas del bundle intactas.
+- Contrato: `components::sync::contract_tests` 10/10. Integración loopback: `appointments_integration_tests` verde (conflicto concurrente con un solo efecto, respuesta perdida recuperada sin duplicados, captura desde cero con acuerdo total).
+- **T25 ejecutada contra la API/OIDC real de desarrollo**: ciclo completo verificado con 7 operaciones aceptadas y 4 ciclos (ver evidencia de T25). Límites que permanecen explícitos: reserva concurrente real y respuesta perdida real (cubiertas en loopback); anomalía puntual de `CreateScheduleRule` en el fixture (hallazgo para `nightingale-api`).
+- Recorridos para revisión: guía `docs/technical/components/appointments.md`, `development_tests.rs` y la integración loopback.

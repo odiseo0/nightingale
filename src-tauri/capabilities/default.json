@@ -47,7 +47,7 @@
     "allow-patients-get-contact",
     "allow-patients-list-patient-contacts",
     "allow-patients-list-contact-patients",
-      "allow-scheduling-create-rule",
+    "allow-scheduling-create-rule",
     "allow-scheduling-update-rule",
     "allow-scheduling-set-rule-status",
     "allow-scheduling-create-exception",
@@ -60,6 +60,16 @@
     "allow-scheduling-list-exceptions",
     "allow-scheduling-list-blocks",
     "allow-scheduling-get-local-availability",
-    "allow-scheduling-check-remote-availability"
+    "allow-scheduling-check-remote-availability",
+    "allow-appointments-create-appointment",
+    "allow-appointments-confirm-appointment",
+    "allow-appointments-reschedule-appointment",
+    "allow-appointments-cancel-appointment",
+    "allow-appointments-complete-appointment",
+    "allow-appointments-mark-no-show",
+    "allow-appointments-list-appointments",
+    "allow-appointments-get-appointment",
+    "allow-appointments-get-history",
+    "allow-appointments-get-booking-context"
 ]
 }

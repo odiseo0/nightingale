@@ -58,6 +58,16 @@ fn main() {
             "scheduling_list_blocks",
             "scheduling_get_local_availability",
             "scheduling_check_remote_availability",
+            "appointments_create_appointment",
+            "appointments_confirm_appointment",
+            "appointments_reschedule_appointment",
+            "appointments_cancel_appointment",
+            "appointments_complete_appointment",
+            "appointments_mark_no_show",
+            "appointments_list_appointments",
+            "appointments_get_appointment",
+            "appointments_get_history",
+            "appointments_get_booking_context",
         ]),
     ))
     .expect("failed to build Tauri application")

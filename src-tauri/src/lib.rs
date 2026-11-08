@@ -91,6 +91,16 @@ pub fn run() {
             components::scheduling::adapters::inbound_queries::scheduling_list_blocks,
             components::scheduling::adapters::inbound_availability::scheduling_get_local_availability,
             components::scheduling::adapters::inbound_availability::scheduling_check_remote_availability,
+            components::appointments::adapters::inbound_commands::appointments_create_appointment,
+            components::appointments::adapters::inbound_commands::appointments_confirm_appointment,
+            components::appointments::adapters::inbound_commands::appointments_reschedule_appointment,
+            components::appointments::adapters::inbound_commands::appointments_cancel_appointment,
+            components::appointments::adapters::inbound_commands::appointments_complete_appointment,
+            components::appointments::adapters::inbound_commands::appointments_mark_no_show,
+            components::appointments::adapters::inbound_queries::appointments_list_appointments,
+            components::appointments::adapters::inbound_queries::appointments_get_appointment,
+            components::appointments::adapters::inbound_queries::appointments_get_history,
+            components::appointments::adapters::inbound_queries::appointments_get_booking_context,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

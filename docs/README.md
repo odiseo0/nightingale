@@ -39,6 +39,7 @@ Las guías de módulos viven en [technical/components/](technical/components/):
 [dispositivos](technical/components/devices.md),
 [sincronización](technical/components/sync.md),
 [agenda y disponibilidad](technical/components/scheduling.md),
+[citas y historia](technical/components/appointments.md),
 [pacientes](technical/components/patients.md),
 [plataforma](technical/components/platform.md) y
 [núcleo compartido](technical/components/shared-kernel.md).

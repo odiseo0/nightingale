@@ -13,6 +13,16 @@ mod confirm_tests;
 #[cfg(test)]
 mod create_tests;
 #[cfg(test)]
+mod development_tests;
+#[cfg(test)]
+mod ipc_query_tests;
+#[cfg(test)]
+mod ipc_registration_tests;
+#[cfg(test)]
+mod ipc_write_tests;
+#[cfg(test)]
+mod reconciliation_tests;
+#[cfg(test)]
 mod repository_tests;
 #[cfg(test)]
 mod reschedule_tests;

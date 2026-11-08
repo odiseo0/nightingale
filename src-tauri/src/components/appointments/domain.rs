@@ -292,7 +292,8 @@ impl AppointmentInterval {
 /// The nine reference snapshots captured at creation. The server recomputes
 /// them on acceptance; the client never recalculates them on reschedule or
 /// history projection.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Snapshots {
     pub service_name: String,
     pub offered_duration_minutes: i64,

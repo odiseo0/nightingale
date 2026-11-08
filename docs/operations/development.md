@@ -1,10 +1,10 @@
 # Desarrollo del escritorio
 
-Esta guía cubre la base local y el motor transversal de Nightingale. Los casos locales no requieren servicios web, PostgreSQL, n8n, Docker ni configuración privada; el acceso y la sincronización remota sí requieren Nightingale API y OIDC de desarrollo. SQLite conserva esquema, identidad/acceso, Outbox/Inbox, cursor y vista remota aceptada. Pacientes, Servicios y Agenda/Disponibilidad están implementados como componentes; el ciclo completo de Citas sigue pendiente como funcionalidad de producto (solo su proyección mínima de ocupación existe, como parte de Agenda).
+Esta guía cubre la base local y el motor transversal de Nightingale. Los casos locales no requieren servicios web, PostgreSQL, n8n, Docker ni configuración privada; el acceso y la sincronización remota sí requieren Nightingale API y OIDC de desarrollo. SQLite conserva esquema, identidad/acceso, Outbox/Inbox, cursor y vista remota aceptada. Pacientes, Servicios, Agenda/Disponibilidad y Citas con historia están implementados como componentes.
 
 Prueba real de Pacientes (opt-in, requiere Nightingale API y OIDC de desarrollo y un login por navegador): `$env:NIGHTINGALE_API_BASE_URL = "<url>"; cargo test --workspace --locked -- --ignored components::patients::development_tests`. Crea solo datos sintéticos; un bloqueo no cuenta como éxito.
 
-Prueba real de Agenda y Disponibilidad (opt-in, mismo entorno; la guía del componente es [docs/technical/components/scheduling.md](../technical/components/scheduling.md)): `$env:NIGHTINGALE_API_BASE_URL = "<url>"; cargo test --workspace --locked -- --ignored components::scheduling::development_tests`. Si no se ejecuta, el límite queda explícito y el plan permanece abierto sin verificación externa declarada.
+Prueba real de Agenda y Disponibilidad (opt-in, mismo entorno; la guía del componente es [docs/technical/components/scheduling.md](../technical/components/scheduling.md)): `$env:NIGHTINGALE_API_BASE_URL = "<url>"; cargo test --workspace --locked -- --ignored components::scheduling::development_tests`. Prueba real de Citas (opt-in, mismo entorno; la guía del componente es [docs/technical/components/appointments.md](../technical/components/appointments.md)): `$env:NIGHTINGALE_API_BASE_URL = "<url>"; cargo test --workspace --locked -- --ignored components::appointments::development_tests`. Si no se ejecuta, el límite queda explícito y el plan permanece abierto sin verificación externa declarada.
 
 **Revisión documental del 2026-10-23:** alineación de permisos, sin cambiar las rutas del escritorio ni repetir sus comprobaciones de ejecución.
 
@@ -156,6 +156,7 @@ cargo test --workspace --locked components::scheduling
 cargo test --workspace --locked components::appointments
 cargo test --workspace --locked components::sync::contract_tests
 cargo test --workspace --locked scheduling_integration_tests
+cargo test --workspace --locked appointments_integration_tests
 pnpm quality
 git diff --check
 ```

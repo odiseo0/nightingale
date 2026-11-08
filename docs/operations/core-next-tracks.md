@@ -41,6 +41,8 @@ Contrato API: `appointment` y `appointment_history`, ambas con UUID de cita. Acc
 
 Offline: una cita guardada queda pendiente de aceptación compartida. Dependencias causales enlazan pacientes/servicios previos cuando corresponde. `SLOT_UNAVAILABLE` y `VERSION_CONFLICT` no se resuelven por hora local ni por sobrescritura forzada. Salir de ventana retira cita/historia aceptadas y conserva intenciones. El Hub y sus solicitudes requieren otro plan y repositorio.
 
+Estado: implementado en el plan P-20261108-02-appointments-core (guía del componente en [docs/technical/components/appointments.md](../technical/components/appointments.md)). Ocupa la migración `0010_appointments`; la prueba con API/OIDC real queda como límite explícito de ese plan.
+
 ## Recorrido para añadir un caso
 
 1. Leer el contrato importado y fijar acción, clave, payload, versión esperada, permisos y ausencia frente a nulo. La API mantiene la única fuente editable.

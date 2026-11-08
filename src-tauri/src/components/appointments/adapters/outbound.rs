@@ -219,7 +219,8 @@ pub struct AppointmentRecord {
 }
 
 /// One accepted history entry of `appointment_history_view`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AppointmentHistoryRecord {
     pub appointment_id: String,
     pub version: i64,
@@ -511,6 +512,15 @@ fn state_of(record: &AppointmentRecord) -> AppointmentState {
     }
 }
 
+/// Operation status view of one local change, for query outputs.
+pub fn operation_view_of(
+    connection: &Connection,
+    scope: &OperationContext,
+    local: &LocalChange,
+) -> super::super::application::AppResult<OperationView> {
+    operation_view(connection, scope, local)
+}
+
 fn operation_view(
     connection: &Connection,
     scope: &OperationContext,
@@ -632,6 +642,25 @@ fn current_access(
     }
 
     Ok(())
+}
+
+/// Highest accepted history version of one appointment in this scope
+/// (0 when the accepted history is absent).
+pub fn history_version(
+    connection: &Connection,
+    scope: &OperationContext,
+    appointment_id: &str,
+) -> rusqlite::Result<i64> {
+    connection.query_row(
+        "SELECT COALESCE(MAX(version),0) FROM appointment_history_view WHERE account_id=?1 AND user_id=?2 AND device_id=?3 AND appointment_id=?4",
+        params![
+            scope.account_id.as_str(),
+            scope.user_id.as_str(),
+            scope.device_id.as_str(),
+            appointment_id
+        ],
+        |row| row.get(0),
+    )
 }
 
 /// Write-side repository: the provisional draft and the Outbox record commit
@@ -915,12 +944,14 @@ impl SqliteAppointmentRepository<'_> {
         use super::super::application as app;
 
         app::require_active(access)?;
+
         if !access.allows_offline("RescheduleAppointment") {
             return Err(super::super::domain::AppointmentsError::new(
                 "PERMISSION_DENIED",
                 "la acción RescheduleAppointment no está permitida para este acceso",
             ));
         }
+
         let scope = access.context.clone();
 
         // The merged row resolves the base and the transition before any write.
@@ -975,6 +1006,7 @@ impl SqliteAppointmentRepository<'_> {
                 "la ventana de ocupación descargada no cubre el intervalo; sincronice antes de reprogramar",
             ));
         }
+
         let start = interval.starts_at.timestamp().to_string();
         let end = interval.ends_at.timestamp().to_string();
         let fits = evaluation

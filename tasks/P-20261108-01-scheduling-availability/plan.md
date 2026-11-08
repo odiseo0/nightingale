@@ -182,12 +182,12 @@ El detalle verificable de cada tarea está en [todo.md](todo.md).
 ### C02: Escrituras nativas
 - [x] Las nueve acciones guardan offline, reabren y respetan permisos/versiones/dependencias.
 - [x] Suite workspace y `pnpm build:desktop` pasan; conflictos conocidos no crean efectos parciales.
-- [ ] Usuario revisa los tres recorridos antes de disponibilidad.
+- [x] El usuario revisa reglas, excepciones y bloqueos antes de disponibilidad.
 
 ### Fase 3: disponibilidad
-- [ ] T09: Motor puro de intervalos.
-- [ ] T10: Consulta local con cobertura.
-- [ ] T11: Consulta remota API.
+- [x] T09: Motor puro de intervalos.
+- [x] T10: Consulta local con cobertura.
+- [x] T11: Consulta remota API.
 
 ### C03: Disponibilidad nativa y remota
 - [ ] Reglas/excepciones/bloqueos/ocupación/DST/cobertura tienen matriz verde.

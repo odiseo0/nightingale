@@ -53,11 +53,7 @@ pub struct ExceptionState {
 }
 
 impl ExceptionState {
-    pub fn from_value(
-        exception_id: String,
-        value: &ExceptionValue,
-        status: Status,
-    ) -> Self {
+    pub fn from_value(exception_id: String, value: &ExceptionValue, status: Status) -> Self {
         Self {
             exception_id,
             professional_id: value.professional_id.as_str().into(),
@@ -187,12 +183,12 @@ impl SchedulingMutation {
 
     pub fn entity_type(&self) -> &'static str {
         match self {
-            Self::CreateBlock { .. }
-            | Self::UpdateBlock { .. }
-            | Self::SetBlockStatus { .. } => "schedule_block",
-            Self::CreateRule { .. }
-            | Self::UpdateRule { .. }
-            | Self::SetRuleStatus { .. } => "schedule_rule",
+            Self::CreateBlock { .. } | Self::UpdateBlock { .. } | Self::SetBlockStatus { .. } => {
+                "schedule_block"
+            }
+            Self::CreateRule { .. } | Self::UpdateRule { .. } | Self::SetRuleStatus { .. } => {
+                "schedule_rule"
+            }
             Self::CreateException { .. }
             | Self::UpdateException { .. }
             | Self::SetExceptionStatus { .. } => "schedule_exception",
@@ -284,7 +280,9 @@ pub fn intersects_active_block(blocks: &[BlockState], interval: &OccupancyInterv
     let starts = interval.starts_at.to_string();
     let ends = interval.ends_at.to_string();
     blocks.iter().any(|block| {
-        block.status == "active" && block.starts_at.as_str() < ends.as_str() && block.ends_at.as_str() > starts.as_str()
+        block.status == "active"
+            && block.starts_at.as_str() < ends.as_str()
+            && block.ends_at.as_str() > starts.as_str()
     })
 }
 
@@ -338,4 +336,142 @@ pub fn visible_schedule_covers(
             && rule.local_start_minute <= start_minute
             && rule.local_end_minute >= end_minute
     })
+}
+
+// ---- Local availability query (T10) ----
+
+/// Maximum `[from,until)` span of a local availability query (contract: 31 days).
+pub const MAX_AVAILABILITY_RANGE_DAYS: i64 = 31;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AvailabilityRequest {
+    pub professional_id: String,
+    pub service_id: String,
+    pub from: jiff::Timestamp,
+    pub until: jiff::Timestamp,
+    pub duration_minutes: Option<i64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AvailabilityInterval {
+    pub starts_at: String,
+    pub ends_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AvailabilityEvaluation {
+    pub time_zone: String,
+    pub reference_duration_minutes: i64,
+    pub requested_duration_minutes: i64,
+    pub account_version: i64,
+    pub offer_version: i64,
+    pub catalog_version: i64,
+    /// Agenda used for the evaluation: entity id with its effective version.
+    pub agenda_versions: Vec<(String, i64)>,
+    pub intervals: Vec<AvailabilityInterval>,
+    pub origin: String,
+    /// A local evaluation is always provisional: unreceived changes and
+    /// occupancy outside the downloaded window may exist.
+    pub provisional: bool,
+    /// `within_synced_window` | `no_synced_window` | `insufficient_coverage`.
+    pub coverage: String,
+}
+
+/// Local availability port. No HTTP and no SQL reach consumers; coverage is
+/// always explicit and a short or empty list never means "free" by itself.
+pub trait ScheduleAvailabilityQuery {
+    fn local_availability(
+        &mut self,
+        access: &AccountAccess,
+        request: &AvailabilityRequest,
+        occupancy: &impl ScheduleOccupancyQuery,
+        cursors: &impl crate::components::sync::application::CursorStore,
+    ) -> Result<AvailabilityEvaluation>;
+}
+
+/// Validates the common contract of a local or remote availability query:
+/// canonical IDs, `[from,until)` of at most 31 days and optional duration 1..=1440.
+pub fn validate_availability_request(request: &AvailabilityRequest) -> Result<()> {
+    request
+        .professional_id
+        .clone()
+        .try_into()
+        .map(|_: crate::components::services::domain::ProfessionalId| ())
+        .map_err(|_| SchedulingError::validation("professionalId debe ser un UUIDv7 canónico"))?;
+    request
+        .service_id
+        .clone()
+        .try_into()
+        .map(|_: crate::components::services::domain::ServiceId| ())
+        .map_err(|_| SchedulingError::validation("serviceId debe ser un UUIDv7 canónico"))?;
+
+    let range_seconds = request
+        .until
+        .as_second()
+        .checked_sub(request.from.as_second())
+        .ok_or_else(|| SchedulingError::validation("rango de consulta inválido"))?;
+
+    if request.from >= request.until || range_seconds > MAX_AVAILABILITY_RANGE_DAYS * 86_400 {
+        return Err(SchedulingError::validation(
+            "el rango debe ser un intervalo de hasta 31 días",
+        ));
+    }
+
+    if let Some(duration) = request.duration_minutes {
+        if !(1..=1440).contains(&duration) {
+            return Err(SchedulingError::validation(
+                "la duración debe ser un entero entre 1 y 1440",
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+/// The current remote view of availability. It refreshes access and never
+/// writes Outbox or accepted views; an error keeps the local state untouched.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RemoteAvailability {
+    pub account_id: String,
+    pub professional_id: String,
+    pub service_id: String,
+    pub reference_duration_minutes: i64,
+    pub requested_duration_minutes: i64,
+    pub intervals: Vec<AvailabilityInterval>,
+    pub origin: String,
+}
+
+/// Online port implemented by the API adapter. Callers must not hold a SQLite
+/// transaction or mutex across these calls.
+pub trait RemoteAvailabilityPort {
+    fn refresh_access(&self) -> impl std::future::Future<Output = Result<AccountAccess>> + Send;
+
+    fn availability(
+        &self,
+        access: &AccountAccess,
+        request: &AvailabilityRequest,
+    ) -> impl std::future::Future<Output = Result<RemoteAvailability>> + Send;
+}
+
+/// Explicit remote availability query: validates, refreshes access and checks
+/// the session still matches before and after the HTTP call.
+pub async fn check_remote_availability(
+    remote: &impl RemoteAvailabilityPort,
+    access: &AccountAccess,
+    request: &AvailabilityRequest,
+) -> Result<RemoteAvailability> {
+    require_read(access)?;
+    validate_availability_request(request)?;
+
+    let fresh = remote.refresh_access().await?;
+    require_read(&fresh)?;
+
+    if fresh.context != access.context {
+        return Err(SchedulingError::new(
+            "PERMISSION_DENIED",
+            "el acceso remoto no coincide con la sesión",
+        ));
+    }
+
+    remote.availability(&fresh, request).await
 }

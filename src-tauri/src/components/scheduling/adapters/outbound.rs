@@ -778,3 +778,194 @@ enum CandidateState {
     Exception(app::ExceptionState),
     Block(app::BlockState),
 }
+
+impl app::ScheduleAvailabilityQuery for SqliteSchedulingRepository<'_> {
+    fn local_availability(
+        &mut self,
+        access: &AccountAccess,
+        request: &app::AvailabilityRequest,
+        occupancy: &impl ScheduleOccupancyQuery,
+        cursors: &impl crate::components::sync::application::CursorStore,
+    ) -> app::Result<app::AvailabilityEvaluation> {
+        app::require_read(access)?;
+        let range_seconds = request
+            .until
+            .as_second()
+            .checked_sub(request.from.as_second())
+            .ok_or_else(|| SchedulingError::validation("rango de consulta inválido"))?;
+        if request.from >= request.until
+            || range_seconds > app::MAX_AVAILABILITY_RANGE_DAYS * 86_400
+        {
+            return Err(SchedulingError::validation(
+                "el rango debe ser un intervalo de hasta 31 días",
+            ));
+        }
+
+        // Cuenta (zona + versión) y catálogo (oferta activa + versiones).
+        let account = crate::components::account::adapters::outbound::SqliteAccountRepository {
+            connection: &mut *self.connection,
+            clock: &crate::shared_kernel::SystemClock,
+        }
+        .account_view(&access.context)
+        .map_err(|error| SchedulingError::new(&error.code, &error.message))?
+        .ok_or_else(|| SchedulingError::new("NOT_FOUND", "cuenta no disponible en este ámbito"))?;
+        let zone = jiff::tz::TimeZone::get(&account.time_zone)
+            .map_err(|_| SchedulingError::validation("zona horaria de la cuenta inválida"))?;
+
+        let catalog = crate::components::services::adapters::outbound::SqliteCatalogRepository {
+            connection: &mut *self.connection,
+        };
+        let professional_id: crate::components::services::domain::ProfessionalId = request
+            .professional_id
+            .clone()
+            .try_into()
+            .map_err(|_| SchedulingError::validation("professionalId debe ser un UUIDv7 canónico"))?;
+        let service_id: crate::components::services::domain::ServiceId = request
+            .service_id
+            .clone()
+            .try_into()
+            .map_err(|_| SchedulingError::validation("serviceId debe ser un UUIDv7 canónico"))?;
+        let professional = catalog
+            .professional(&access.context, &professional_id)
+            .map_err(|error| SchedulingError::new(&error.code, &error.message))?
+            .filter(|professional| professional.status == "active")
+            .ok_or_else(|| SchedulingError::new("NOT_FOUND", "profesional no disponible"))?;
+        let offer = catalog
+            .offer(&access.context, &professional_id, &service_id)
+            .map_err(|error| SchedulingError::new(&error.code, &error.message))?
+            .filter(|offer| offer.status == "active" && offer.service_status == "active")
+            .ok_or_else(|| {
+                SchedulingError::new("NOT_FOUND", "oferta de servicio no disponible")
+            })?;
+
+        let duration = match request.duration_minutes {
+            Some(value) => {
+                if !(1..=1440).contains(&value) {
+                    return Err(SchedulingError::validation(
+                        "la duración debe ser un entero entre 1 y 1440",
+                    ));
+                }
+                value
+            }
+            None => offer.effective_duration_minutes,
+        };
+
+        let tx = self.connection.transaction().map_err(storage_error)?;
+        current_access(&tx, access, None)?;
+
+        let (rules, rule_versions) = fused_states(rule_rows(&tx, &access.context)?, |state| {
+            state.rule_id.clone()
+        });
+        let (exceptions, exception_versions) =
+            fused_states(exception_rows(&tx, &access.context)?, |state| {
+                state.exception_id.clone()
+            });
+        let (blocks, block_versions) = fused_states(block_rows(&tx, &access.context)?, |state| {
+            state.block_id.clone()
+        });
+        let rules: Vec<app::RuleState> = rules
+            .into_iter()
+            .filter(|state| state.professional_id == professional.professional_id)
+            .collect();
+        let exceptions: Vec<app::ExceptionState> = exceptions
+            .into_iter()
+            .filter(|state| state.professional_id == professional.professional_id)
+            .collect();
+        let blocks: Vec<app::BlockState> = blocks
+            .into_iter()
+            .filter(|state| state.professional_id == professional.professional_id)
+            .collect();
+
+        let known: Vec<super::super::availability::Interval> = occupancy
+            .list_occupancy(&professional.professional_id, request.from, request.until)
+            .map_err(SchedulingError::from)?
+            .into_iter()
+            .map(|interval| {
+                super::super::availability::Interval {
+                    start: interval.starts_at,
+                    end: interval.ends_at,
+                }
+            })
+            .collect();
+        let intervals = super::super::availability::available_intervals(
+            &zone,
+            &rules,
+            &exceptions,
+            &blocks,
+            &known,
+            request.from,
+            request.until,
+            duration,
+        )?;
+
+        // Cobertura: la ventana de ocupación descargada decide si el resultado
+        // tiene contexto suficiente; desconocido nunca se presenta como libre.
+        let coverage = match cursors.cursor(&tx, &access.context) {
+            Ok(Some(stored)) => {
+                let window = stored.window;
+                let from = window.get("appointments_from").and_then(Value::as_str);
+                let until = window.get("appointments_until").and_then(Value::as_str);
+                match (from, until) {
+                    (Some(from), Some(until))
+                        if from <= request.from.to_string().as_str()
+                            && request.until.to_string().as_str() <= until =>
+                    {
+                        "within_synced_window"
+                    }
+                    _ => "insufficient_coverage",
+                }
+            }
+            Ok(None) => "no_synced_window",
+            Err(error) => return Err(SchedulingError::from(error)),
+        };
+        tx.commit().map_err(storage_error)?;
+
+        let mut agenda_versions = rule_versions;
+        agenda_versions.extend(exception_versions);
+        agenda_versions.extend(block_versions);
+
+        Ok(app::AvailabilityEvaluation {
+            time_zone: account.time_zone,
+            reference_duration_minutes: offer.effective_duration_minutes,
+            requested_duration_minutes: duration,
+            account_version: account.version,
+            offer_version: offer.version,
+            catalog_version: offer.service_version,
+            agenda_versions,
+            intervals: intervals
+                .into_iter()
+                .map(|interval| app::AvailabilityInterval {
+                    starts_at: interval.start.to_string(),
+                    ends_at: interval.end.to_string(),
+                })
+                .collect(),
+            origin: "local".into(),
+            provisional: true,
+            coverage: coverage.into(),
+        })
+    }
+}
+
+/// Fused visible states plus the version each one stands on (accepted version,
+/// or the version the latest provisional aims at).
+/// Fused visible states plus the entity id and the version each one stands on
+/// (accepted version, or the version the latest provisional aims at).
+fn fused_states<T: Clone>(
+    rows: Vec<app::EntityRow<T>>,
+    id: impl Fn(&T) -> String,
+) -> (Vec<T>, Vec<(String, i64)>) {
+    let mut states = Vec::with_capacity(rows.len());
+    let mut versions = Vec::with_capacity(rows.len());
+    for row in rows {
+        let version = row
+            .provisional
+            .as_ref()
+            .map(|p| p.expected_version + 1)
+            .or_else(|| row.accepted.as_ref().map(|a| a.version));
+        if let (Some(state), Some(version)) = (row.visible().cloned(), version) {
+            versions.push((id(&state), version));
+            states.push(state);
+        }
+    }
+    (states, versions)
+}

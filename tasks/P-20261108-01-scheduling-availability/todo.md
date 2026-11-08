@@ -317,11 +317,11 @@
 
 ## C02: Escrituras nativas
 
-**Status:** Pendiente de revisión del usuario (no aprobado por el agente).
+**Status:** Aprobado por el usuario el 2026-11-08 (commits `c8a317f` y anteriores).
 
 - [x] Las nueve acciones guardan offline, reabren y respetan permisos, versiones y dependencias.
 - [x] `cargo test --workspace --locked` y `pnpm build:desktop` pasan; conflictos conocidos no crean efectos parciales.
-- [ ] El usuario revisa reglas, excepciones y bloqueos antes de disponibilidad.
+- [x] El usuario revisa reglas, excepciones y bloqueos antes de disponibilidad.
 - [x] `git diff --check` pasa.
 
 **Evidencia 2026-11-08 (C02):**
@@ -357,6 +357,23 @@
 
 **Estimated scope:** M
 
+## T09: Motor puro de intervalos
+
+**Status:** Done
+
+**Description:** Implementar unión, intersección, sustracción, conversión civil→UTC y filtrado por duración sin almacenamiento ni red.
+
+**Acceptance criteria:**
+- [x] Excepciones preceden reglas y bloqueos/ocupación se restan correctamente.
+- [x] DST gap/fold se rechazan y `1440` usa el día civil siguiente.
+- [x] Contiguos, solapamientos y bordes `[start,end)` producen intervalos exactos.
+
+**Evidencia 2026-11-08 (T09):**
+
+- `availability.rs` puro (sin storage/HTTP): `Interval` `[start,end)` con invariante, `merge` (unión solapados/contiguos ordenado), `subtract` (semántica medioabierta: cortes contiguos no dejan hueco ni solape), `fitting` (duración 1–1440), `available_intervals` (minutos efectivos por fecha: excepción activa reemplaza el día —`closed` vacía, `replacement` sustituye—; unión de reglas solapadas; vigencia inclusiva; conversión civil→UTC estricta reutilizando `civil_interval_to_utc`; recorte a `[from,until)` —nada fuera del rango—; resta de bloqueos activos y ocupación; fusión y filtrado por duración). Firma en instantes UTC; las fechas civiles se derivan por zona (instante→civil es siempre inequívoco).
+- `availability_tests.rs` (9 pruebas): matriz determinista de fusión/sustracción/bordes, prioridad de excepciones y filtrado por duración, vigencia inclusiva y rangos multi-día, rechazo de gap/fold (Nueva York 2026-03-08 y 2026-11-01), `1440` = medianoche siguiente y día de 23h en DST (1440 no cabe), rangos y duraciones inválidos.
+- Verificación: `cargo test --workspace --locked components::scheduling::availability` → **9/9**; sin warnings.
+
 ## T10: Consulta local con cobertura
 
 **Status:** Todo
@@ -382,6 +399,24 @@
 - `src-tauri/src/components/scheduling/availability_query_tests.rs`
 
 **Estimated scope:** M
+
+## T10: Consulta local con cobertura
+
+**Status:** Done
+
+**Description:** Componer `AccountViewQuery`, `CatalogQuery`, agenda, ocupación y `CursorStore` en el puerto `ScheduleAvailabilityQuery`.
+
+**Acceptance criteria:**
+- [x] Duración, versiones y estados aceptados de cuenta/catálogo/profesional son correctos.
+- [x] Cobertura dentro/sin/fuera de ventana nunca se convierte en un falso "sin huecos" o "libre".
+- [x] La consulta limita el rango a 31 días, valida duración y no ejecuta HTTP.
+
+**Evidencia 2026-11-08 (T10):**
+
+- `application.rs`: `AvailabilityRequest` (profesional/servicio/`[from,until)`/duración opcional), `AvailabilityEvaluation` (zona, duración de referencia y solicitada, versiones de cuenta/oferta/catálogo, `agenda_versions` usada, intervalos UTC como texto, `origin: "local"`, `provisional: true` siempre, `coverage`), puerto `ScheduleAvailabilityQuery` y validador común `validate_availability_request` (IDs canónicos, ≤31 días, duración 1–1440) reutilizado por la vía remota (T11).
+- Implementación SQLite: exige cuenta, profesional activo y oferta activa (`status`+`service_status`) por los puertos de Account/Services; agenda fusionada filtrada por profesional; ocupación por el puerto de Citas dentro de `[from,until)`; cobertura desde `CursorStore`: `[from,until)` ⊆ `[appointments_from,appointments_until]` → `within_synced_window`; sin cursor → `no_synced_window`; resto → `insufficient_coverage`. La cobertura es siempre explícita y la lista nunca se presenta como "libre" por sí sola. Sin HTTP; sin escrituras.
+- `availability_query_tests.rs` (6 pruebas): evaluación dentro de ventana con versiones (cuenta 1, oferta 2, catálogo 7, agenda usada con versión efectiva) e intervalos 12:00–16:00Z; sin ventana → solo local explícito; fuera y parcialmente fuera → `insufficient_coverage`; ocupación resta y divide huecos con duración que filtra a vacío; rangos >31 días, duración 0 e oferta inexistente/inactiva rechazados; edición de regla actualiza `agenda_versions` (versión 2) y vacía la disponibilidad.
+- Verificación: acumulado 44/44; sin warnings. Manual: dentro/sin/fuera de ventana distinguibles en las pruebas.
 
 ## T11: Consulta remota API
 
@@ -416,6 +451,43 @@
 - [ ] La consulta remota loopback no convierte respuesta en reserva o dato offline.
 - [ ] El usuario revisa semántica, cobertura y mensajes de disponibilidad.
 - [ ] `cargo test --workspace --locked` y `git diff --check` pasan.
+
+## T11: Consulta remota API
+
+**Status:** Done
+
+**Description:** Implementar adaptador tipado `GET /availability`, puerta de sesión y resultado remoto no persistido.
+
+**Acceptance criteria:**
+- [x] Query y respuesta respetan IDs, duraciones, intervalos y máximo de 31 días del contrato.
+- [x] Se refresca acceso y no se mantiene mutex SQLite durante HTTP ni se escribe Outbox/vista aceptada.
+- [x] Errores 401/403/404/422/503 conservan la vista local y devuelven códigos seguros.
+
+**Evidencia 2026-11-08 (T11):**
+
+- `adapters/api.rs`: `SchedulingAPI::availability` → `GET v1/accounts/{account}/availability` con `professionalId`, `serviceId`, `from`, `until` y `durationMinutes` opcional; respuesta `RemoteAvailabilityResponse` con `deny_unknown_fields` exacta al contrato (`AvailabilityResponse`).
+- `application.rs`: `RemoteAvailability` (origin `"remote"`), puerto `RemoteAvailabilityPort` (refresh + availability, futuros `Send`) y caso `check_remote_availability`: validación previa (sin HTTP si falla), refresco de acceso, verificación de que el acceso remoto coincide con la sesión y delegación. No escribe Outbox ni vistas; un error conserva la vista local.
+- `adapters/online.rs`: `OnlineScheduling` (patrón `OnlineAccount`): refresco vía `IdentityAPI`, validación de respuesta contra la petición (cuenta/profesional/servicio coinciden, duraciones 1–1440, intervalos RFC 3339 con inicio<fin) → `INVALID_RESPONSE`; errores HTTP mapeados a códigos seguros (503 → `SERVICE_UNAVAILABLE`, código seguro del cliente HTTP compartido).
+- `adapters/desktop.rs`: `SessionGate` sobre `identity_context` (cuenta seleccionada + usuario) tomada antes del HTTP y reverificada después; cambio de cuenta/logout durante la petición → `PERMISSION_DENIED` ("la sesión cambió durante la consulta remota"). La conexión SQLite solo se lee y nunca se retiene durante el `await` (en el test, la mutación concurrente ocurre por una segunda conexión al mismo archivo).
+- `online_tests.rs` (5 pruebas): loopback de éxito con parámetros de query y resultado remoto; respuesta inválida (serviceId ajeno) → `INVALID_RESPONSE`; 503 → `SERVICE_UNAVAILABLE`; rango >31 días rechazado antes de cualquier HTTP (0 peticiones); puerta de sesión rechaza cambio de cuenta a mitad de petición y permite sesión estable.
+- Límite registrado: el refresco de acceso y la consulta son dos llamadas HTTP sin transacción local compartida, por diseño (nunca se retiene SQLite durante HTTP).
+- Verificación: `cargo test --workspace --locked components::scheduling` → **49/49**; sin warnings.
+
+## C03: Disponibilidad nativa y remota
+
+**Status:** Pendiente de revisión del usuario (no aprobado por el agente).
+
+- [x] Reglas, excepciones, bloqueos, ocupación, DST y cobertura tienen matriz verde.
+- [x] La consulta remota loopback no convierte respuesta en reserva o dato offline.
+- [ ] El usuario revisa semántica, cobertura y mensajes de disponibilidad.
+- [x] `cargo test --workspace --locked` y `git diff --check` pasan.
+
+**Evidencia 2026-11-08 (C03):**
+
+- `cargo test --workspace --locked`: **287 passed, 0 failed** (281 lib + 5 core_persistence + 1 bin), 7 ignored preexistentes. Scheduling: 49/49 (9 motor, 6 consulta local, 5 remota, más las 29 previas).
+- `pnpm build:desktop`: OK (`nightingale.exe`). `git diff --check`: OK. Un cambio espurio ajeno (`account/adapters/desktop.rs`, línea en blanco) detectado y revertido.
+- Consulta remota loopback: validación previa sin HTTP, refresco de acceso, validación de respuesta contra la petición y resultado `origin: "remote"` no persistido; error remoto conserva la vista local y devuelve código seguro.
+- Para revisión del usuario: semántica de `coverage` (`within_synced_window`/`no_synced_window`/`insufficient_coverage`), mensajes de error seguros y el carácter siempre provisional de la evaluación local.
 
 ## T12: Proyectores de agenda y ocupación
 

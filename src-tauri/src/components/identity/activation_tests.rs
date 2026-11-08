@@ -230,7 +230,7 @@ fn activation_registers_only_self_reuses_secret_and_survives_reopen() {
                         .to_ascii_lowercase()
                         .contains(&format!("authorization: bearer {OIDC_TOKEN}"))
                 );
-                assert_eq!(body(request)["localSchemaVersion"], 7);
+                assert_eq!(body(request)["localSchemaVersion"], 9);
 
                 return (201, issue());
             }

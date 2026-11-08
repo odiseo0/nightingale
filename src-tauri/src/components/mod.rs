@@ -1,9 +1,11 @@
 pub mod account;
+pub mod appointments;
 pub mod devices;
 pub mod diagnostics;
 pub mod identity;
 pub mod patients;
 pub(crate) mod projector;
+pub mod scheduling;
 pub mod services;
 pub mod storage;
 pub mod sync;

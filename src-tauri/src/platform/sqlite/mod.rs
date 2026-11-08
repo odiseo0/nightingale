@@ -49,6 +49,16 @@ const MIGRATIONS: &[Migration] = &[
         name: "0007_patients",
         sql: include_str!("../../../migrations/0007_patients.sql"),
     },
+    Migration {
+        version: 8,
+        name: "0008_scheduling",
+        sql: include_str!("../../../migrations/0008_scheduling.sql"),
+    },
+    Migration {
+        version: 9,
+        name: "0009_appointment_occupancy",
+        sql: include_str!("../../../migrations/0009_appointment_occupancy.sql"),
+    },
 ];
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
@@ -567,7 +577,7 @@ mod tests {
             connection
                 .pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
                 .unwrap(),
-            7
+            MIGRATIONS.last().unwrap().version
         );
         for table in [
             "patient_profile_view",

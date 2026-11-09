@@ -1254,7 +1254,11 @@ src/
     testing/           apoyo de pruebas cuando sea necesario
 ```
 
-La estructura actual concentra paneles en `App.tsx`; es un esqueleto y no una arquitectura visual final. Los planes de migración deberán mantener un recorrido funcional en cada paso.
+La estructura anterior concentraba paneles técnicos en `App.tsx`; desde el plan
+P-20261108-05 la app usa un router con shell (`src/app/`), la Agenda diaria en
+`/agenda` y el esqueleto técnico conservado en `/desarrollo`. Es una evolución
+gradual y no una arquitectura visual final; los planes de migración deberán mantener
+un recorrido funcional en cada paso.
 
 Dependencias permitidas:
 

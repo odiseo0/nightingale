@@ -19,7 +19,8 @@ tras un resultado desconocido crea otra operación y exige revisar el estado rem
 Comandos IPC: account_get_view, account_get_preferences, account_set_preference,
 account_update_details, account_update_policy y account_set_status. Cada uno tiene
 permiso Tauri explícito. React usa solo src/shared/api/account.ts. El panel está en
-src/features/settings y se monta desde App.tsx con autorización del usuario.
+src/features/settings y se monta desde la ruta `/desarrollo` del router (`src/app/`),
+definido en `src/App.tsx`.
 
 Preferencias: theme (system/light/dark) y servicesShowInactive (boolean), con lista
 cerrada de claves y valores. El componente guarda estas opciones de dispositivo;

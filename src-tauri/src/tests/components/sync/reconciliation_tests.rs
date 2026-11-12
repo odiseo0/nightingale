@@ -591,3 +591,97 @@ fn get_recovers_all_outcomes_and_transient_failure_keeps_uncertainty() {
         }
     });
 }
+
+#[test]
+fn reviews_expose_only_scoped_metadata_and_preserve_selection_and_storage() {
+    let db = Database::new();
+    let mut connection = db.open();
+    let scope = access().context;
+    assert!(
+        SqliteOperationStore
+            .reviews(&connection, &scope)
+            .unwrap()
+            .is_empty()
+    );
+    for number in 1..=8 {
+        seed(&mut connection, number, vec![]);
+    }
+    connection
+        .execute(
+            "UPDATE sync_outbox SET status='conflict' WHERE operation_id=?1",
+            [id(1).as_str()],
+        )
+        .unwrap();
+    connection.execute("UPDATE sync_outbox SET status='rejected',entity_type='patient_contact',entity_key=?1 WHERE operation_id=?2",
+        params![json!({"patientId":id(10_002),"contactPersonId":id(20_002)}).to_string(),id(2).as_str()]).unwrap();
+    connection.execute("UPDATE sync_outbox SET status='unknown',last_error='\"NOT_FOUND\"' WHERE operation_id=?1", [id(3).as_str()]).unwrap();
+    for (number, field) in [(4, "account_id"), (5, "user_id"), (6, "device_id")] {
+        connection
+            .execute(
+                &format!(
+                    "UPDATE sync_outbox SET status='conflict',{field}=?1 WHERE operation_id=?2"
+                ),
+                params![OTHER, id(number).as_str()],
+            )
+            .unwrap();
+    }
+    connection
+        .execute(
+            "UPDATE sync_outbox SET permission_epoch=2 WHERE operation_id=?1",
+            [id(7).as_str()],
+        )
+        .unwrap();
+    connection
+        .execute(
+            "UPDATE sync_outbox SET status='unknown' WHERE operation_id=?1",
+            [id(8).as_str()],
+        )
+        .unwrap();
+    let before = connection.total_changes();
+    let reviews = SqliteOperationStore.reviews(&connection, &scope).unwrap();
+    assert_eq!(connection.total_changes(), before);
+    assert_eq!(
+        reviews
+            .iter()
+            .map(|r| r.operation_id.as_str())
+            .collect::<Vec<_>>(),
+        [
+            id(7).as_str(),
+            id(3).as_str(),
+            id(2).as_str(),
+            id(1).as_str()
+        ]
+    );
+    let one = reviews
+        .iter()
+        .find(|r| r.operation_id == id(1).as_str())
+        .unwrap();
+    assert_eq!(one.action, "RegisterPatient");
+    assert_eq!(one.entity_type, "patient_profile");
+    assert_eq!(one.entity_key, json!(id(10_001)));
+    assert_eq!(one.created_at_millis, 1);
+    let two = reviews
+        .iter()
+        .find(|r| r.operation_id == id(2).as_str())
+        .unwrap();
+    assert_eq!(
+        two.entity_key,
+        json!({"patientId":id(10_002),"contactPersonId":id(20_002)})
+    );
+    let value = serde_json::to_value(&reviews).unwrap();
+    assert_eq!(value[0]["createdAtMillis"], 7);
+    assert_eq!(value[1]["code"], "NOT_FOUND");
+    for row in value.as_array().unwrap() {
+        assert_eq!(row.as_object().unwrap().len(), 7);
+    }
+    let text = value.to_string();
+    for private in [
+        "payload",
+        "fullName",
+        "result",
+        "dependsOn",
+        "semanticFingerprint",
+    ] {
+        assert!(!text.contains(private));
+    }
+}

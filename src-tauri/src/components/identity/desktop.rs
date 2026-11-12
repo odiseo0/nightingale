@@ -666,14 +666,15 @@ mod tests {
         };
         let value = serde_json::to_value(view).unwrap();
         assert!(value.get("signedIn").unwrap().as_bool().unwrap());
+        assert_eq!(value["reviews"][0]["action"], "RegisterPatient");
+        assert_eq!(value["reviews"][0]["entityType"], "patient_profile");
+        assert_eq!(
+            value["reviews"][0]["entityKey"],
+            "019a1234-0000-7000-8000-000000000010"
+        );
+        assert!(value["reviews"][0]["createdAtMillis"].is_i64());
         let output = value.to_string();
-        for word in [
-            "DO_NOT_EXPOSE",
-            "fullName",
-            "payload",
-            "entityKey",
-            "result",
-        ] {
+        for word in ["DO_NOT_EXPOSE", "fullName", "payload", "result"] {
             assert!(!output.contains(word));
         }
         assert!(

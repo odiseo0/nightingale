@@ -36,6 +36,10 @@ pub struct ReviewSummary {
     pub operation_id: String,
     pub status: String,
     pub code: Option<APICode>,
+    pub action: String,
+    pub entity_type: String,
+    pub entity_key: serde_json::Value,
+    pub created_at_millis: i64,
 }
 
 /// Local intention and its receipt for review. No business projection is changed.
@@ -164,7 +168,7 @@ fn available_scope<'a>(
 
 impl SqliteOperationStore {
     pub fn reviews(&self, c: &Connection, scope: &OperationContext) -> Result<Vec<ReviewSummary>> {
-        let mut query=c.prepare("SELECT operation_id,status,last_error FROM sync_outbox WHERE account_id=?1 AND user_id=?2 AND device_id=?3 AND
+        let mut query=c.prepare("SELECT operation_id,status,last_error,action,entity_type,entity_key,created_at FROM sync_outbox WHERE account_id=?1 AND user_id=?2 AND device_id=?3 AND
             (status IN ('conflict','rejected') OR coalesce(last_error,'') IN ('\"NOT_FOUND\"','\"RESULT_EXPIRED\"') OR (permission_epoch!=?4 AND status IN ('pending','unknown','retryable','in_flight'))) ORDER BY created_at DESC,operation_id LIMIT 100").map_err(storage_error)?;
         query
             .query_map(
@@ -182,6 +186,10 @@ impl SqliteOperationStore {
                         operation_id: r.get(0)?,
                         status: r.get(1)?,
                         code,
+                        action: r.get(3)?,
+                        entity_type: r.get(4)?,
+                        entity_key: json_column(r, 5)?,
+                        created_at_millis: r.get(6)?,
                     })
                 },
             )

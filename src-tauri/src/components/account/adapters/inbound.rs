@@ -8,7 +8,10 @@ use super::super::{
 };
 use super::{desktop, outbound::SqliteAccountRepository};
 use crate::{
-    components::identity::{domain::AccountAccess, repository::SqliteAccessStore},
+    components::identity::{
+        domain::{AccessRole, AccountAccess},
+        repository::SqliteAccessStore,
+    },
     shared_kernel::SystemClock,
 };
 use rusqlite::Connection;
@@ -79,6 +82,7 @@ impl From<AccountView> for AccountViewDto {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountScreenDto {
+    pub viewer_role: AccessRole,
     pub account: Option<AccountViewDto>,
     pub preferences: PreferencesDto,
     pub can_manage: bool,
@@ -153,6 +157,7 @@ fn read_view(connection: &mut Connection) -> Result<AccountScreenDto> {
     let screen = application::get_account_view(&repository, &access)?;
 
     Ok(AccountScreenDto {
+        viewer_role: screen.viewer_role,
         account: screen.account.map(Into::into),
         preferences: screen.preferences.into(),
         can_manage: screen.can_manage,
@@ -235,6 +240,114 @@ pub async fn account_set_status(
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn cached_account_screen_keeps_role_separate_from_manage_and_serializes_scope() {
+        use crate::components::{
+            account::application::AccountReadRepository,
+            identity::{
+                domain::{AccessStatus, IdentityContext},
+                repository::AccessStore,
+            },
+        };
+        use crate::shared_kernel::id::OperationContext;
+
+        let actions: Vec<String> = [
+            "UpdateAccountDetails",
+            "UpdateAccountPolicy",
+            "SetAccountStatus",
+        ]
+        .into_iter()
+        .map(String::from)
+        .collect();
+        for (role, allowed_actions, can_manage, label) in [
+            (AccessRole::Owner, vec![], false, "owner"),
+            (AccessRole::Owner, actions.clone(), true, "owner"),
+            (AccessRole::Assistant, actions, false, "assistant"),
+        ] {
+            let mut connection =
+                crate::platform::sqlite::open(std::path::Path::new(":memory:")).unwrap();
+            let scope: OperationContext = serde_json::from_value(json!({
+                "accountId":"019a1234-0000-7000-8000-000000000001",
+                "userId":"019a1234-0000-7000-8000-000000000002",
+                "deviceId":"019a1234-0000-7000-8000-000000000003", "permissionEpoch":1
+            }))
+            .unwrap();
+            let mut access = AccountAccess {
+                context: scope.clone(),
+                role,
+                status: AccessStatus::Active,
+                allowed_actions,
+                checked_at_millis: 10,
+            };
+            let tx = connection.transaction().unwrap();
+            SqliteAccessStore
+                .save_context(
+                    &tx,
+                    &IdentityContext {
+                        issuer: "https://issuer.example".into(),
+                        subject: "synthetic".into(),
+                        user_id: scope.user_id.clone(),
+                        selected_account_id: Some(scope.account_id.clone()),
+                    },
+                )
+                .unwrap();
+            SqliteAccessStore.save_access(&tx, &access).unwrap();
+            tx.commit().unwrap();
+            SqliteAccountRepository {
+                connection: &mut connection,
+                clock: &SystemClock,
+            }
+            .set_preference(&scope, Preference::Theme(Theme::Light))
+            .unwrap();
+
+            for field in ["accountId", "userId", "deviceId"] {
+                let mut value = serde_json::to_value(&scope).unwrap();
+                value[field] = json!("019a1234-0000-7000-8000-000000000099");
+                let foreign: OperationContext = serde_json::from_value(value).unwrap();
+                let tx = connection.transaction().unwrap();
+                SqliteAccessStore
+                    .save_access(
+                        &tx,
+                        &AccountAccess {
+                            context: foreign.clone(),
+                            role: AccessRole::Assistant,
+                            status: AccessStatus::Active,
+                            allowed_actions: vec![],
+                            checked_at_millis: 1,
+                        },
+                    )
+                    .unwrap();
+                tx.commit().unwrap();
+                SqliteAccountRepository {
+                    connection: &mut connection,
+                    clock: &SystemClock,
+                }
+                .set_preference(&foreign, Preference::Theme(Theme::Dark))
+                .unwrap();
+            }
+            let before = connection.total_changes();
+            let value = serde_json::to_value(read_view(&mut connection).unwrap()).unwrap();
+            assert_eq!(value["viewerRole"], label);
+            assert_eq!(value["canManage"], can_manage);
+            assert_eq!(value["preferences"]["theme"], "light");
+            assert_eq!(connection.total_changes(), before);
+            for status in [
+                AccessStatus::Revoked,
+                AccessStatus::Inactive,
+                AccessStatus::RegistrationRequired,
+            ] {
+                access.status = status;
+                let tx = connection.transaction().unwrap();
+                SqliteAccessStore.save_access(&tx, &access).unwrap();
+                tx.commit().unwrap();
+                assert_eq!(
+                    read_view(&mut connection).unwrap_err().code,
+                    "PERMISSION_DENIED"
+                );
+            }
+        }
+    }
 
     #[test]
     fn requests_reject_scope_injection_fractional_policy_and_bad_preferences() {

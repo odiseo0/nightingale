@@ -64,6 +64,7 @@ pub trait AccountReadRepository: AccountViewQuery {
 }
 
 pub struct AccountScreen {
+    pub viewer_role: AccessRole,
     pub account: Option<AccountView>,
     pub preferences: Preferences,
     pub can_manage: bool,
@@ -87,6 +88,7 @@ pub fn get_account_view(
     require_access(access)?;
 
     Ok(AccountScreen {
+        viewer_role: access.role.clone(),
         account: repository.account_view(&access.context)?,
         preferences: repository.preferences(&access.context)?,
         can_manage: access.role == AccessRole::Owner

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useBlocker, useNavigate, useParams } from "react-router-dom";
 import { CircleNotch, PencilSimple, Plus, Trash } from "@phosphor-icons/react";
+import Modal from "../../components/primitives/Modal";
 import { getAccountView } from "../../shared/api/account";
 import {
   addPatientIdentifier, baseOfPatient, createContactPerson, createPatientContactRelationship,
@@ -63,6 +64,10 @@ export default function PatientEditorPage() {
   const [progress, setProgress] = useState<string | null>(null);
   /* Paciente ya creado si un envío multi-paso falló a mitad: no duplicar. */
   const [createdPatientId, setCreatedPatientId] = useState<string | null>(null);
+  /* Contacto y vínculo ya creados en un intento previo: reintentar no los
+   * duplica; se reutilizan para completar solo los pasos pendientes. */
+  const [createdContactId, setCreatedContactId] = useState<string | null>(null);
+  const [relationshipCreated, setRelationshipCreated] = useState(false);
   const savingRef = useRef(false);
   const savedRef = useRef(false);
   const dirtyRef = useRef(false);
@@ -113,9 +118,19 @@ export default function PatientEditorPage() {
             documentType: d.documentType,
             documentNumber: d.documentNumber,
           }));
-        setIdentifiers(existing.length > 0
+        const nextIdentifiers = existing.length > 0
           ? [...existing, { id: uuidV7(), issuingCountry: "VE", documentType: "national_id", documentNumber: "" }]
-          : existing);
+          : existing;
+        setIdentifiers(nextIdentifiers);
+        /* La precarga fija la línea base: salir sin cambios no avisa. */
+        if (state) {
+          baselineRef.current = JSON.stringify([
+            state.fullName ?? "", state.birthDate ?? "", state.phoneCode ?? "", state.phone ?? "",
+            nextIdentifiers.map((i) => [i.issuingCountry, i.documentType, i.documentNumber]),
+            "", null,
+            state.identificationBasis === "minor_without_document" ? "minor_without_document" : "own_document",
+          ]);
+        }
       })
       .catch(() => { if (!cancelled) setFormError("No se pudo cargar la ficha para editar."); });
     return () => { cancelled = true; };
@@ -147,8 +162,18 @@ export default function PatientEditorPage() {
     return () => { contactGeneration.current += 1; window.clearTimeout(timer); };
   }, [contactMode, contactQuery]);
 
-  const dirty = fullName !== "" || phone !== "" || identifiers.some((i) => i.documentNumber !== "")
-    || contactName !== "" || selectedContactId !== null;
+  /* La línea base separa precarga de edición: abrir una ficha cargada no
+   * cuenta como cambio; modificar cualquier valor respecto a la línea base
+   * sí activa el aviso de salida. */
+  const baselineRef = useRef(JSON.stringify([
+    "", "", "+58", "", [["VE", "national_id", ""]], "", null, "own_document",
+  ]));
+  const currentSnapshot = JSON.stringify([
+    fullName, birthDate, phoneCode, phone,
+    identifiers.map((i) => [i.issuingCountry, i.documentType, i.documentNumber]),
+    contactName, selectedContactId, basis,
+  ]);
+  const dirty = currentSnapshot !== baselineRef.current;
   dirtyRef.current = dirty;
   const blocker = useBlocker(() => dirtyRef.current && !savedRef.current);
 
@@ -174,8 +199,8 @@ export default function PatientEditorPage() {
       });
       setProfileRow(await getPatient(editPatientId));
       setStatusMessage(next === "inactive"
-        ? "Ficha desactivada en este equipo · Pendiente de aceptación. Las citas existentes no se cancelan."
-        : "Ficha activada en este equipo · Pendiente de aceptación.");
+        ? "Ficha desactivada en este equipo. Las citas existentes no se cancelan."
+        : "Ficha activada en este equipo.");
     } catch (statusError: unknown) {
       setFormError(mutationErrorMessage(statusError));
     } finally {
@@ -254,7 +279,7 @@ export default function PatientEditorPage() {
           });
         }
         savedRef.current = true;
-        sessionStorage.setItem(MESSAGE_KEY, "Cambios guardados en este equipo · Pendiente de aceptación.");
+        sessionStorage.setItem(MESSAGE_KEY, "Cambios guardados en este equipo.");
         navigate(`/paciente/${editPatientId}`);
         return;
       }
@@ -284,11 +309,15 @@ export default function PatientEditorPage() {
         if (!patientId) throw new Error("sin clave de paciente");
         setCreatedPatientId(patientId);
       }
-      if (basis === "minor_without_document") {
+      if (basis === "minor_without_document" && !relationshipCreated) {
         let contactPersonId: string;
         if (contactMode === "existing") {
           if (!selectedContactId) throw new Error("sin contacto seleccionado");
           contactPersonId = selectedContactId;
+        } else if (createdContactId) {
+          /* El contacto ya se creó en un intento previo fallido: se reutiliza
+           * para no duplicarlo al reintentar. */
+          contactPersonId = createdContactId;
         } else {
           setProgress("Guardando el contacto responsable…");
           const contact = await createContactPerson({
@@ -303,6 +332,7 @@ export default function PatientEditorPage() {
             extracted = String((key as { contactPersonId: unknown }).contactPersonId);
           }
           if (!extracted) throw new Error("sin clave de contacto");
+          setCreatedContactId(extracted);
           contactPersonId = extracted;
         }
         setProgress("Guardando el vínculo responsable…");
@@ -318,11 +348,12 @@ export default function PatientEditorPage() {
             ? { validUntil: new Date(civilMidnightUtc(zone, untilY, untilM, untilD)).toISOString() }
             : {}),
         });
+        setRelationshipCreated(true);
       }
       savedRef.current = true;
       sessionStorage.setItem(
         fromAppointment ? "cita:mensaje" : MESSAGE_KEY,
-        "Paciente guardado en este equipo · Pendiente de aceptación.",
+        "Paciente guardado en este equipo.",
       );
       if (fromAppointment && patientId) {
         navigate(`/cita/nueva?paciente=${patientId}`);
@@ -364,7 +395,7 @@ export default function PatientEditorPage() {
       <div className="page-header">
         <div>
           <h1 className="page-heading">{editMode ? "Editar paciente" : "Registrar paciente"}</h1>
-          <p className="muted">La ficha se guarda en este equipo y queda pendiente de aceptación.</p>
+          <p className="muted">La ficha se guarda en este equipo.</p>
         </div>
         <div className="toolbar">
           {editMode && profileRow && (
@@ -642,8 +673,8 @@ export default function PatientEditorPage() {
                 </label>
               </div>
               <p className="muted" style={{ fontSize: 13 }}>
-                El vínculo se marca como responsable; la elegibilidad a la fecha de cada cita
-                la valida el proceso local.
+                El vínculo se marca como responsable; la vigencia a la fecha de cada cita
+                la comprueba el sistema.
               </p>
             </fieldset>
           )}
@@ -660,10 +691,7 @@ export default function PatientEditorPage() {
               {editMode && profileRow && (
                 <div>
                   <dt>Estado de la ficha</dt>
-                  <dd>
-                    {visibleOf(profileRow)?.status === "active" ? "Activo" : "Inactivo"}
-                    {profileRow.provisional && " · provisional"}
-                  </dd>
+                  <dd>{visibleOf(profileRow)?.status === "active" ? "Activo" : "Inactivo"}</dd>
                 </div>
               )}
               <div>
@@ -703,8 +731,8 @@ export default function PatientEditorPage() {
               <div className="notice" role="alertdialog" aria-label="Confirmar cambio de estado">
                 <p>
                   {visibleOf(profileRow)?.status === "active"
-                    ? "Desactivar la ficha no cancela sus citas. El cambio queda guardado en este equipo pendiente de aceptación."
-                    : "La ficha volverá a estar activa. El cambio queda guardado en este equipo pendiente de aceptación."}
+                    ? "Desactivar la ficha no cancela sus citas. El cambio queda guardado en este equipo."
+                    : "La ficha volverá a estar activa. El cambio queda guardado en este equipo."}
                 </p>
                 <div className="toolbar">
                   <button
@@ -725,29 +753,25 @@ export default function PatientEditorPage() {
               {saving ? <><CircleNotch size={16} aria-hidden="true" /> Guardando…</> : (editMode ? "Guardar cambios" : "Guardar paciente")}
             </button>
             <p className="muted" style={{ fontSize: 13 }}>
-              Guardar crea la ficha de forma provisional en este equipo; no confirma aceptación
-              compartida. Las coincidencias de nombre o teléfono no fusionan personas.
+              Guardar conserva la ficha en este equipo; no confirma aceptación compartida.
+              Las coincidencias de nombre o teléfono no fusionan personas.
             </p>
           </section>
         </div>
       </form>
 
-      {blocker.state === "blocked" && (
-        <div className="modal-backdrop" role="alertdialog" aria-labelledby="descartar-registro" aria-modal="true">
-          <div className="modal-card">
-            <h2 id="descartar-registro" style={{ fontSize: 20 }}>Cambios sin guardar</h2>
-            <p className="muted">Si sales ahora, el registro no se guardará y los cambios se perderán.</p>
-            <div className="toolbar">
-              <button type="button" className="btn btn--primary" onClick={() => blocker.reset?.()}>
-                Seguir editando
-              </button>
-              <button type="button" className="btn" onClick={() => blocker.proceed?.()}>
-                Descartar y salir
-              </button>
-            </div>
-          </div>
+      <Modal open={blocker.state === "blocked"} onClose={() => blocker.reset?.()} alert labelledBy="descartar-registro">
+        <h2 id="descartar-registro" style={{ fontSize: 20 }}>Cambios sin guardar</h2>
+        <p className="muted">Si sales ahora, el registro no se guardará y los cambios se perderán.</p>
+        <div className="toolbar">
+          <button type="button" className="btn btn--primary" onClick={() => blocker.reset?.()}>
+            Seguir editando
+          </button>
+          <button type="button" className="btn" onClick={() => blocker.proceed?.()}>
+            Descartar y salir
+          </button>
         </div>
-      )}
+      </Modal>
     </>
   );
 }

@@ -1,0 +1,43 @@
+[
+  {
+    "case": "Catalog and README close with the real final state",
+    "checks": {
+      "routes": 52,
+      "removed": "/lista-espera/ofertas (user decision: patients are not leads)",
+      "added": ["/hub/cita-modificada", "/hub/servicio"],
+      "readme": "route count, tour list, index table and verification section updated; historical captures and verification.json identified as historical",
+      "evidenceIndex": "README points to C01–C08 evidence and the final view sheet"
+    }
+  },
+  {
+    "case": "Every catalog route resolves to an explicit dispatch branch (no silent fallback)",
+    "method": "static Node check replicating the render() dispatch against the 52 catalog paths",
+    "result": "52/52 covered; the agenda fallback receives no catalog entry"
+  },
+  {
+    "case": "verification artifact represents the final code",
+    "files": {
+      "verification-2026-11-12.json": "date, catalog, dispatch coverage, per-block evidence links, checked sizes, limits and SHA-256 of index.html/styles.css/app.js",
+      "previews/ampliacion-contact-sheet.png": "view sheet composed from post-iteration captures of the final code (source: evidence/C09/contact-sheet.html)"
+    },
+    "historical": "verification.json (2026-10-22) and the 34 historical PNGs stay untouched and identified as historical"
+  },
+  {
+    "case": "Sizes and interactions coverage across the plan",
+    "checked": [
+      "1280×800 functional walks of every block (C01–C08)",
+      "800×600 with own table scroll (C05, C06, C07, C08 captures)",
+      "320×720 Hub (C08)",
+      "keyboard: Tab, Escape, Ctrl+K across dialogs and blocks"
+    ],
+    "notChecked": ["1024×768 loads for the final code (C02 covered earlier routes; not repeated for new routes)", "text at 200 % (browser tool does not expose page zoom)", "screen reader", "user tests"]
+  },
+  {
+    "case": "No controls pretend to operate without doing so",
+    "implemented": "scenario-dependent actions say so (retries, offline blocks); uncontracted capabilities render as read-only design with explanation (link policies, expired invitations, pending revocations)"
+  },
+  {
+    "case": "Limits",
+    "implemented": "The prototype is a visual sample with in-memory data; coverage matrices describe sample checks, not product conformance."
+  }
+]

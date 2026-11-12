@@ -11,7 +11,7 @@ import {
 } from "../../shared/api/patients";
 import {
   civilToday, dayRange, errorMessage, formatDateFull, formatTime, formatTimeEnd,
-  statusLabel, syncLabel,
+  statusLabel,
 } from "../appointments/presentation";
 import { relationshipKindLabel } from "./presentation";
 
@@ -49,44 +49,34 @@ function AppointmentList({ zone, title, items, emptyText }: AppointmentListProps
       item.state !== null);
   if (!visible.length) return <p className="muted">{emptyText}</p>;
   return (
-    <div className="table-scroll">
-      <table className="data-table">
-        <caption className="muted" style={{ textAlign: "left", padding: "8px 12px" }}>{title}</caption>
-        <thead>
-          <tr>
-            <th scope="col">Fecha</th>
-            <th scope="col">Intervalo</th>
-            <th scope="col">Servicio</th>
-            <th scope="col">Estado</th>
-            <th scope="col">Sincronización</th>
-          </tr>
-        </thead>
-        <tbody>
-          {visible.map(({ row, state }) => (
-            <tr key={state.appointmentId}>
-              <td>
-                <Link to={`/cita/${state.appointmentId}`}>{formatDateFull(zone, state.startsAt)}</Link>
-              </td>
-              <td className="num">
-                {formatTime(zone, state.startsAt)}–{formatTimeEnd(zone, state.endsAt)}
-              </td>
-              <td>{state.serviceName}</td>
-              <td><span className="badge">{statusLabel[state.status] ?? state.status}</span></td>
-              <td>
-                {row.provisional && <span className="badge badge--selected">Guardada en este equipo</span>}
-                {row.operations.map((op) => (
-                  <span key={op.operationId} className="badge badge--local">
-                    {syncLabel[op.status] ?? op.status}
-                  </span>
-                ))}
-                {!row.provisional && row.operations.length === 0 && (
-                  <span className="muted" style={{ fontSize: 13 }}>Aceptada</span>
-                )}
-              </td>
+    <div>
+      <p className="muted" style={{ margin: "0 0 8px" }}>{title}</p>
+      <div className="table-scroll">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              <th scope="col">Intervalo</th>
+              <th scope="col">Servicio</th>
+              <th scope="col">Estado</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {visible.map(({ state }) => (
+              <tr key={state.appointmentId}>
+                <td>
+                  <Link to={`/cita/${state.appointmentId}`}>{formatDateFull(zone, state.startsAt)}</Link>
+                </td>
+                <td className="num">
+                  {formatTime(zone, state.startsAt)}–{formatTimeEnd(zone, state.endsAt)}
+                </td>
+                <td>{state.serviceName}</td>
+                <td><span className="badge">{statusLabel[state.status] ?? state.status}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -194,14 +184,17 @@ export default function PatientRecordPage() {
       <div className="page-header">
         <div>
           <h1 className="page-heading">{state?.fullName?.trim() || "Paciente sin nombre registrado"}</h1>
-          <p className="muted">
+          <p className="muted" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             {state && (
               <>
-                Completitud: {state.completionStatus === "complete" ? "Completa" : "Borrador"} ·
-                Estado: {state.status === "active" ? "Activo" : "Inactivo"}
+                <span className="badge">
+                  {state.completionStatus === "complete" ? "Completa" : "Borrador"}
+                </span>
+                <span className="badge">
+                  {state.status === "active" ? "Activo" : "Inactivo"}
+                </span>
               </>
             )}
-            {profile?.provisional && " · Guardada en este equipo (pendiente de aceptación)"}
           </p>
         </div>
         <div className="toolbar" role="group" aria-label="Acciones de la ficha">
@@ -276,7 +269,6 @@ export default function PatientRecordPage() {
                       <span className="num">{doc.documentNumber}</span> · {doc.documentType} ·{" "}
                       {doc.issuingCountry} ·{" "}
                       {verificationLabel[doc.verificationStatus] ?? doc.verificationStatus}
-                      {row.provisional && <span className="badge badge--selected" style={{ marginLeft: 8 }}>Guardada en este equipo</span>}
                     </li>
                   );
                 })}
@@ -300,7 +292,7 @@ export default function PatientRecordPage() {
                   if (!view) return null;
                   const phone = view.contactPhone
                     ? `${view.contactPhoneCode ? `${view.contactPhoneCode} ` : ""}${view.contactPhone}`
-                    : "sin teléfono";
+                    : "teléfono no registrado";
                   return (
                     <li key={view.relationship.contactPersonId} style={{ marginBottom: 6 }}>
                       {view.contactFullName} ·{" "}
@@ -310,7 +302,7 @@ export default function PatientRecordPage() {
                         <span className="badge" style={{ marginLeft: 8 }}>Responsable</span>
                       )}
                       {view.relationship.status !== "active" && (
-                        <span className="badge badge--local" style={{ marginLeft: 8 }}>Inactivo</span>
+                        <span className="badge" style={{ marginLeft: 8 }}>Inactivo</span>
                       )}
                     </li>
                   );

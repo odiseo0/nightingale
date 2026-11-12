@@ -1,0 +1,180 @@
+[
+  {
+    "case": "Unfiltered slot",
+    "slot": "Primer intervalo disponible\n10:30 – 11:00"
+  },
+  {
+    "case": "Filtered slot",
+    "slot": "Primer intervalo disponible\n10:30 – 11:00",
+    "rows": 5
+  },
+  {
+    "case": "Real empty day",
+    "empty": "No hay citas para este día\n\nLa fecha está disponible en este equipo y todavía no tiene citas.\n\nNueva cita"
+  },
+  {
+    "case": "Uncovered date",
+    "empty": "Esta fecha no está disponible en este equipo\n\nLa vista local cubre del 19 de octubre al 30 de octubre. No podemos mostrar esta fecha como si estuviera vacía.\n\nVolver a hoy",
+    "availability": 0
+  },
+  {
+    "case": "Agenda state",
+    "empty": "",
+    "loading": true,
+    "newAppointment": true,
+    "overflow": false,
+    "rows": 0,
+    "mode": "loading"
+  },
+  {
+    "case": "Agenda state",
+    "empty": "",
+    "loading": false,
+    "newAppointment": true,
+    "overflow": false,
+    "rows": 8,
+    "mode": "refreshing"
+  },
+  {
+    "case": "Agenda state",
+    "empty": "",
+    "loading": false,
+    "newAppointment": true,
+    "overflow": false,
+    "rows": 8,
+    "mode": "stale"
+  },
+  {
+    "case": "Agenda state",
+    "empty": "No pudimos leer la agenda",
+    "loading": false,
+    "newAppointment": true,
+    "overflow": false,
+    "rows": 0,
+    "mode": "read-error"
+  },
+  {
+    "case": "Agenda state",
+    "empty": "No tienes permiso para ver esta agenda",
+    "loading": false,
+    "newAppointment": false,
+    "overflow": false,
+    "rows": 0,
+    "mode": "no-permission"
+  },
+  {
+    "case": "Agenda state",
+    "empty": "",
+    "loading": false,
+    "newAppointment": true,
+    "overflow": false,
+    "rows": 8,
+    "mode": "ready"
+  },
+  {
+    "case": "Weekly navigation",
+    "nextWeekButton": 1
+  },
+  {
+    "axisTop": 361.0635986328125,
+    "case": "Week scale",
+    "days": [
+      185.53634643554688,
+      185.54998779296875,
+      185.54998779296875,
+      185.54998779296875,
+      185.53634643554688
+    ],
+    "events": [
+      {
+        "height": 91.99090576171876,
+        "label": "Luis Fernando Pérez, 19 de octubre, 09:00 a 10:00, Primera consulta, Elena Arias, Atendida"
+      },
+      {
+        "height": 43.99090576171875,
+        "label": "María Fernanda del Carmen González, 19 de octubre, 14:00 a 14:30, Control de seguimiento, Elena Arias, Atendida"
+      },
+      {
+        "height": 67.99090576171875,
+        "label": "Valentina Herrera, 20 de octubre, 10:00 a 10:45, Consulta general, Elena Arias, Atendida"
+      },
+      {
+        "height": 43.99090576171875,
+        "label": "José Antonio Castillo, 21 de octubre, 10:00 a 10:30, Consulta general, Elena Arias, Atendida"
+      },
+      {
+        "height": 19.990907669067383,
+        "label": "Andrés Gutiérrez, 21 de octubre, 11:00 a 11:15, Control de seguimiento, Elena Arias, Atendida"
+      },
+      {
+        "height": 43.99090576171875,
+        "label": "Ana María Rodríguez, 22 de octubre, 09:00 a 09:30, Consulta general, Elena Arias, Confirmada"
+      },
+      {
+        "height": 43.99090576171875,
+        "label": "Luis Fernando Pérez, 22 de octubre, 09:30 a 10:00, Control de seguimiento, Elena Arias, Programada"
+      },
+      {
+        "height": 43.99090576171875,
+        "label": "María Fernanda del Carmen González, 22 de octubre, 10:00 a 10:30, Consulta general, Elena Arias, Programada"
+      },
+      {
+        "height": 43.99090576171875,
+        "label": "Carlos Méndez, 22 de octubre, 11:00 a 11:30, Primera consulta, Elena Arias, Confirmada"
+      },
+      {
+        "height": 43.99090576171875,
+        "label": "Valentina Herrera, 22 de octubre, 11:30 a 12:00, Control de seguimiento, Elena Arias, Confirmada"
+      },
+      {
+        "height": 43.99090576171875,
+        "label": "José Antonio Castillo, 22 de octubre, 14:00 a 14:30, Consulta general, Elena Arias, Programada"
+      },
+      {
+        "height": 43.99090576171875,
+        "label": "Sofía Rivas, 22 de octubre, 14:30 a 15:00, Primera consulta, Elena Arias, Confirmada"
+      },
+      {
+        "height": 43.99090576171875,
+        "label": "Andrés Gutiérrez, 22 de octubre, 15:00 a 15:30, Control de seguimiento, Elena Arias, Confirmada"
+      },
+      {
+        "height": 43.99090576171875,
+        "label": "Ana María Rodríguez, 23 de octubre, 09:00 a 09:30, Consulta general, Elena Arias, Programada"
+      },
+      {
+        "height": 67.99090576171875,
+        "label": "Sofía Rivas, 23 de octubre, 14:00 a 14:45, Primera consulta, Elena Arias, Programada"
+      },
+      {
+        "height": 91.99090576171876,
+        "label": "Andrés Gutiérrez, 23 de octubre, 14:45 a 15:45, Consulta general, Elena Arias, Confirmada"
+      }
+    ]
+  },
+  {
+    "case": "Week return",
+    "focusedLink": "#/cita/a16",
+    "hash": "#/agenda/semana",
+    "left": 321.16363525390625,
+    "overflow": false,
+    "top": 414.5454406738281
+  },
+  {
+    "case": "List pagination",
+    "first": 8,
+    "after": 16
+  },
+  {
+    "case": "List return",
+    "focusedLink": "#/cita/a1",
+    "hash": "#/citas",
+    "period": "all",
+    "query": "Ana"
+  },
+  {
+    "case": "Multi-professional week",
+    "overlaps": [],
+    "events": 17
+  }
+]

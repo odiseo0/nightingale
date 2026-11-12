@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-12",
+  "scope": "Ampliación P-20261111-01 del prototipo original: T01–T21 completas. Complementa a verification.json (histórico, 2026-10-22); no lo sustituye.",
+  "catalog": {
+    "groups": 7,
+    "routes": 52,
+    "dispatchCoverage": "52 de 52 rutas del catálogo resueltas por ramas explícitas del despachador (comprobación estática con Node); la ruta de respaldo no recibe ninguna entrada del catálogo.",
+    "removed": ["/lista-espera/ofertas"],
+    "added": ["/hub/cita-modificada", "/hub/servicio"]
+  },
+  "blockEvidence": {
+    "C01": "../tasks/P-20261111-01-prototype-completion/evidence/C01/verification.md",
+    "C02": "../tasks/P-20261111-01-prototype-completion/evidence/C02/verification.md",
+    "C03": "../tasks/P-20261111-01-prototype-completion/evidence/C03/",
+    "C04": "../tasks/P-20261111-01-prototype-completion/evidence/C04/",
+    "C05": "../tasks/P-20261111-01-prototype-completion/evidence/C05/verification.md",
+    "C06": "../tasks/P-20261111-01-prototype-completion/evidence/C06/verification.md",
+    "C07": "../tasks/P-20261111-01-prototype-completion/evidence/C07/verification.md",
+    "C08": "../tasks/P-20261111-01-prototype-completion/evidence/C08/verification.md"
+  },
+  "sizes": {
+    "checked": [
+      "1280×800 (recorridos funcionales de todos los bloques)",
+      "1024×768 y 800×600 (cargas de rutas C02; comprobaciones C05–C07 con scroll propio de tablas)",
+      "320×720 (Hub del paciente, C08)"
+    ],
+    "notChecked": ["Texto al 200 % (la herramienta de navegador no expone zoom de página)", "Lector de pantalla"]
+  },
+  "viewSheet": "previews/ampliacion-contact-sheet.png",
+  "limits": [
+    "Datos ficticios en memoria; recargar restablece el ejemplo",
+    "Sin autenticación, servicios, WhatsApp, SQLite ni sincronización reales",
+    "La paleta de color propuesta sigue pendiente de aprobación del usuario",
+    "H01–H07 de la auditoría heurística 2026-11-12 quedan registrados sin corregir por decisión de alcance"
+  ],
+  "source_sha256": {
+    "index.html": "7100472174ca34b55d6987d5cc18136c687bd895d2a2fee26697f146aa7365c9",
+    "styles.css": "6e336de413fca79a27de943bcfb73587a8b0605961d93d5f21e396b9785ecba6",
+    "app.js": "2676116929f8d851aed901e01db270d0d5581899ef71a3afd952556db4aaf524"
+  }
+}

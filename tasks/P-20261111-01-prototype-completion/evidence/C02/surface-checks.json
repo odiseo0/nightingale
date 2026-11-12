@@ -1,0 +1,1298 @@
+[
+  {
+    "hash": "#/acceso",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Entra a tu consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/navegador",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Continúa en el navegador",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/cuentas",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Abre tu consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/equipo",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Registra este equipo",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/preparando",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Preparando tu consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/local",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Puedes abrir tu consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/sesion-vencida",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Vuelve a iniciar sesión",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/denegado",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "No tienes acceso a esta consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/conexion",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Necesitas conexión",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/servicio",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "No pudimos comprobar el acceso",
+    "overflow": false
+  },
+  {
+    "hash": "#/preparacion",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Prepara tu consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/preparacion/lista",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Tu consulta está lista",
+    "overflow": false
+  },
+  {
+    "hash": "#/agenda",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Hoy, jueves 22",
+    "overflow": false
+  },
+  {
+    "hash": "#/agenda/semana",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "19 de octubre – 23 de octubre",
+    "overflow": false
+  },
+  {
+    "hash": "#/citas",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Lista de citas",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a1",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Lista de citas",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/nueva",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Nueva cita",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a1/reprogramar",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Reprogramar cita",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a16/reprogramar",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Reprogramar cita",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a10",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Lista de citas",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a11",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Lista de citas",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a19",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Lista de citas",
+    "overflow": false
+  },
+  {
+    "hash": "#/pacientes",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Pacientes",
+    "overflow": false
+  },
+  {
+    "hash": "#/paciente/p1",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Ana María Rodríguez",
+    "overflow": false
+  },
+  {
+    "hash": "#/pacientes/nuevo",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Registrar paciente",
+    "overflow": false
+  },
+  {
+    "hash": "#/solicitudes",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Solicitudes",
+    "overflow": false
+  },
+  {
+    "hash": "#/solicitud/r1",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Solicitud de cambio",
+    "overflow": false
+  },
+  {
+    "hash": "#/lista-espera",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Lista de espera",
+    "overflow": false
+  },
+  {
+    "hash": "#/lista-espera/ofertas",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Lista de espera",
+    "overflow": false
+  },
+  {
+    "hash": "#/comunicaciones",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Comunicaciones",
+    "overflow": false
+  },
+  {
+    "hash": "#/indicadores",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Indicadores",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/cuenta",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/servicios",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/horarios",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/comunicaciones",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/equipo",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/dispositivos",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/actividad",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Por revisar",
+    "overflow": false
+  },
+  {
+    "hash": "#/conflicto/a3",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Revisar un horario",
+    "overflow": false
+  },
+  {
+    "hash": "#/diagnostico",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Diagnóstico",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/cita",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Tu próxima cita",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/confirmada",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Asistencia confirmada",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/cancelar",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Cancelar tu cita",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/cancelada",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Tu cita se ha cancelado",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/cambiar",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "¿Necesitas otra fecha?",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/solicitud",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Solicitud recibida",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/enlace-vencido",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Este enlace ya no está disponible",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/no-disponible",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "No pudimos comprobar el resultado",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Entra a tu consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/navegador",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Continúa en el navegador",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/cuentas",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Abre tu consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/equipo",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Registra este equipo",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/preparando",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Preparando tu consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/local",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Puedes abrir tu consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/sesion-vencida",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Vuelve a iniciar sesión",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/denegado",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "No tienes acceso a esta consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/conexion",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Necesitas conexión",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/servicio",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "No pudimos comprobar el acceso",
+    "overflow": false
+  },
+  {
+    "hash": "#/preparacion",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Prepara tu consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/preparacion/lista",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Tu consulta está lista",
+    "overflow": false
+  },
+  {
+    "hash": "#/agenda",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Hoy, jueves 22",
+    "overflow": false
+  },
+  {
+    "hash": "#/agenda/semana",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "19 de octubre – 23 de octubre",
+    "overflow": false
+  },
+  {
+    "hash": "#/citas",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Lista de citas",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a1",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Lista de citas",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/nueva",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Nueva cita",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a1/reprogramar",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Reprogramar cita",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a16/reprogramar",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Reprogramar cita",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a10",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Lista de citas",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a11",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Lista de citas",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a19",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Lista de citas",
+    "overflow": false
+  },
+  {
+    "hash": "#/pacientes",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Pacientes",
+    "overflow": false
+  },
+  {
+    "hash": "#/paciente/p1",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Ana María Rodríguez",
+    "overflow": false
+  },
+  {
+    "hash": "#/pacientes/nuevo",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Registrar paciente",
+    "overflow": false
+  },
+  {
+    "hash": "#/solicitudes",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Solicitudes",
+    "overflow": false
+  },
+  {
+    "hash": "#/solicitud/r1",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Solicitud de cambio",
+    "overflow": false
+  },
+  {
+    "hash": "#/lista-espera",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Lista de espera",
+    "overflow": false
+  },
+  {
+    "hash": "#/lista-espera/ofertas",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Lista de espera",
+    "overflow": false
+  },
+  {
+    "hash": "#/comunicaciones",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Comunicaciones",
+    "overflow": false
+  },
+  {
+    "hash": "#/indicadores",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Indicadores",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/cuenta",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/servicios",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/horarios",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/comunicaciones",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/equipo",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/dispositivos",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/actividad",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Por revisar",
+    "overflow": false
+  },
+  {
+    "hash": "#/conflicto/a3",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Revisar un horario",
+    "overflow": false
+  },
+  {
+    "hash": "#/diagnostico",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Diagnóstico",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/cita",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Tu próxima cita",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/confirmada",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Asistencia confirmada",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/cancelar",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Cancelar tu cita",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/cancelada",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Tu cita se ha cancelado",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/cambiar",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "¿Necesitas otra fecha?",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/solicitud",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Solicitud recibida",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/enlace-vencido",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "Este enlace ya no está disponible",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/no-disponible",
+    "size": {
+      "width": 1024,
+      "height": 768
+    },
+    "heading": "No pudimos comprobar el resultado",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Entra a tu consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/navegador",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Continúa en el navegador",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/cuentas",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Abre tu consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/equipo",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Registra este equipo",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/preparando",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Preparando tu consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/local",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Puedes abrir tu consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/sesion-vencida",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Vuelve a iniciar sesión",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/denegado",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "No tienes acceso a esta consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/conexion",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Necesitas conexión",
+    "overflow": false
+  },
+  {
+    "hash": "#/acceso/servicio",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "No pudimos comprobar el acceso",
+    "overflow": false
+  },
+  {
+    "hash": "#/preparacion",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Prepara tu consulta",
+    "overflow": false
+  },
+  {
+    "hash": "#/preparacion/lista",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Tu consulta está lista",
+    "overflow": false
+  },
+  {
+    "hash": "#/agenda",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Hoy, jueves 22",
+    "overflow": false
+  },
+  {
+    "hash": "#/agenda/semana",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "19 de octubre – 23 de octubre",
+    "overflow": false
+  },
+  {
+    "hash": "#/citas",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Lista de citas",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a1",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Lista de citas",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/nueva",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Nueva cita",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a1/reprogramar",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Reprogramar cita",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a16/reprogramar",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Reprogramar cita",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a10",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Lista de citas",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a11",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Lista de citas",
+    "overflow": false
+  },
+  {
+    "hash": "#/cita/a19",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Lista de citas",
+    "overflow": false
+  },
+  {
+    "hash": "#/pacientes",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Pacientes",
+    "overflow": false
+  },
+  {
+    "hash": "#/paciente/p1",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Ana María Rodríguez",
+    "overflow": false
+  },
+  {
+    "hash": "#/pacientes/nuevo",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Registrar paciente",
+    "overflow": false
+  },
+  {
+    "hash": "#/solicitudes",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Solicitudes",
+    "overflow": false
+  },
+  {
+    "hash": "#/solicitud/r1",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Solicitud de cambio",
+    "overflow": false
+  },
+  {
+    "hash": "#/lista-espera",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Lista de espera",
+    "overflow": false
+  },
+  {
+    "hash": "#/lista-espera/ofertas",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Lista de espera",
+    "overflow": false
+  },
+  {
+    "hash": "#/comunicaciones",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Comunicaciones",
+    "overflow": false
+  },
+  {
+    "hash": "#/indicadores",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Indicadores",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/cuenta",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/servicios",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/horarios",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/comunicaciones",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/equipo",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/configuracion/dispositivos",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Configuración",
+    "overflow": false
+  },
+  {
+    "hash": "#/actividad",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Por revisar",
+    "overflow": false
+  },
+  {
+    "hash": "#/conflicto/a3",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Revisar un horario",
+    "overflow": false
+  },
+  {
+    "hash": "#/diagnostico",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Diagnóstico",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/cita",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Tu próxima cita",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/confirmada",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Asistencia confirmada",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/cancelar",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Cancelar tu cita",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/cancelada",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Tu cita se ha cancelado",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/cambiar",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "¿Necesitas otra fecha?",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/solicitud",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Solicitud recibida",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/enlace-vencido",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Este enlace ya no está disponible",
+    "overflow": false
+  },
+  {
+    "hash": "#/hub/no-disponible",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "No pudimos comprobar el resultado",
+    "overflow": false
+  }
+]

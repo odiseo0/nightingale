@@ -1,0 +1,335 @@
+{
+  "date": "2026-11-12",
+  "readingLines": [
+    {
+      "leading": "20px",
+      "lines": [
+        65,
+        46
+      ],
+      "size": "12px",
+      "text": "Información compartida que aparece en las cit",
+      "width": 417.5999755859375
+    },
+    {
+      "leading": "20px",
+      "lines": [
+        71,
+        48
+      ],
+      "size": "12px",
+      "text": "Las citas muestran el nombre del lugar y la s",
+      "width": 417.5999755859375
+    },
+    {
+      "leading": "20px",
+      "lines": [
+        72,
+        22
+      ],
+      "size": "12px",
+      "text": "Cambiar la zona exige revisar los horarios; s",
+      "width": 417.5999755859375
+    },
+    {
+      "leading": "20px",
+      "lines": [
+        71,
+        71,
+        54
+      ],
+      "size": "12px",
+      "text": "Las citas ya registradas conservan el lugar y",
+      "width": 417.5999755859375
+    }
+  ],
+  "samples": [
+    {
+      "surface": "agenda",
+      "headings": [
+        {
+          "leading": "28.8px",
+          "size": "24px",
+          "text": "Hoy, jueves 22"
+        }
+      ],
+      "height": 1061,
+      "horizontalOverflow": false,
+      "prose": [],
+      "root": "16px",
+      "sizes": [
+        "16px",
+        "20px",
+        "12px",
+        "24px"
+      ],
+      "width": 808
+    },
+    {
+      "surface": "horarios",
+      "headings": [
+        {
+          "leading": "28.8px",
+          "size": "24px",
+          "text": "Configuración"
+        },
+        {
+          "leading": "19.2px",
+          "size": "16px",
+          "text": "Horario semanal"
+        },
+        {
+          "leading": "19.2px",
+          "size": "16px",
+          "text": "Días de atención"
+        },
+        {
+          "leading": "24px",
+          "size": "20px",
+          "text": "Excepciones por fecha"
+        },
+        {
+          "leading": "24px",
+          "size": "20px",
+          "text": "Bloqueos"
+        }
+      ],
+      "height": 1061,
+      "horizontalOverflow": false,
+      "prose": [
+        {
+          "leading": "20px",
+          "measure": "417.6px",
+          "size": "12px",
+          "text": "Un cambio que deje citas vigentes fuera del horari",
+          "width": 417.5999755859375
+        }
+      ],
+      "root": "16px",
+      "sizes": [
+        "16px",
+        "20px",
+        "12px",
+        "24px"
+      ],
+      "width": 808,
+      "lineCounts": [
+        {
+          "leading": "20px",
+          "lines": [
+            74,
+            70,
+            20
+          ],
+          "size": "12px",
+          "text": "Un cambio que deje citas vigentes fuera del h",
+          "width": 417.5999755859375
+        }
+      ]
+    },
+    {
+      "surface": "calendario-en-modal-final",
+      "headings": [
+        {
+          "leading": "28.8px",
+          "size": "24px",
+          "text": "Configuración"
+        },
+        {
+          "leading": "19.2px",
+          "size": "16px",
+          "text": "Horario semanal"
+        },
+        {
+          "leading": "19.2px",
+          "size": "16px",
+          "text": "Días de atención"
+        },
+        {
+          "leading": "24px",
+          "size": "20px",
+          "text": "Excepciones por fecha"
+        },
+        {
+          "leading": "24px",
+          "size": "20px",
+          "text": "Bloqueos"
+        },
+        {
+          "leading": "24px",
+          "size": "20px",
+          "text": "Editar regla semanal"
+        },
+        {
+          "leading": "19.2px",
+          "size": "16px",
+          "text": "2. Vigencia"
+        },
+        {
+          "leading": "19.2px",
+          "size": "16px",
+          "text": "3. Tramos de atención"
+        }
+      ],
+      "height": 1061,
+      "horizontalOverflow": false,
+      "prose": [
+        {
+          "leading": "20px",
+          "measure": "417.6px",
+          "size": "12px",
+          "text": "Un cambio que deje citas vigentes fuera del horari",
+          "width": 417.5999755859375
+        }
+      ],
+      "root": "16px",
+      "sizes": [
+        "16px",
+        "20px",
+        "12px",
+        "24px"
+      ],
+      "width": 808
+    },
+    {
+      "surface": "semana",
+      "headings": [
+        {
+          "leading": "28.8px",
+          "size": "24px",
+          "text": "19 de octubre – 23 de octubre"
+        }
+      ],
+      "height": 1061,
+      "horizontalOverflow": false,
+      "prose": [],
+      "root": "16px",
+      "sizes": [
+        "16px",
+        "20px",
+        "12px",
+        "24px"
+      ],
+      "width": 808
+    },
+    {
+      "surface": "semana-375",
+      "headings": [
+        {
+          "leading": "28.8px",
+          "size": "24px",
+          "text": "19 de octubre – 23 de octubre"
+        }
+      ],
+      "height": 812,
+      "horizontalOverflow": false,
+      "prose": [],
+      "root": "16px",
+      "sizes": [
+        "16px",
+        "12px",
+        "24px",
+        "20px"
+      ],
+      "width": 375
+    },
+    {
+      "surface": "cita-nombre-largo-375",
+      "headings": [
+        {
+          "leading": "28.8px",
+          "size": "24px",
+          "text": "19 de octubre – 23 de octubre"
+        },
+        {
+          "leading": "24px",
+          "size": "20px",
+          "text": "María Fernanda del Carmen González"
+        },
+        {
+          "leading": "19.2px",
+          "size": "16px",
+          "text": "Comunicaciones"
+        }
+      ],
+      "height": 812,
+      "horizontalOverflow": false,
+      "prose": [],
+      "root": "16px",
+      "sizes": [
+        "16px",
+        "12px",
+        "24px",
+        "20px",
+        "28px"
+      ],
+      "width": 375
+    },
+    {
+      "surface": "editor-375",
+      "headings": [
+        {
+          "leading": "28.8px",
+          "size": "24px",
+          "text": "Reprogramar cita"
+        },
+        {
+          "leading": "19.2px",
+          "size": "16px",
+          "text": "Comparar horarios"
+        }
+      ],
+      "height": 812,
+      "horizontalOverflow": false,
+      "prose": [
+        {
+          "leading": "20px",
+          "measure": "417.6px",
+          "size": "12px",
+          "text": "Hora de Caracas · Disponibilidad local: 19–30 de o",
+          "width": 328.4454345703125
+        }
+      ],
+      "root": "16px",
+      "sizes": [
+        "16px",
+        "12px",
+        "24px",
+        "20px"
+      ],
+      "width": 375
+    },
+    {
+      "surface": "cita-final",
+      "headings": [
+        {
+          "leading": "28.8px",
+          "size": "24px",
+          "text": "19 de octubre – 23 de octubre"
+        },
+        {
+          "leading": "24px",
+          "size": "20px",
+          "text": "María Fernanda del Carmen González"
+        },
+        {
+          "leading": "19.2px",
+          "size": "16px",
+          "text": "Comunicaciones"
+        }
+      ],
+      "height": 812,
+      "horizontalOverflow": false,
+      "prose": [],
+      "root": "16px",
+      "sizes": [
+        "16px",
+        "12px",
+        "24px",
+        "20px",
+        "28px"
+      ],
+      "width": 375
+    }
+  ]
+}

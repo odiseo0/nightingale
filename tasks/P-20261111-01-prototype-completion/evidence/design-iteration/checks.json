@@ -1,0 +1,145 @@
+[
+  {
+    "case": "hour dividers",
+    "eventHeights": [
+      91.99090576171876,
+      43.99090576171875,
+      67.99090576171875
+    ],
+    "hourHeight": 95.99999237060548,
+    "rows": [
+      8,
+      8,
+      8,
+      8,
+      8
+    ]
+  },
+  {
+    "active": "Cerrar detalle",
+    "bodyOverflow": "hidden",
+    "case": "modal first keyboard target",
+    "modalOpen": true,
+    "panels": 0
+  },
+  {
+    "case": "nested cancellation closes to appointment",
+    "generic": false,
+    "open": true,
+    "status": "Programada"
+  },
+  {
+    "case": "Escape returns to week",
+    "focus": "#/cita/a2",
+    "open": false,
+    "overflow": "visible",
+    "url": "#/agenda/semana"
+  },
+  {
+    "case": "list context",
+    "focus": "#/cita/a1",
+    "hash": "#/citas",
+    "query": "Ana"
+  },
+  {
+    "case": "patient backdrop",
+    "heading": "Sofía Rivas",
+    "title": "Sofía Rivas"
+  },
+  {
+    "case": "reschedule returns to modal",
+    "content": "FechaMartes, 27 de octubreHorario10:00 – 10:45ServicioPrimera consultaProfesionalElena AriasLugarCentro Médico Los Olivos · Consultorio 204Contacto+58 424 000 1007",
+    "open": true
+  },
+  {
+    "case": "return to patient",
+    "url": "http://127.0.0.1:8766/#/paciente/p7"
+  },
+  {
+    "case": "confirm updates modal",
+    "color": "rgb(22, 101, 52)",
+    "open": true,
+    "status": "Confirmada"
+  },
+  {
+    "actions": 0,
+    "case": "cancel refreshes modal",
+    "open": true,
+    "status": "Cancelada"
+  },
+  {
+    "case": "modal 800x600",
+    "dialog": {
+      "bottom": 576.4363384246826,
+      "height": 552.4363403320312,
+      "left": 50.140907287597656,
+      "right": 750.1363296508789,
+      "top": 23.999998092651367,
+      "width": 699.9954223632812,
+      "x": 50.140907287597656,
+      "y": 23.999998092651367
+    },
+    "overflow": false,
+    "scrollable": true
+  },
+  {
+    "case": "modal 375x812",
+    "dialogWidth": 341.26361083984375,
+    "overflow": false,
+    "title": "María Fernanda del Carmen González"
+  },
+  {
+    "active": "",
+    "case": "native modal tab cycle",
+    "focusInside": true
+  },
+  {
+    "case": "week scroll preserved",
+    "during": {
+      "windowY": 68.07272338867188,
+      "x": 0,
+      "y": 342.9818115234375
+    },
+    "after": {
+      "windowY": 68.07272338867188,
+      "x": 0,
+      "y": 342.9818115234375
+    }
+  },
+  {
+    "case": "read-only modal",
+    "copy": true,
+    "mutatingButtons": 0
+  },
+  {
+    "case": "browser Back closes modal",
+    "hash": "#/agenda/semana",
+    "open": false
+  },
+  {
+    "case": "browser Forward reopens modal",
+    "open": true,
+    "title": "Carlos Méndez"
+  },
+  {
+    "case": "backdrop click closes",
+    "hash": "#/agenda/semana",
+    "open": false
+  },
+  {
+    "background": "rgb(254, 243, 199)",
+    "case": "semantic badge",
+    "color": "rgb(146, 64, 14)",
+    "label": "Ausencia"
+  },
+  {
+    "background": "rgb(255, 241, 242)",
+    "case": "semantic badge",
+    "color": "rgb(159, 18, 57)",
+    "label": "Cancelada"
+  },
+  {
+    "case": "console",
+    "errors": []
+  }
+]

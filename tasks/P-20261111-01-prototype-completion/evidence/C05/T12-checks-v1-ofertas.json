@@ -1,0 +1,70 @@
+[
+  {
+    "case": "Waiting list and offers have distinct content; ordering does not imply priority",
+    "route": "lista-espera",
+    "entries": [
+      {"patient": "Valentina Herrera", "service": "Control de seguimiento", "preference": "Mañanas · lunes a viernes", "since": "19 de octubre", "status": "En espera", "actions": ["Editar", "Ofrecer horario"]},
+      {"patient": "Sofía Rivas", "service": "Primera consulta", "preference": "Tardes · martes o jueves", "since": "20 de octubre", "status": "En espera", "actions": ["Editar", "Ofrecer horario"]},
+      {"patient": "Andrés Gutiérrez", "service": "Control de seguimiento", "preference": "Cualquier horario", "since": "21 de octubre", "status": "En espera", "actions": ["Editar", "Ofrecer horario"]}
+    ],
+    "note": "El orden de esta lista no fija una prioridad de asignación; la política de prioridad sigue pendiente."
+  },
+  {
+    "case": "Editing an entry updates service and preference with own validation that keeps fields",
+    "route": "lista-espera",
+    "dialog": "Editar entrada de Valentina Herrera",
+    "context": "Valentina Herrera · En espera desde 19 de octubre",
+    "emptyPreferenceError": "Escribe la preferencia de horario. Tus cambios se conservan.",
+    "afterSave": {"preference": "Mañanas · solo lunes", "toast": "Entrada actualizada en el ejemplo."}
+  },
+  {
+    "case": "Adding an entry requires a preference and keeps the form on error",
+    "route": "lista-espera",
+    "dialog": "Añadir a la lista de espera",
+    "emptyPreferenceError": "Escribe la preferencia de horario. Tus cambios se conservan.",
+    "afterSave": {"patient": "Ana María Rodríguez", "service": "Consulta general", "preference": "Tardes · cualquier día", "since": "22 de octubre", "toast": "Paciente añadido a la lista de espera."}
+  },
+  {
+    "case": "Offer detail shows interval, example expiry and response; interest is not a reservation",
+    "route": "lista-espera/ofertas",
+    "dialog": "Oferta para Andrés Gutiérrez",
+    "summary": "Control de seguimiento · 23 de octubre, 10:30 – 11:00 · Vence 22 de octubre, 18:00 · Respuesta: Interesado",
+    "text": "El paciente mostró interés. El horario sigue sin reservarse hasta que el personal lo asigne.",
+    "action": "Asignar este horario",
+    "footnote": "El interés del paciente no reserva el horario; la asignación la confirma el personal y la API volvería a comprobar oferta y disponibilidad."
+  },
+  {
+    "case": "Expired and declined offers cannot be assigned and offer a compatible next step",
+    "route": "lista-espera/ofertas",
+    "expired": {"dialog": "Oferta para Valentina Herrera", "text": "Esta oferta venció y ya no se puede asignar. Puedes ofrecer otro horario compatible.", "action": "Ofrecer otro horario", "opensCandidatesFor": "Valentina Herrera"},
+    "declined": {"dialog": "Oferta para Sofía Rivas", "text": "El paciente rechazó este intervalo. Puedes ofrecer otro horario compatible.", "action": "Ofrecer otro horario"}
+  },
+  {
+    "case": "Dialog opened from inside a dialog replaces content without InvalidStateError",
+    "implemented": "dialog() guards showModal with if(!el.open); source: https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement/showModal"
+  },
+  {
+    "case": "Assignment requires staff action with explicit illustrated acceptance; occupied interval keeps the entry",
+    "route": "lista-espera/ofertas",
+    "confirmDialog": "¿Asignar este horario a Andrés Gutiérrez? · Crea la cita en el ejemplo tras una aceptación ilustrada del personal.",
+    "occupiedSetup": "Two 45-minute appointments (09:30–10:15 and 10:15–11:00) booked on 23 oct with Control de seguimiento",
+    "occupiedResult": {"toast": "Ese horario ya no está disponible; la entrada se conserva en la lista de espera.", "offer": "Interesado", "entry": "En espera", "noDuplicateAppointment": true},
+    "afterFreeingInterval": {"offer": "Asignada", "entry": "Asignada", "appointment": "Cita de Andrés Gutiérrez · Viernes, 23 de octubre, 2026 · 10:30 – 11:00 · Control de seguimiento · Programada"},
+    "assignedDetail": {"dialog": "Oferta para Andrés Gutiérrez", "text": "Esta oferta ya se asignó y la cita quedó registrada en el ejemplo.", "link": "Ver cita"},
+    "assignedEntryActions": "none"
+  },
+  {
+    "case": "Keyboard and narrow sizes",
+    "checks": {
+      "escapeClosesEditDialog": true,
+      "escapeClosesCandidatesDialog": true,
+      "offersAt800x600": "five columns legible, row actions stack",
+      "waitingAt800x600": "table keeps its own horizontal scroll without document overflow",
+      "touchTargets": "verified under mobile/touch emulation"
+    }
+  },
+  {
+    "case": "Limits",
+    "implemented": "Results are in-memory examples; no real booking, messaging, reservation or Hub call is simulated. Priority policy remains open by design."
+  }
+]

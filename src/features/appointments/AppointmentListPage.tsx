@@ -8,7 +8,7 @@ import {
 } from "../../shared/api/appointments";
 import {
   civilToday, dayRange, errorMessage, formatDateFull, formatTime, formatTimeEnd,
-  patientNameOf, statusLabel, syncLabel,
+  patientNameOf, statusLabel,
 } from "./presentation";
 
 const PAGE_SIZE = 15;
@@ -18,20 +18,39 @@ interface Props {
   context: BookingContext | null;
   professionals: { professionalId: string; publicName: string }[];
   serviceNames: Map<string, string>;
+  showProfessional: boolean;
 }
+
+const LIST_KEY = "listaCitas:estado";
 
 /** T02 · Vista Lista: citas próximas e historial con búsqueda, periodo,
  * filtros y paginación real. Canceladas/pasadas solo por filtro/contexto. */
-export default function AppointmentListPage({ zone, context, professionals, serviceNames }: Props) {
+export default function AppointmentListPage({ zone, context, professionals, serviceNames, showProfessional }: Props) {
   const [draft, setDraft] = useState({ q: "", status: "", window: "next" as "next" | "past", professionalId: "", serviceId: "" });
   const [applied, setApplied] = useState(draft);
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState<EntityRow<AppointmentState>[] | null>(null);
   const [total, setTotal] = useState(0);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const generation = useRef(0);
   const rowsRef = useRef<EntityRow<AppointmentState>[] | null>(null);
+
+  /* Restaurar búsqueda/filtros/página al volver de una cita. */
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(LIST_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as { draft?: typeof draft; applied?: typeof applied; page?: number };
+        if (saved.draft) setDraft(saved.draft);
+        if (saved.applied) setApplied(saved.applied);
+        if (saved.page) setPage(saved.page);
+      }
+    } catch { /* estado previo ilegible: se ignora */ }
+  }, []);
+
+  useEffect(() => {
+    sessionStorage.setItem(LIST_KEY, JSON.stringify({ draft, applied, page }));
+  }, [draft, applied, page]);
 
   const rangeOf = useCallback((window: "next" | "past") => {
     const today = civilToday(zone);
@@ -47,7 +66,6 @@ export default function AppointmentListPage({ zone, context, professionals, serv
 
   const load = useCallback(async () => {
     const request = ++generation.current;
-    setRefreshing(true);
     try {
       const result = await listAppointments({
         ...rangeOf(applied.window),
@@ -65,8 +83,6 @@ export default function AppointmentListPage({ zone, context, professionals, serv
     } catch (loadError: unknown) {
       if (request !== generation.current) return;
       if (rowsRef.current === null) setError(errorMessage(loadError));
-    } finally {
-      if (request === generation.current) setRefreshing(false);
     }
   }, [applied, page, rangeOf]);
 
@@ -130,19 +146,21 @@ export default function AppointmentListPage({ zone, context, professionals, serv
             ))}
           </select>
         </label>
-        <label className="field-label">
-          Profesional
-          <select
-            className="select"
-            value={draft.professionalId}
-            onChange={(event) => setDraft({ ...draft, professionalId: event.target.value })}
-          >
-            <option value="">Todos</option>
-            {professionals.map((p) => (
-              <option key={p.professionalId} value={p.professionalId}>{p.publicName}</option>
-            ))}
-          </select>
-        </label>
+        {showProfessional && (
+          <label className="field-label">
+            Profesional
+            <select
+              className="select"
+              value={draft.professionalId}
+              onChange={(event) => setDraft({ ...draft, professionalId: event.target.value })}
+            >
+              <option value="">Todos</option>
+              {professionals.map((p) => (
+                <option key={p.professionalId} value={p.professionalId}>{p.publicName}</option>
+              ))}
+            </select>
+          </label>
+        )}
         <label className="field-label">
           Servicio
           <select
@@ -165,9 +183,9 @@ export default function AppointmentListPage({ zone, context, professionals, serv
       </form>
 
       <p role="status" className="muted" aria-live="polite">
-        {refreshing && rows !== null && "Actualizando…"}
-        {!refreshing && `${total} cita(s) en el periodo, datos disponibles en este equipo.`}
-        {applied.q && " La búsqueda se aplica sobre los resultados cargados."}
+        {applied.q
+          ? `${visibleRows.length} cita(s) de esta página coinciden con «${applied.q}»; ${total} cita(s) en el periodo. La búsqueda solo cubre los datos cargados en este equipo.`
+          : `${total} cita(s) en el periodo, datos disponibles en este equipo.`}
       </p>
 
       {error && rows === null && (
@@ -178,7 +196,7 @@ export default function AppointmentListPage({ zone, context, professionals, serv
         </div>
       )}
 
-      {rows !== null && visibleRows.length === 0 && !refreshing && (
+      {rows !== null && visibleRows.length === 0 && (
         <div className="state-block">
           {filterActive ? (
             <>
@@ -196,22 +214,18 @@ export default function AppointmentListPage({ zone, context, professionals, serv
       {visibleRows.length > 0 && (
         <div className="table-scroll">
           <table className="data-table">
-            <caption className="muted" style={{ textAlign: "left", padding: "8px 12px" }}>
-              Lista de citas
-            </caption>
             <thead>
               <tr>
                 <th scope="col">Fecha</th>
                 <th scope="col">Intervalo</th>
                 <th scope="col">Paciente</th>
                 <th scope="col">Servicio</th>
-                <th scope="col">Profesional</th>
+                {showProfessional && <th scope="col">Profesional</th>}
                 <th scope="col">Estado</th>
-                <th scope="col">Sincronización</th>
               </tr>
             </thead>
             <tbody>
-              {visibleRows.map(({ row, state }) => (
+              {visibleRows.map(({ state }) => (
                 <tr key={state.appointmentId}>
                   <td>
                     <Link to={`/cita/${state.appointmentId}`}>{formatDateFull(zone, state.startsAt)}</Link>
@@ -221,19 +235,8 @@ export default function AppointmentListPage({ zone, context, professionals, serv
                   </td>
                   <td>{patientNameOf(context, state.patientId)}</td>
                   <td>{state.serviceName}</td>
-                  <td>{state.professionalName}</td>
+                  {showProfessional && <td>{state.professionalName}</td>}
                   <td><span className="badge">{statusLabel[state.status] ?? state.status}</span></td>
-                  <td>
-                    {row.provisional && <span className="badge badge--selected">Guardada en este equipo</span>}
-                    {row.operations.map((op) => (
-                      <span key={op.operationId} className="badge badge--local">
-                        {syncLabel[op.status] ?? op.status}
-                      </span>
-                    ))}
-                    {!row.provisional && row.operations.length === 0 && (
-                      <span className="muted" style={{ fontSize: 13 }}>Aceptada</span>
-                    )}
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -243,13 +246,13 @@ export default function AppointmentListPage({ zone, context, professionals, serv
 
       {total > PAGE_SIZE && (
         <div className="toolbar" role="group" aria-label="Paginación">
-          <button type="button" className="btn" disabled={page <= 1 || refreshing}
+          <button type="button" className="btn" disabled={page <= 1}
             onClick={() => setPage(page - 1)}>
             <CaretLeft size={16} aria-hidden="true" />
             Anterior
           </button>
           <span className="muted" aria-live="polite">Página {page} de {totalPages}</span>
-          <button type="button" className="btn" disabled={page >= totalPages || refreshing}
+          <button type="button" className="btn" disabled={page >= totalPages}
             onClick={() => setPage(page + 1)}>
             Siguiente
             <CaretRight size={16} aria-hidden="true" />

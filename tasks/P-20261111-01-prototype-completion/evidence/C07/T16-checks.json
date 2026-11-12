@@ -1,0 +1,42 @@
+[
+  {
+    "case": "List and detail show device, app, last known access and authorization without secrets",
+    "route": "configuracion/dispositivos",
+    "devices": [
+      {"name": "Equipo de Elena", "os": "Windows · Nightingale 0.1", "last": "Ahora", "status": "Actual", "detailState": "Este equipo", "revokeOffered": false},
+      {"name": "Recepción", "os": "Windows · Nightingale 0.1", "last": "Hoy, 08:35", "status": "Autorizado", "detailState": "Autorizado", "revokeOffered": true},
+      {"name": "Tablet de Lucía", "os": "iPadOS · Nightingale 0.1", "last": "Ayer, 17:02", "status": "Por confirmar", "nextStep": "Comprobar de nuevo"},
+      {"name": "Portátil antiguo", "os": "Windows · Nightingale 0.1", "last": "28 de septiembre, 19:40", "status": "Revocado", "nextStep": "Autorizar de nuevo"}
+    ],
+    "detail": ["Último acceso conocido", "Autorizado: fecha y persona", "No se muestran secretos de sesión. Los equipos desconectados no reciben cambios de inmediato."]
+  },
+  {
+    "case": "Revocation identifies device and consequences without promising instant offline effect",
+    "route": "configuracion/dispositivos",
+    "confirm": "¿Revocar el acceso de Recepción? · El equipo dejará de sincronizar y deberá volver a autorizarse. Los datos locales del equipo no se borran desde aquí. · El cambio se aplica cuando el equipo esté conectado; no es inmediato si está desconectado.",
+    "afterRevoke": {"status": "Por confirmar", "toast": "Revocación registrada en el ejemplo; falta confirmarla con el servicio."},
+    "offline": "«Revocar el acceso requiere conexión y autorización. Tus cambios se conservan.» y el estado no cambia"
+  },
+  {
+    "case": "Pending-result and restricted states offer a valid next step",
+    "route": "configuracion/dispositivos",
+    "recheck": {"device": "Recepción", "action": "Comprobar de nuevo", "result": "Revocado", "toast": "Revocación confirmada en el ejemplo; el equipo queda restringido."},
+    "reactivate": {"device": "Portátil antiguo", "confirm": "El equipo volverá a sincronizar con la consulta.", "result": "Autorizado · Último acceso: Ahora"}
+  },
+  {
+    "case": "Assistant view is read-only for devices",
+    "route": "configuracion/dispositivos",
+    "checks": {"noRevoke": true, "noRecheck": true, "noReactivate": true, "note": "Solo la persona que administra la consulta puede revocar o autorizar equipos."}
+  },
+  {
+    "case": "Keyboard and narrow sizes",
+    "checks": {
+      "escapeClosesDeviceDetail": true,
+      "at800x600": "device list stays legible without document overflow; touch targets verified under mobile emulation"
+    }
+  },
+  {
+    "case": "Limits",
+    "implemented": "Device states and revocations are in-memory examples; no session secret, remote wipe or real revocation is simulated."
+  }
+]

@@ -1,7 +1,8 @@
-import { CircleNotch, Info, Warning } from "@phosphor-icons/react";
+import { CircleNotch, Info, Plus, Warning } from "@phosphor-icons/react";
 import type { ProfileState, ServiceOfferView } from "../../shared/api/appointments";
 import type { EntityRow, RelationshipView } from "../../shared/api/patients";
 import { civilToday, formatDateLong } from "./presentation";
+import AvailabilityPicker, { type AvailabilityState } from "./AvailabilityPicker";
 
 export interface ResponsibleState {
   required: boolean;
@@ -24,14 +25,20 @@ interface Props {
   onResponsibleChange: (contactPersonId: string | null) => void;
   responsible: ResponsibleState;
   onRetryContacts: () => void;
+  availability: AvailabilityState;
+  slot: { startsAt: string; endsAt: string } | null;
+  onSlotChange: (slot: { startsAt: string; endsAt: string } | null) => void;
+  onRetryAvailability: () => void;
+  onRegisterPatient: () => void;
 }
 
-/** Campos del editor S04: paciente, servicio/profesional, fecha y responsable.
+/** Campos del editor S04 en tres grupos: Paciente, Servicio y Horario.
  * Etiquetas persistentes, valores reales y sin identificadores técnicos. */
 export default function BookingFields({
   zone, patients, offers, professionalName,
   patientId, onPatientChange, offer, onOfferChange, civil, onCivilChange,
   responsibleId, onResponsibleChange, responsible, onRetryContacts,
+  availability, slot, onSlotChange, onRetryAvailability, onRegisterPatient,
 }: Props) {
   const today = civilToday(zone);
   const selectedPatient = patients.find((p) => p.patientId === patientId) ?? null;
@@ -49,7 +56,7 @@ export default function BookingFields({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, minWidth: 0, flex: 1 }}>
       <fieldset style={{ border: 0, padding: 0, margin: 0, display: "grid", gap: 16 }}>
-        <legend className="muted" style={{ marginBottom: 8 }}>Paciente y servicio</legend>
+        <legend className="muted" style={{ marginBottom: 8 }}>Paciente</legend>
 
         {patients.length === 1 && selectedPatient === null ? (
           <p>
@@ -81,12 +88,23 @@ export default function BookingFields({
           </label>
         ) : null}
 
+        <div>
+          <button type="button" className="btn btn--subtle" onClick={onRegisterPatient}>
+            <Plus size={16} aria-hidden="true" />
+            Registrar paciente
+          </button>
+        </div>
+
         {patientIncomplete && (
           <div className="notice">
             <Info size={18} aria-hidden="true" />
             <p>La ficha de este paciente está incompleta; el proceso local puede rechazar la cita.</p>
           </div>
         )}
+      </fieldset>
+
+      <fieldset style={{ border: 0, padding: 0, margin: 0, display: "grid", gap: 16 }}>
+        <legend className="muted" style={{ marginBottom: 8 }}>Servicio</legend>
 
         {offers.length === 0 ? (
           <div className="notice" role="alert">
@@ -122,8 +140,8 @@ export default function BookingFields({
         )}
       </fieldset>
 
-      <fieldset style={{ border: 0, padding: 0, margin: 0, display: "grid", gap: 16 }}>
-        <legend className="muted" style={{ marginBottom: 8 }}>Fecha</legend>
+      <fieldset style={{ border: 0, padding: 0, margin: 0, display: "grid", gap: 12 }}>
+        <legend className="muted" style={{ marginBottom: 8 }}>Horario</legend>
         <div className="toolbar">
           <button type="button" className="btn btn--subtle" onClick={() => onCivilChange(today)} disabled={civil === today}>
             Hoy
@@ -140,6 +158,13 @@ export default function BookingFields({
           </label>
         </div>
         <p className="muted" aria-live="polite">{formatDateLong(zone, civil)}</p>
+        <AvailabilityPicker
+          zone={zone}
+          availability={availability}
+          slot={slot}
+          onSlotChange={onSlotChange}
+          onRetry={onRetryAvailability}
+        />
       </fieldset>
 
       {responsible.required && (

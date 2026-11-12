@@ -1,0 +1,91 @@
+[
+  {
+    "case": "Directory separates contact, next appointment, activity, completion and status",
+    "route": "pacientes",
+    "patients": 12,
+    "columns": ["Nombre", "Contacto", "Próxima cita", "Actividad", "Ficha", "Estado"],
+    "states": {
+      "p9": {"contacto": "Por responsable", "ficha": "Ficha completa", "estado": "Activo"},
+      "p10": {"contacto": "Sin teléfono", "ficha": "Borrador", "estado": "Activo"},
+      "p12": {"contacto": "+58 · falta el número", "ficha": "Borrador", "estado": "Activo"}
+    }
+  },
+  {
+    "case": "Adult with own document registered complete; leading zeros preserved",
+    "route": "paciente/p13",
+    "name": "Camila Duarte",
+    "document": "Venezuela · Documento nacional · 00123456 · Declarado",
+    "phone": "+58 416 777 3344",
+    "badges": ["Ficha completa", "Activo"],
+    "doubleSubmitGuard": true
+  },
+  {
+    "case": "Minor without document registered complete via responsible",
+    "route": "paciente/p13",
+    "name": "Mateo Herrera",
+    "birthDate": "2019-03-14",
+    "document": "Sin documento registrado",
+    "responsible": "c1",
+    "badges": ["Ficha completa", "Activo"],
+    "conditionalFields": "document block hidden, birth date shown after choosing minor basis"
+  },
+  {
+    "case": "Partial phone pair rejected with fields preserved",
+    "route": "pacientes/nuevo",
+    "error": "Completa el código y el número de teléfono juntos, o deja ambos vacíos.",
+    "fieldsPreserved": true
+  },
+  {
+    "case": "Draft saved with only the name; ficha lists missing requirements",
+    "route": "paciente/p14",
+    "name": "Paola Guzmán",
+    "badges": ["Borrador", "Activo"],
+    "notice": "Faltan: documento propio · teléfono completo o responsable."
+  },
+  {
+    "case": "Editing a draft to meet requirements completes it without a separate action",
+    "route": "paciente/p14",
+    "document": "Venezuela · Documento nacional · V-00778899 · Declarado",
+    "phone": "+58 412 555 9090",
+    "badges": ["Ficha completa", "Activo"],
+    "noticeRemoved": true
+  },
+  {
+    "case": "Completeness conflict: edit that breaks a complete ficha is rejected, previous state kept",
+    "route": "paciente/p1",
+    "error": "Estos cambios dejarían la ficha completa sin sus requisitos.",
+    "kept": {"phone": "+58 412 000 1001", "completion": "complete"}
+  },
+  {
+    "case": "Homonym search returns both records distinguished by contact",
+    "route": "pacientes",
+    "query": "Ana María Rodríguez",
+    "results": 2,
+    "contacts": ["+58 412 000 1001", "+58 414 555 0182"]
+  },
+  {
+    "case": "Local no-match state is not presented as global absence",
+    "route": "pacientes",
+    "query": "zzz",
+    "results": 0,
+    "message": "La búsqueda solo recorre los datos disponibles localmente."
+  },
+  {
+    "case": "Incomplete phone ficha shows explicit pair note",
+    "route": "paciente/p12",
+    "phone": "+58 · falta el número",
+    "note": "El teléfono guardado está incompleto: falta el número.",
+    "badges": ["Borrador", "Activo"]
+  },
+  {
+    "case": "Narrow layout 800x600 keeps table scroll inside its own region (touch emulation)",
+    "route": "pacientes",
+    "viewport": "800x600",
+    "documentOverflow": false
+  },
+  {
+    "case": "Unsaved-changes protection still active on registration form",
+    "route": "pacientes/nuevo",
+    "beforeUnload": "confirm-leave dialog shown on reload with dirty form"
+  }
+]

@@ -1,0 +1,35 @@
+[
+  {
+    "case": "Ctrl+K and the search button open grouped results for patients and appointments (H08 closed)",
+    "route": "any (global dialog)",
+    "queryByName": {"query": "Ana María", "groups": {"Pacientes": "2 homonyms distinguished by phone", "Citas": "appointments of the matched patients"}},
+    "queryByTime": {"query": "09:00", "groups": {"Citas": "appointments at that hour across dates"}},
+    "keyboard": "Ctrl+K opens; Tab reaches results; Enter follows the link; Escape closes",
+    "heuristic": "H08 (search promised appointments but returned only patients) resolved"
+  },
+  {
+    "case": "Empty results speak about local data, not a global absence",
+    "implemented": "«No hay coincidencias en los datos locales del ejemplo.»"
+  },
+  {
+    "case": "Returning restores the search with focus",
+    "route": "cita/a1 reopened search",
+    "checks": {"queryRestored": "«09:00» prefilled after opening a result and pressing Ctrl+K again", "focus": "input focused via autofocus"}
+  },
+  {
+    "case": "Help explains tasks, not the demo (H09 closed)",
+    "route": "help dialog",
+    "tasks": ["Cambiar o cancelar una cita", "Registrar un paciente", "Revisar solicitudes del paciente", "Asignar un horario desde la lista de espera"],
+    "eachTask": "short explanation plus a link to the relevant screen",
+    "footerLinks": ["Ver todas las pantallas", "Diagnóstico"]
+  },
+  {
+    "case": "Diagnostics stays isolated without secrets",
+    "route": "diagnostico",
+    "implemented": "unchanged: example-only technical data, no credentials, outside daily work"
+  },
+  {
+    "case": "Limits",
+    "implemented": "Search covers the in-memory example only; no external or global index is implied."
+  }
+]

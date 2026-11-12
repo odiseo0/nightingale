@@ -1,9 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
+import type { ReviewSummary } from "./sync";
 
 export interface AccountChoice { id: string; displayName: string; role: string; status: string }
 export interface CoreStatus {
   lastSyncAt: number | null;
-  reviews: { operationId: string; status: string; code: string | null }[];
+  reviews: ReviewSummary[];
   configured: boolean;
   signedIn: boolean;
   accountId: string | null;

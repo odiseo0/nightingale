@@ -1,0 +1,47 @@
+[
+  {
+    "case": "Catalog and offer shown with explicit scope; base and adjustment distinguished",
+    "route": "configuracion/servicios",
+    "rows": [
+      {"name": "Consulta general", "reference": "30 min", "detail": "sin ajuste; usa la base de 30 min", "catalog": "activo", "offer": "activa"},
+      {"name": "Control de seguimiento", "reference": "45 min", "detail": "ajuste de la oferta sobre una base de 30 min", "catalog": "activo", "offer": "activa"},
+      {"name": "Primera consulta", "reference": "45 min", "detail": "sin ajuste; usa la base de 45 min", "catalog": "activo", "offer": "inactiva"}
+    ],
+    "technicalVersionsHidden": true
+  },
+  {
+    "case": "Invalid base duration rejected with custom message; form preserved",
+    "route": "configuracion/servicios",
+    "input": {"baseDuration": 2000},
+    "error": "La duración base debe ser un número entero entre 1 y 1440 minutos. Tus cambios se conservan.",
+    "dialogKeptOpen": true
+  },
+  {
+    "case": "Valid edit saves offer override (20 min over 30 base)",
+    "route": "configuracion/servicios",
+    "result": "Duración de referencia: 20 min · ajuste de la oferta sobre una base de 30 min"
+  },
+  {
+    "case": "Deactivating an offer requires confirmation and explains existing appointments keep data",
+    "route": "configuracion/servicios",
+    "confirmDialog": "¿Desactivar la oferta de Consulta general?",
+    "after": "Oferta de esta consulta: inactiva"
+  },
+  {
+    "case": "Deactivated offer disappears from new booking options",
+    "route": "cita/nueva",
+    "serviceOptions": ["Control de seguimiento"]
+  },
+  {
+    "case": "Existing appointment keeps its service and duration after offer deactivation and override change",
+    "route": "cita/a1",
+    "service": "Consulta general",
+    "interval": "09:00 – 09:30",
+    "referenceChangedTo": 20
+  },
+  {
+    "case": "Catalog deactivation also deactivates the offer; both reversible; owner-only and online limits enforced",
+    "route": "configuracion/servicios",
+    "implemented": "toggle-catalog with confirmation, offer cascade, reactivate paths, viewerRole and scenario guards"
+  }
+]

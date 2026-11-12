@@ -1,0 +1,269 @@
+[
+  {
+    "case": "Invalid initial hours",
+    "error": "La hora de fin debe ser posterior a la de inicio.",
+    "practice": "Consulta de Elena Arias"
+  },
+  {
+    "case": "Initial setup saved",
+    "heading": "Tu consulta está lista"
+  },
+  {
+    "case": "Revoked access",
+    "copy": "N\nNightingale\nNo tienes acceso a esta consulta\n\nEl acceso de esta cuenta o equipo ya no está autorizado. Los datos guardados y el trabajo pendiente se conservan. Contacta con la persona que administra la consulta.\n\nConsulta de Elena Arias\n\nEste equipo · Windows\n\nVolver a iniciar sesiónVolver al acceso"
+  },
+  {
+    "case": "Permitted local access",
+    "notice": false,
+    "rows": 8
+  },
+  {
+    "case": "Activation offline",
+    "heading": "Necesitas conexión"
+  },
+  {
+    "case": "Assistant setup restriction",
+    "heading": "La consulta aún no está lista",
+    "editableFields": 0
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Entra a tu consulta",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/navegador",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Continúa en el navegador",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/cuentas",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Abre tu consulta",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/equipo",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Registra este equipo",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/preparando",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Preparando tu consulta",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/local",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Puedes abrir tu consulta",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/sesion-vencida",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Vuelve a iniciar sesión",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/denegado",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "No tienes acceso a esta consulta",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/conexion",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Necesitas conexión",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/servicio",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "No pudimos comprobar el acceso",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/preparacion",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Prepara tu consulta",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/preparacion/lista",
+    "size": {
+      "width": 1280,
+      "height": 800
+    },
+    "heading": "Tu consulta está lista",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Entra a tu consulta",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/navegador",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Continúa en el navegador",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/cuentas",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Abre tu consulta",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/equipo",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Registra este equipo",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/preparando",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Preparando tu consulta",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/local",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Puedes abrir tu consulta",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/sesion-vencida",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Vuelve a iniciar sesión",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/denegado",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "No tienes acceso a esta consulta",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/conexion",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Necesitas conexión",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/acceso/servicio",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "No pudimos comprobar el acceso",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/preparacion",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Prepara tu consulta",
+    "overflow": false
+  },
+  {
+    "case": "Surface",
+    "hash": "#/preparacion/lista",
+    "size": {
+      "width": 800,
+      "height": 600
+    },
+    "heading": "Tu consulta está lista",
+    "overflow": false
+  }
+]

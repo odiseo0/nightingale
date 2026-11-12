@@ -44,3 +44,29 @@ export const entityLabel: Record<string, string> = {
   service_offer: "Oferta",
   schedule_rule: "Horario",
 };
+
+/** Solo estos estados requieren una decisión del personal; pendiente,
+ * enviando, reintento y resultado desconocido siguen su recuperación
+ * automática sin mostrarse en Por revisar. */
+export function needsIntervention(status: string): boolean {
+  return status === "conflict" || status === "rejected" || status === "review_required";
+}
+
+/** Ruta local de una revisión según su entidad y clave; null cuando no hay
+ * ruta específica (la salida segura será su sección o Ayuda). No inventa
+ * enlaces para entidades sin recorrido contratado. */
+export function reviewRoute(entityType: string, entityKey: unknown): string | null {
+  const key = typeof entityKey === "string" && entityKey !== ""
+    ? entityKey
+    : typeof entityKey === "object" && entityKey !== null
+      ? ("appointmentId" in entityKey && typeof (entityKey as { appointmentId: unknown }).appointmentId === "string"
+          ? (entityKey as { appointmentId: string }).appointmentId
+          : "patientId" in entityKey && typeof (entityKey as { patientId: unknown }).patientId === "string"
+            ? (entityKey as { patientId: string }).patientId
+            : null)
+      : null;
+  if (key === null) return null;
+  if (entityType === "appointment") return `/cita/${key}`;
+  if (entityType === "patient_profile") return `/paciente/${key}`;
+  return null;
+}

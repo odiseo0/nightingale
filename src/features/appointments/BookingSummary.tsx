@@ -94,8 +94,8 @@ export default function BookingSummary({
         <p className="muted">Falta: {missing.join(", ")}.</p>
       )}
       <p className="muted" style={{ fontSize: 13 }}>
-        Guardar crea una cita provisional en este equipo; no confirma una reserva
-        aceptada ni envía ningún mensaje.
+        Guardar registra la cita en este equipo; no confirma una reserva aceptada
+        ni envía ningún mensaje.
       </p>
     </section>
   );

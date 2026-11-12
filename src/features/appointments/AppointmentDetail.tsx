@@ -6,9 +6,10 @@ import {
   type AppointmentState, type BookingContext, type EntityRow,
   type HistoryView, visibleOf,
 } from "../../shared/api/appointments";
+import { listPatientContacts, visibleOf as visibleContact } from "../../shared/api/patients";
 import {
-  errorMessage, formatDateFull, formatDateTime, formatTime, formatTimeEnd,
-  patientNameOf, patientPhoneOf, statusLabel, syncLabel,
+  errorMessage, formatAddressLine, formatDateFull, formatDateTime, formatTime,
+  formatTimeEnd, historyActionLabel, patientNameOf, patientPhoneOf, statusLabel,
 } from "./presentation";
 import LifecycleActions from "./LifecycleActions";
 
@@ -18,12 +19,14 @@ interface Props {
   onClose?: () => void;
 }
 
-/** Detalle de cita en modo lectura (S03): datos de la cita, paciente del
- * contexto, historia aceptada y operaciones locales, separadas. */
+/** Detalle de cita (S03): prioriza paciente, horario y acciones; la actividad
+ * se muestra como acciones comprensibles y las operaciones técnicas viven en
+ * diagnóstico, no en la vista diaria. */
 export default function AppointmentDetail({ appointmentId, context, onClose }: Props) {
   const navigate = useNavigate();
   const [row, setRow] = useState<EntityRow<AppointmentState> | null>(null);
   const [history, setHistory] = useState<HistoryView | null>(null);
+  const [responsibleName, setResponsibleName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -56,6 +59,32 @@ export default function AppointmentDetail({ appointmentId, context, onClose }: P
 
   const state = row ? visibleOf(row) : null;
   const zone = context?.timeZone ?? state?.timeZone ?? "UTC";
+  const patientName = state ? patientNameOf(context, state.patientId) : "Cita";
+
+  /* Resolver el nombre del responsable; nunca se muestra un UUID como
+   * sustituto del nombre. Si no hay lectura autorizada, queda sin registrar. */
+  useEffect(() => {
+    if (!state?.responsibleContactId) return;
+    let cancelled = false;
+    listPatientContacts({ patientId: state.patientId })
+      .then((relations) => {
+        if (cancelled) return;
+        const match = relations
+          .map((relation) => visibleContact(relation))
+          .find((view) => view?.relationship.contactPersonId === state.responsibleContactId);
+        setResponsibleName(match?.contactFullName ?? null);
+      })
+      .catch(() => { /* sin lectura autorizada: se muestra como no registrado */ });
+    return () => { cancelled = true; };
+  }, [state?.responsibleContactId, state?.patientId]);
+
+  const addressLine = state
+    ? formatAddressLine({
+        address: state.locationAddress,
+        city: state.locationCity,
+        state: state.locationState,
+      })
+    : "";
 
   return (
     <section
@@ -65,10 +94,17 @@ export default function AppointmentDetail({ appointmentId, context, onClose }: P
       aria-busy={row === null && error === null}
     >
       <div className="detail-heading">
-        <h2 id="detalle-cita-titulo" style={{ fontSize: 20 }}>
-          Detalle de cita
-        </h2>
-        <div className="toolbar" style={{ gap: 8 }}>
+        <div style={{ minWidth: 0 }}>
+          <h2 id="detalle-cita-titulo" style={{ fontSize: 20, overflowWrap: "anywhere" }}>
+            {patientName}
+          </h2>
+          {state && (
+            <p className="muted" style={{ fontSize: 14, marginTop: 2 }}>
+              {state.serviceName} · {state.offeredDurationMinutes} min
+            </p>
+          )}
+        </div>
+        <div className="toolbar" style={{ gap: 8, flexShrink: 0 }}>
           {state && (state.status === "scheduled" || state.status === "confirmed") && (
             <button
               type="button"
@@ -108,31 +144,10 @@ export default function AppointmentDetail({ appointmentId, context, onClose }: P
         <>
           <dl className="fact-grid">
             <div>
-              <dt>Paciente</dt>
-              <dd>{patientNameOf(context, state.patientId)}</dd>
-            </div>
-            <div>
-              <dt>Teléfono</dt>
-              <dd>{patientPhoneOf(context, state.patientId) ?? "No registrado"}</dd>
-            </div>
-            <div>
               <dt>Estado</dt>
               <dd>
                 <span className="badge">{statusLabel[state.status] ?? state.status}</span>
-                {row?.provisional && (
-                  <p className="muted" style={{ marginTop: 4 }}>
-                    Guardada en este equipo · pendiente de aceptación.
-                  </p>
-                )}
               </dd>
-            </div>
-            <div>
-              <dt>Servicio</dt>
-              <dd>{state.serviceName} ({state.offeredDurationMinutes} min)</dd>
-            </div>
-            <div>
-              <dt>Profesional</dt>
-              <dd>{state.professionalName}</dd>
             </div>
             <div>
               <dt>Fecha e intervalo</dt>
@@ -144,27 +159,37 @@ export default function AppointmentDetail({ appointmentId, context, onClose }: P
               </dd>
             </div>
             <div>
+              <dt>Teléfono</dt>
+              <dd>{patientPhoneOf(context, state.patientId) ?? "No registrado"}</dd>
+            </div>
+            <div>
               <dt>Lugar</dt>
               <dd>
                 {state.locationName}
-                {state.locationAddress && <>, {state.locationAddress}</>}
-                <br />
-                {[state.locationCity, state.locationState, state.locationCountry]
-                  .filter(Boolean).join(", ")}
+                {addressLine && (
+                  <>
+                    <br />
+                    {addressLine}
+                  </>
+                )}
               </dd>
             </div>
             <div>
-              <dt>Confirmación del servidor</dt>
+              <dt>Profesional</dt>
+              <dd>{state.professionalName}</dd>
+            </div>
+            <div>
+              <dt>Confirmación</dt>
               <dd>
                 {state.confirmedAt
                   ? `Confirmada el ${formatDateTime(zone, state.confirmedAt)}`
-                  : "Sin confirmación del servidor."}
+                  : "Sin confirmación registrada."}
               </dd>
             </div>
             {state.responsibleContactId && (
               <div>
-                <dt>Referencia de contacto responsable</dt>
-                <dd>{state.responsibleContactId}</dd>
+                <dt>Contacto responsable</dt>
+                <dd>{responsibleName ?? "No registrado"}</dd>
               </div>
             )}
           </dl>
@@ -174,24 +199,24 @@ export default function AppointmentDetail({ appointmentId, context, onClose }: P
               row={row}
               zone={zone}
               noShowGraceMinutes={context?.noShowGraceMinutes ?? 15}
-              patientLabel={patientNameOf(context, state.patientId)}
+              patientLabel={patientName}
               onMutated={(message) => { setNotice(message); reload(); }}
               onError={(message) => setNotice(message)}
             />
           )}
 
           <div>
-            <h3 style={{ fontSize: 16, marginBottom: 8 }}>Historia aceptada</h3>
+            <h3 style={{ fontSize: 16, marginBottom: 8 }}>Actividad</h3>
             {!history || history.accepted.length === 0 ? (
               <p className="muted">
-                Sin historia aceptada descargada en este equipo.
+                Sin actividad aceptada descargada en este equipo.
               </p>
             ) : (
               <ol style={{ margin: 0, paddingLeft: 20 }}>
                 {history.accepted.map((entry) => (
                   <li key={entry.version} style={{ marginBottom: 6 }}>
                     <span className="num">
-                      v{entry.version} · {entry.action} ·{" "}
+                      {historyActionLabel[entry.action] ?? entry.action} ·{" "}
                       {statusLabel[entry.status] ?? entry.status} ·{" "}
                       {formatDateTime(zone, entry.changedAt)}
                     </span>
@@ -205,23 +230,6 @@ export default function AppointmentDetail({ appointmentId, context, onClose }: P
               </ol>
             )}
           </div>
-
-          {history && history.operations.length > 0 && (
-            <div>
-              <h3 style={{ fontSize: 16, marginBottom: 8 }}>Operaciones locales</h3>
-              <ul style={{ margin: 0, paddingLeft: 20 }}>
-                {history.operations.map((op) => (
-                  <li key={op.operationId} style={{ marginBottom: 6 }}>
-                    {syncLabel[op.status] ?? op.status}
-                    {op.error && <span className="muted"> · {op.error}</span>}
-                  </li>
-                ))}
-              </ul>
-              <p className="muted" style={{ fontSize: 13 }}>
-                Separadas de la historia aceptada; no son hechos compartidos.
-              </p>
-            </div>
-          )}
         </>
       )}
     </section>

@@ -1,0 +1,38 @@
+[
+  {
+    "case": "Operable period with coherent example data per period",
+    "route": "indicadores",
+    "selector": "Elegir periodo del informe",
+    "periods": ["Semana en curso (19 – 25 oct)", "Semana pasada (12 – 18 oct)", "Últimas dos semanas (8 – 21 oct)", "Octubre (1 – 31 oct)", "Semana del 26 oct – 1 nov"],
+    "month": {"registered": 64, "attendance": "90 % · 45 atendidas de 50 finalizadas", "absent": "5 · 10 % de las 50 finalizadas", "recovered": 4, "confirmations": "48 de 64 · 75 %", "cancellations": "8 de 64 · 13 %"},
+    "weekLast": {"registered": 22, "attendance": "90 % · 18 atendidas de 20 finalizadas", "confirmations": "17 de 22 · 77 %", "cancellations": "3 de 22 · 14 %"},
+    "weekCurrent": {"registered": 24, "attendance": "89 % · 16 atendidas de 18 finalizadas", "openNote": "los datos llegan hasta el 21 de octubre y las cifras pueden crecer al cerrarse"}
+  },
+  {
+    "case": "Every figure has unit, period, numerator/denominator when applicable, update time and definition",
+    "implemented": "metric cards carry unit and numerator/denominator; the toolbar carries period, «Actualizado el …» and Hora de Caracas; the definitions table adds a Unidad column and the calculation of the example"
+  },
+  {
+    "case": "Chart has labels, scale note and tabular equivalent",
+    "implemented": "bar values and week labels on top/bottom; scale note «cada barra se normaliza al valor máximo del periodo»; Semana | Citas table with total row"
+  },
+  {
+    "case": "Empty, open-period and unavailable states are distinct and Agenda stays usable",
+    "route": "indicadores",
+    "empty": {"period": "Semana del 26 oct – 1 nov", "title": "Sin datos en este periodo", "action": "Ver semana en curso returns to data"},
+    "openPeriod": "notice «Periodo en curso: los datos llegan hasta el 21 de octubre…», distinct from the empty state",
+    "unavailable": {"scenario": "Servicio temporalmente no disponible", "title": "No pudimos leer el informe", "text": "La agenda y el resto de las pantallas siguen utilizables con los datos locales.", "retry": "Volver a cargar toasts that the service is still unavailable; no fake success"},
+    "agendaUsable": "Agenda loads its local data while indicators are unavailable"
+  },
+  {
+    "case": "Keyboard and narrow sizes",
+    "checks": {
+      "escapeClosesPeriodDialog": true,
+      "at800x600": "metrics wrap 2×2, chart and tables keep their own scroll without document overflow; touch targets verified under mobile emulation"
+    }
+  },
+  {
+    "case": "Limits",
+    "implemented": "Report numbers are a fixed fictitious example per period; no real aggregation, export or analytics call is simulated."
+  }
+]

@@ -4,7 +4,7 @@ import { CaretLeft, CaretRight, CircleNotch, MagnifyingGlass } from "@phosphor-i
 import {
   listPatients, visibleOf, type EntityRow, type ProfileState,
 } from "../../shared/api/patients";
-import { errorMessage, syncLabel } from "../appointments/presentation";
+import { errorMessage } from "../appointments/presentation";
 
 const PAGE_SIZE = 10;
 const STORAGE_KEY = "pacientes:estado";
@@ -48,7 +48,6 @@ export default function PatientsPage() {
   const [draft, setDraft] = useState<DirectoryState>(readStoredState);
   const [rows, setRows] = useState<EntityRow<ProfileState>[] | null>(null);
   const [total, setTotal] = useState(0);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice] = useState<string | null>(() => {
     const message = sessionStorage.getItem(MESSAGE_KEY);
@@ -77,7 +76,6 @@ export default function PatientsPage() {
 
   const load = useCallback(async (state: DirectoryState) => {
     const request = ++generation.current;
-    setRefreshing(true);
     try {
       const page = await listPatients({
         page: state.page,
@@ -103,8 +101,6 @@ export default function PatientsPage() {
         setPhase(rowsRef.current === null ? "error" : "ready");
         setError(errorMessage(loadError));
       }
-    } finally {
-      if (request === generation.current) setRefreshing(false);
     }
   }, []);
 
@@ -208,9 +204,8 @@ export default function PatientsPage() {
       </form>
 
       <p role="status" className="muted" aria-live="polite">
-        {refreshing && rows !== null && "Actualizando…"}
         {error && `No se pudo actualizar el directorio. ${error}`}
-        {!refreshing && !error && applied.q && `Resultados para “${applied.q}” en datos locales.`}
+        {!error && applied.q && `Resultados para “${applied.q}” en datos locales.`}
       </p>
 
       {phase === "error" && rows === null && (
@@ -237,20 +232,16 @@ export default function PatientsPage() {
       {visibleRows.length > 0 && (
         <div className="table-scroll">
           <table className="data-table">
-            <caption className="muted" style={{ textAlign: "left", padding: "8px 12px" }}>
-              Directorio de pacientes
-            </caption>
             <thead>
               <tr>
                 <th scope="col">Paciente</th>
                 <th scope="col">Teléfono</th>
                 <th scope="col">Completitud</th>
                 <th scope="col">Estado</th>
-                <th scope="col">Sincronización</th>
               </tr>
             </thead>
             <tbody>
-              {visibleRows.map(({ row, state }) => (
+              {visibleRows.map(({ state }) => (
                 <tr key={state.patientId}>
                   <td>
                     <Link
@@ -277,19 +268,6 @@ export default function PatientsPage() {
                       {state.status === "active" ? "Activo" : "Inactivo"}
                     </span>
                   </td>
-                  <td>
-                    {row.provisional && (
-                      <span className="badge badge--selected">Guardada en este equipo</span>
-                    )}
-                    {row.operations.map((op) => (
-                      <span key={op.operationId} className="badge badge--local">
-                        {syncLabel[op.status] ?? op.status}
-                      </span>
-                    ))}
-                    {!row.provisional && row.operations.length === 0 && (
-                      <span className="muted" style={{ fontSize: 13 }}>Aceptada</span>
-                    )}
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -302,7 +280,7 @@ export default function PatientsPage() {
           <button
             type="button"
             className="btn"
-            disabled={applied.page <= 1 || refreshing}
+            disabled={applied.page <= 1}
             onClick={() => setApplied({ ...applied, page: applied.page - 1 })}
           >
             <CaretLeft size={16} aria-hidden="true" />
@@ -314,7 +292,7 @@ export default function PatientsPage() {
           <button
             type="button"
             className="btn"
-            disabled={applied.page >= totalPages || refreshing}
+            disabled={applied.page >= totalPages}
             onClick={() => setApplied({ ...applied, page: applied.page + 1 })}
           >
             Siguiente

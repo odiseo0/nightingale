@@ -87,7 +87,7 @@ El Patient Hub es una excepción: su API posee las capacidades del Hub y el escr
 
 ### 4.3 La operación local debe ser inmediata
 
-La interfaz no esperará una respuesta de la nube para cada acción. Una operación se aplicará localmente y, cuando corresponda, quedará marcada como pendiente de sincronización.
+La interfaz no esperará una respuesta de la nube para cada acción. Una operación se aplicará localmente y, cuando corresponda, conservará internamente su estado pendiente de sincronización.
 
 ### 4.4 La complejidad debe responder a una necesidad real
 
@@ -417,22 +417,13 @@ No será necesario descargar todas las tablas en cada conexión.
 
 Las entidades sincronizadas no se eliminarán físicamente de inmediato. Se utilizarán cancelaciones, estados inactivos o marcas de eliminación para que todos los dispositivos puedan recibir el cambio.
 
-### 9.9 Estado de sincronización visible
+### 9.9 Estado interno y presentación
 
-La interfaz distinguirá:
+El núcleo conserva estados de sincronización, versiones, permisos, identidad de operaciones y recuperación. La revisión de presentación aprobada del 2026-11-09 (P-20261109-22) hace invisible el proceso normal: sin etiquetas, columnas, contadores, botones ni avisos de intercambio.
 
-- `synced`: confirmado en el estado compartido.
-- `pending`: cambio local pendiente.
-- `syncing`: operación en proceso.
-- `conflict`: diferencia que requiere atención.
-- `failed`: fallo persistente o no recuperable automáticamente.
+Los estados internos distinguen `synced` (confirmado en el estado compartido), `pending` (cambio local pendiente), `syncing` (en proceso), `conflict` (diferencia que requiere atención) y `failed` (fallo persistente o no recuperable automáticamente). Estos datos permanecen disponibles para el núcleo y el diagnóstico.
 
-La aplicación mostrará además:
-
-- Estado de conexión.
-- Momento de la última sincronización exitosa.
-- Cantidad de cambios pendientes.
-- Conflictos que requieren revisión.
+«Cita guardada» o «Cambios guardados» confirma persistencia local, sin garantizar reserva compartida, envío ni liberación. Conflictos, rechazos y restricciones que exigen intervención aparecen junto al dato y en Por revisar; su enlace es condicional. Diagnóstico conserva conexión, última sincronización y operaciones. Un resultado desconocido conserva su identidad y evita duplicación durante la recuperación automática.
 
 ## 10. Concurrencia en varios dispositivos
 
@@ -461,7 +452,7 @@ No se implementarán bloqueos distribuidos. La concurrencia se controlará media
 
 ### 10.2 Reservas sin conexión
 
-Una cita creada sin conexión se mostrará localmente como provisional hasta que PostgreSQL la acepte.
+Una cita creada sin conexión conserva su estado provisional interno hasta que PostgreSQL la acepte. La vista confirma guardado local sin etiqueta de proceso.
 
 Si otro dispositivo ocupó el intervalo, PostgreSQL rechazará la escritura compartida y Rust mostrará el conflicto sin borrar la intención local.
 
@@ -533,7 +524,7 @@ El guardado local no espera a la red. Las capacidades del Hub usan su API según
 2. Rust valida la operación localmente.
 3. SQLite guarda la cita con estado de sincronización `pending`.
 4. La misma transacción añade la operación a `sync_outbox`.
-5. La interfaz identifica la cita como provisional.
+5. La interfaz confirma «Cita guardada» tras persistir localmente, sin prometer reserva compartida.
 6. Al recuperar la conexión, Rust envía la operación a Nightingale API.
 7. API comprueba autorización y reglas compartidas y acepta o rechaza la reserva en una transacción PostgreSQL.
 8. SQLite se actualiza con el resultado definitivo.
@@ -961,7 +952,7 @@ Deberá contar con:
 
 La aplicación podrá generar copias coherentes mediante las herramientas de respaldo de SQLite. No se copiará el archivo abierto de forma arbitraria a carpetas sincronizadas.
 
-La nube protege únicamente los cambios que ya fueron sincronizados. La interfaz advertirá cuando un dispositivo acumule cambios pendientes durante demasiado tiempo.
+La nube protege únicamente los cambios que ya fueron sincronizados. Si un problema requiere intervención, la interfaz explicará su efecto en contexto y Por revisar; no mostrará contadores ni avisos del proceso normal.
 
 ### 21.3 Objetivos pendientes
 

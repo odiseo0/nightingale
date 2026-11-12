@@ -1,0 +1,12 @@
+[
+  {
+    "case": "Assistant with unprepared account",
+    "heading": "La consulta aún no está lista",
+    "formCount": 0
+  },
+  {
+    "case": "Assistant with prepared account",
+    "heading": "Tu consulta está lista",
+    "formCount": 0
+  }
+]

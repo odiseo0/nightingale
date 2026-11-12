@@ -175,3 +175,37 @@ export function patientPhoneOf(context: BookingContext | null, patientId: string
   if (profile.phoneCode && profile.phone) return `${profile.phoneCode} ${profile.phone}`;
   return profile.phone ?? null;
 }
+
+/** La columna y el filtro Profesional se ocultan solo para el dueño con un
+ * único profesional disponible; asistentes y cuentas con varios profesionales
+ * lo conservan. El rol nulo (contexto no disponible) nunca oculta. */
+export function showsProfessionalColumn(
+  viewerRole: "owner" | "assistant" | null,
+  professionalCount: number,
+): boolean {
+  return viewerRole !== "owner" || professionalCount > 1;
+}
+
+/** Dirección de lectura: termina en ciudad y estado, sin país ni separadores
+ * vacíos cuando falta un dato. El país almacenado se conserva fuera de esta
+ * lectura. */
+export function formatAddressLine(parts: {
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+}): string {
+  return [parts.address, parts.city, parts.state]
+    .filter((part): part is string => typeof part === "string" && part.trim().length > 0)
+    .join(", ");
+}
+
+/** Actividad traducida a acciones comprensibles; códigos desconocidos se
+ * muestran tal cual (son cadenas contractuales estables y seguras). */
+export const historyActionLabel: Record<string, string> = {
+  created: "Cita creada",
+  confirmed: "Cita confirmada",
+  rescheduled: "Cita reprogramada",
+  cancelled: "Cita cancelada",
+  completed: "Atención registrada",
+  no_show: "Ausencia registrada",
+};

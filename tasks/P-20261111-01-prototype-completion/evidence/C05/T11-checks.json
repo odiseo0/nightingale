@@ -1,0 +1,44 @@
+[
+  {
+    "case": "List keeps request and current appointment together with known status and age",
+    "route": "solicitudes",
+    "requests": [
+      {"patient": "Luis Fernando Pérez", "status": "Solicitud de cambio", "age": "Recibida ayer, 16:20"},
+      {"patient": "Valentina Herrera", "status": "Solicitud de cambio", "age": "Recibida hoy, 08:10"},
+      {"patient": "Andrés Gutiérrez", "status": "Desactualizada", "age": "Recibida hace 2 días, 11:05"},
+      {"patient": "Sofía Rivas", "status": "Conciliación pendiente", "age": "Recibida hace 3 días, 09:40"}
+    ],
+    "navCount": 2,
+    "footer": "2 solicitud(es) esperan tu revisión."
+  },
+  {
+    "case": "Detail shows request, age, status and the untouched current appointment",
+    "route": "solicitud/r1",
+    "message": "«No podré asistir ese día. ¿Podrían ofrecerme otra fecha?»",
+    "currentAppointment": "22 de octubre · 09:30 – 10:00 · Control de seguimiento",
+    "note": "La solicitud por sí sola no reserva ni mueve esta cita."
+  },
+  {
+    "case": "Choosing a slot does not alter the appointment; saving from the request marks it resolved",
+    "route": "cita/a2/reprogramar?solicitud=r1",
+    "afterSave": {"request": "Resuelta", "navCount": 1, "footer": "1 solicitud(es) esperan tu revisión."},
+    "noDuplicateChanges": true
+  },
+  {
+    "case": "Accepted change with failed reconciliation is distinguished and offers no simulated success",
+    "route": "solicitud/r4",
+    "status": "Conciliación pendiente",
+    "text": "El cambio de cita ya fue aceptado, pero esta solicitud sigue abierta: falta actualizarla en el ejemplo. No requiere una nueva reserva.",
+    "actions": ["Ver cita"]
+  },
+  {
+    "case": "Outdated request is distinguished without duplicating changes",
+    "route": "solicitudes",
+    "status": "Desactualizada",
+    "implemented": "stale detail explains the appointment already moved and shows only Ver cita"
+  },
+  {
+    "case": "Actions without contract produce no simulated service success",
+    "implemented": "no reject/withdraw buttons; pending flow only records the local change and marks the request resolved in memory"
+  }
+]

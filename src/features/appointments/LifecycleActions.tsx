@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { CircleNotch, Prohibit, CheckCircle, XCircle, UserCheck } from "@phosphor-icons/react";
+import Modal from "../../components/primitives/Modal";
 import {
   cancelAppointment, completeAppointment, confirmAppointment, markNoShow,
   type AppointmentState, type EntityRow, visibleOf,
@@ -45,7 +46,9 @@ export default function LifecycleActions({
       await work();
       setDialog(null);
       setReason("");
-      onMutated(`${action} guardado en este equipo · Pendiente de aceptación.`);
+      /* Confirma solo la persistencia local conocida; no promete liberación,
+       * aceptación compartida ni envío de mensajes. */
+      onMutated("Cita guardada.");
     } catch (error: unknown) {
       onError(mutationErrorMessage(error));
     } finally {
@@ -59,7 +62,7 @@ export default function LifecycleActions({
   const dialogTexts: Record<Exclude<DialogKind, null>, { title: string; body: string; confirm: string; action: string }> = {
     cancel: {
       title: "Cancelar cita",
-      body: `Vas a cancelar la cita de ${patientLabel} del ${formatDateFull(zone, state.startsAt)} a las ${formatTime(zone, state.startsAt)}. La historia se conserva; el horario solo se libera cuando la API acepte la cancelación y podrá ofrecerse a otra persona.`,
+      body: `Vas a cancelar la cita de ${patientLabel} del ${formatDateFull(zone, state.startsAt)} a las ${formatTime(zone, state.startsAt)}. La historia se conserva; el horario solo se libera cuando se acepte la cancelación y podrá ofrecerse a otra persona.`,
       confirm: "Confirmar cancelación",
       action: "Cancelación",
     },
@@ -85,7 +88,7 @@ export default function LifecycleActions({
             type="button"
             className="btn btn--primary"
             disabled={busy}
-            onClick={() => void run("Confirmación", () => confirmAppointment(state.appointmentId, base))}
+            onClick={() => void run("confirm", () => confirmAppointment(state.appointmentId, base))}
           >
             {busyAction === "confirm" ? <CircleNotch size={16} aria-hidden="true" /> : <CheckCircle size={16} aria-hidden="true" />}
             {confirmLabel}
@@ -123,9 +126,14 @@ export default function LifecycleActions({
         </p>
       ) : null}
 
-      {dialog && (
-        <div className="modal-backdrop" role="alertdialog" aria-modal="true" aria-labelledby="accion-titulo">
-          <div className="modal-card">
+      <Modal
+        open={dialog !== null}
+        onClose={() => { setDialog(null); setReason(""); }}
+        alert
+        labelledBy="accion-titulo"
+      >
+        {dialog && (
+          <>
             <h2 id="accion-titulo" style={{ fontSize: 20 }}>{dialogTexts[dialog].title}</h2>
             <p className="muted">{dialogTexts[dialog].body}</p>
             <label className="field-label">
@@ -163,9 +171,9 @@ export default function LifecycleActions({
                 {dialog === "cancel" ? "Conservar cita" : "Volver"}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </section>
   );
 }

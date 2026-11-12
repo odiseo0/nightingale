@@ -1,0 +1,53 @@
+[
+  {
+    "case": "List ties each message to patient, appointment, type/channel, send date and known result",
+    "route": "comunicaciones",
+    "columns": ["Paciente", "Comunicación (tipo · canal)", "Cita relacionada", "Envío", "Estado", "Acciones"],
+    "rows": [
+      {"patient": "Ana María Rodríguez", "message": "Recordatorio de cita · WhatsApp", "appointment": "22 de octubre, 09:00", "sent": "21 de octubre · 09:00", "status": "Entregado"},
+      {"patient": "Luis Fernando Pérez", "message": "Recordatorio de cita · WhatsApp", "appointment": "22 de octubre, 09:30", "sent": "21 de octubre · 09:30", "status": "Entregado"},
+      {"patient": "Carlos Méndez", "message": "Confirmación de asistencia · WhatsApp", "appointment": "22 de octubre, 11:00", "sent": "21 de octubre · 17:10", "status": "Respondido"},
+      {"patient": "Valentina Herrera", "message": "Recordatorio de cita · WhatsApp", "appointment": "22 de octubre, 11:30", "sent": "22 de octubre · 08:00", "status": "Programado"},
+      {"patient": "José Antonio Castillo", "message": "Recordatorio de cita · WhatsApp", "appointment": "22 de octubre, 14:00", "sent": "22 de octubre · 08:30", "status": "Revisar teléfono"},
+      {"patient": "María Fernanda del Carmen González", "message": "Recordatorio de cita · WhatsApp", "appointment": "22 de octubre, 10:00", "sent": "22 de octubre · 08:30", "status": "Resultado desconocido"}
+    ],
+    "subtitle": "No hay mensajería libre."
+  },
+  {
+    "case": "Status filter shortens the list with a visible cleanup",
+    "route": "comunicaciones",
+    "filter": {"dialog": "Filtrar comunicaciones", "apply": "Entregado"},
+    "result": {"rows": 2, "note": "Filtrado por «Entregado»", "cleanup": "Limpiar filtro restores six rows"}
+  },
+  {
+    "case": "Detail relates the appointment and does not change attendance by itself",
+    "route": "comunicaciones",
+    "dialog": "Detalle de comunicación",
+    "failedPhone": {"patient": "José Antonio Castillo", "appointment": "Cita: 22 de octubre, 14:00 – 14:30 · Consulta general", "status": "Revisar teléfono", "text": "Fallo conocido: el número no pudo validarse en este ejemplo. No ofrecemos un reenvío automático; revisa el contacto antes de cualquier otro intento."},
+    "unknownResult": {"patient": "María Fernanda del Carmen González", "status": "Resultado desconocido", "text": "Sin confirmación de entrega en este ejemplo (tiempo de espera agotado). No reenviamos a ciegas: revisa el contacto o espera la actualización del resultado.", "noResendOffered": true},
+    "responded": {"patient": "Carlos Méndez", "text": "La respuesta queda registrada con la comunicación; el estado de la cita lo cambia el personal al confirmarla, no este mensaje."},
+    "footnote": "Las comunicaciones no cambian por sí solas el estado de la cita."
+  },
+  {
+    "case": "Contact review returns to the same message with context",
+    "route": "comunicaciones",
+    "flow": ["Detalle de comunicación → Revisar contacto", "Revisar contacto de José Antonio Castillo: teléfono registrado y canal preferido; «Este aviso no reenvía el mensaje.»", "Volver al mensaje restores the failed-message detail"],
+    "noBlindResend": true
+  },
+  {
+    "case": "Appointment detail shows its real related messages",
+    "route": "cita/a1",
+    "implemented": "Communications section lists messages tied to the appointment; appointments without messages show «Sin comunicaciones registradas.»"
+  },
+  {
+    "case": "Keyboard and narrow sizes",
+    "checks": {
+      "escapeClosesMessageDetail": true,
+      "at800x600": "table keeps its own horizontal scroll without document overflow; touch targets verified under mobile emulation"
+    }
+  },
+  {
+    "case": "Limits",
+    "implemented": "Delivery and response results are in-memory examples; no real messaging, retry or provider call is simulated."
+  }
+]

@@ -1,0 +1,855 @@
+{
+  "date": "2026-11-11",
+  "typeChecks": [
+    {
+      "path": "agenda",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "body": "Mulish, \"Segoe UI\", sans-serif",
+      "heading": "Montserrat, \"Segoe UI\", sans-serif",
+      "overflow": false
+    },
+    {
+      "path": "paciente/p1",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "body": "Mulish, \"Segoe UI\", sans-serif",
+      "heading": "Montserrat, \"Segoe UI\", sans-serif",
+      "overflow": false
+    },
+    {
+      "path": "cita/nueva",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "body": "Mulish, \"Segoe UI\", sans-serif",
+      "heading": "Montserrat, \"Segoe UI\", sans-serif",
+      "overflow": false
+    },
+    {
+      "path": "agenda",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "body": "Mulish, \"Segoe UI\", sans-serif",
+      "heading": "Montserrat, \"Segoe UI\", sans-serif",
+      "overflow": false
+    },
+    {
+      "path": "paciente/p1",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "body": "Mulish, \"Segoe UI\", sans-serif",
+      "heading": "Montserrat, \"Segoe UI\", sans-serif",
+      "overflow": false
+    },
+    {
+      "path": "cita/nueva",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "body": "Mulish, \"Segoe UI\", sans-serif",
+      "heading": "Montserrat, \"Segoe UI\", sans-serif",
+      "overflow": false
+    }
+  ],
+  "shellChecks": [
+    {
+      "viewer": "owner-one",
+      "scenario": "normal",
+      "notice": "",
+      "overflow": false,
+      "professional": false,
+      "reviewLink": false
+    },
+    {
+      "viewer": "assistant-one",
+      "scenario": "normal",
+      "notice": "",
+      "overflow": false,
+      "professional": true,
+      "reviewLink": false
+    },
+    {
+      "viewer": "owner-many",
+      "scenario": "normal",
+      "notice": "",
+      "overflow": false,
+      "professional": true,
+      "reviewLink": false
+    },
+    {
+      "viewer": "owner-one",
+      "scenario": "offline",
+      "notice": "",
+      "overflow": false,
+      "professional": false,
+      "reviewLink": false
+    },
+    {
+      "viewer": "owner-one",
+      "scenario": "unavailable",
+      "notice": "",
+      "overflow": false,
+      "professional": false,
+      "reviewLink": false
+    },
+    {
+      "viewer": "owner-one",
+      "scenario": "conflict",
+      "notice": "Una cita necesita tu revisión.Otro equipo reservó el horario que habías elegido.Revisar",
+      "overflow": false,
+      "professional": false,
+      "reviewLink": true
+    }
+  ],
+  "routeChecks": [
+    {
+      "hash": "#/acceso",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Entra a tu consulta",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/preparacion",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Tu consulta, lista para empezar",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/agenda",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Hoy, jueves 22",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/agenda/semana",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "La semana",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/citas",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Todas las citas",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/cita/a1",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Hoy, jueves 22",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/cita/nueva",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Nueva cita",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/cita/a1/reprogramar",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Reprogramar cita",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/pacientes",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Pacientes",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/paciente/p1",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Ana María Rodríguez",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/pacientes/nuevo",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Registrar paciente",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/solicitudes",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Solicitudes",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/solicitud/r1",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Solicitud de cambio",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/lista-espera",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Lista de espera",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/lista-espera/ofertas",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Lista de espera",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/comunicaciones",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Comunicaciones",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/indicadores",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Indicadores",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/configuracion/cuenta",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Configuración",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/configuracion/servicios",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Configuración",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/configuracion/horarios",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Configuración",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/configuracion/comunicaciones",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Configuración",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/configuracion/equipo",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Configuración",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/configuracion/dispositivos",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Configuración",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/actividad",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Por revisar",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/conflicto/a3",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Revisar un horario",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/diagnostico",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Diagnóstico",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/hub/cita",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Tu próxima cita",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/hub/confirmada",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Asistencia confirmada",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/hub/cancelar",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Cancelar tu cita",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/hub/cancelada",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Tu cita se ha cancelado",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/hub/cambiar",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "¿Necesitas otra fecha?",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/hub/solicitud",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Solicitud recibida",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/hub/enlace-vencido",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "Este enlace ya no está disponible",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/hub/no-disponible",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "heading": "No pudimos comprobar el resultado",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/acceso",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Entra a tu consulta",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/preparacion",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Tu consulta, lista para empezar",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/agenda",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Hoy, jueves 22",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/agenda/semana",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "La semana",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/citas",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Todas las citas",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/cita/a1",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Hoy, jueves 22",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/cita/nueva",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Nueva cita",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/cita/a1/reprogramar",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Reprogramar cita",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/pacientes",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Pacientes",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/paciente/p1",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Ana María Rodríguez",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/pacientes/nuevo",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Registrar paciente",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/solicitudes",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Solicitudes",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/solicitud/r1",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Solicitud de cambio",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/lista-espera",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Lista de espera",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/lista-espera/ofertas",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Lista de espera",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/comunicaciones",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Comunicaciones",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/indicadores",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Indicadores",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/configuracion/cuenta",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Configuración",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/configuracion/servicios",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Configuración",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/configuracion/horarios",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Configuración",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/configuracion/comunicaciones",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Configuración",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/configuracion/equipo",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Configuración",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/configuracion/dispositivos",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Configuración",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/actividad",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Por revisar",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/conflicto/a3",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Revisar un horario",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/diagnostico",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Diagnóstico",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/hub/cita",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Tu próxima cita",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/hub/confirmada",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Asistencia confirmada",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/hub/cancelar",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Cancelar tu cita",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/hub/cancelada",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Tu cita se ha cancelado",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/hub/cambiar",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "¿Necesitas otra fecha?",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/hub/solicitud",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Solicitud recibida",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/hub/enlace-vencido",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "Este enlace ya no está disponible",
+      "iconsConsistent": true,
+      "overflow": false
+    },
+    {
+      "hash": "#/hub/no-disponible",
+      "size": {
+        "width": 800,
+        "height": 600
+      },
+      "heading": "No pudimos comprobar el resultado",
+      "iconsConsistent": true,
+      "overflow": false
+    }
+  ],
+  "overflowRegression": {
+    "client": 785,
+    "overflow": false,
+    "scroll": 785,
+    "tableScroll": 658,
+    "tableWidth": 547
+  },
+  "filterChecks": [
+    {
+      "case": "Assistant after inaccessible filter",
+      "overflow": false,
+      "rows": 8,
+      "selected": ""
+    }
+  ],
+  "secondProfessionalCheck": {
+    "availability": false,
+    "empty": "No hay citas para mostrarPrueba con otro filtro o elimina los filtros.Quitar filtros",
+    "filter": "martin"
+  },
+  "keyboardChecks": [
+    {
+      "case": "Return from appointment",
+      "date": "2026-10-23",
+      "focusedLink": "#/cita/a9",
+      "status": "Programada"
+    },
+    {
+      "case": "Open drawer",
+      "focus": "Cerrar navegación",
+      "footerInert": true,
+      "workspaceInert": true
+    },
+    {
+      "case": "Wrap backward",
+      "focusedLink": "#/configuracion/cuenta"
+    },
+    {
+      "case": "Wrap forward",
+      "focus": "Nightingale"
+    },
+    {
+      "case": "Escape",
+      "focus": "Abrir menú",
+      "workspaceInert": false
+    },
+    {
+      "case": "Skip link",
+      "focusedId": "main",
+      "hash": "#/agenda"
+    }
+  ],
+  "limits": [
+    "Pruebas sobre datos ficticios",
+    "No servicios reales",
+    "Sin prueba de lector de pantalla",
+    "C01 pendiente de aceptación del usuario"
+  ]
+}

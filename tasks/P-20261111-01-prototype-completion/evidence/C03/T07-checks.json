@@ -1,0 +1,59 @@
+[
+  {
+    "case": "Responsible shows relationship, role, validity, representation and activity as separate data",
+    "route": "paciente/p9",
+    "responsibles": [
+      {"name": "Laura Rivas", "relationship": "Madre", "role": "Contacto y decisiones administrativas", "vigencia": "Vigente desde 10 de abril de 2026", "representation": "declarada", "phone": "+58 412 000 2001"},
+      {"name": "Tomás Rivas", "relationship": "Padre", "role": "Solo contacto", "vigencia": "Vigencia finalizada el 30 de junio de 2026", "representation": "sin constancia", "phone": "+58 414 000 3002"}
+    ],
+    "minorNotIdentifiedWithAdultDocument": true
+  },
+  {
+    "case": "Completeness conflict: deactivating the only valid responsible of a complete minor ficha is blocked",
+    "route": "paciente/p9",
+    "action": "deactivate-responsible:c1",
+    "dialog": "No se puede inactivar este vínculo",
+    "message": "Laura Rivas es el único responsable vigente con teléfono de Gabriel Rivas. Inactivarlo dejaría una ficha completa sin sus requisitos.",
+    "stateKept": true
+  },
+  {
+    "case": "Adding a responsible from the record links it with validity starting today",
+    "route": "paciente/p9",
+    "added": {"name": "Carmen Luzardo", "relationship": "Tía", "vigencia": "Vigente desde 22 de octubre de 2026"},
+    "linked": true
+  },
+  {
+    "case": "Deactivating the vínculo works once another valid responsible exists; reactivate available",
+    "route": "paciente/p9",
+    "after": {"c1": "Vigencia finalizada el 22 de octubre de 2026", "c3": "Vigente"},
+    "fichaStillComplete": true
+  },
+  {
+    "case": "Record splits upcoming encounters and paginated history",
+    "route": "paciente/p1",
+    "upcoming": 2,
+    "history": "5 de 7 citas",
+    "afterLoadMore": "7 de 7 citas",
+    "rowsIncludeDate": true
+  },
+  {
+    "case": "Deactivating a record does not cancel its appointments",
+    "route": "paciente/p1",
+    "badges": ["Ficha completa", "Inactivo"],
+    "appointmentsKept": 9,
+    "newAppointmentHidden": true,
+    "reactivarAvailable": true
+  },
+  {
+    "case": "Responsible registered inline from the appointment editor is linked and selected",
+    "route": "cita/nueva?paciente=p9",
+    "added": {"name": "Diego Luzardo", "relationship": "Tío"},
+    "summaryShows": "Responsable: Diego Luzardo",
+    "bookingDraftKept": true
+  },
+  {
+    "case": "Editor dirty protection still triggers beforeunload on reload",
+    "route": "cita/nueva?paciente=p9",
+    "beforeUnload": "confirm-leave dialog shown"
+  }
+]

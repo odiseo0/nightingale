@@ -1,0 +1,40 @@
+[
+  {
+    "case": "Account separates shared data, place address, zone and local preferences with explicit scope",
+    "route": "configuracion/cuenta",
+    "sections": ["Datos de la consulta", "Lugar de atención", "Zona horaria", "Preferencias de este equipo"],
+    "addressEndsAt": "ciudad y estado; el país no se muestra",
+    "theme": "Claro único definido"
+  },
+  {
+    "case": "Owner edits place and city; saved in the example",
+    "route": "configuracion/cuenta",
+    "saved": {"placeName": "Clínica Santa Paula", "city": "Valencia", "state": "Carabobo"}
+  },
+  {
+    "case": "Historical appointment keeps its location snapshot after the account change",
+    "route": "cita/a10",
+    "location": "Centro Médico Los Olivos · Consultorio 204",
+    "unchangedAfterAccountEdit": true
+  },
+  {
+    "case": "Incomplete address rejected with fields preserved",
+    "route": "configuracion/cuenta",
+    "error": "La dirección de lectura debe llegar al menos a ciudad y estado. Revisa los campos; tus cambios se conservan."
+  },
+  {
+    "case": "Assistant sees shared data read-only with explanation",
+    "route": "configuracion/cuenta",
+    "viewer": "assistant",
+    "saveDisabled": true,
+    "help": "Solo la persona que administra la consulta puede cambiar estos datos."
+  },
+  {
+    "case": "Offline blocks shared-data save but local preferences still save",
+    "route": "configuracion/cuenta",
+    "scenario": "offline",
+    "sharedError": "Cambiar los datos compartidos requiere conexión y acceso al servicio. Tus cambios se conservan en el formulario.",
+    "localSaved": {"hourFormat": "12 horas"},
+    "localPersistsAfterNavigation": true
+  }
+]

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>Nightingale · Tu cita (diseño Hub)</title><link rel="stylesheet" href="styles.css"><style>
+/* Entrega de diseño del Patient Hub: móvil desde 320 px. Reutiliza tokens y clases de la muestra. */
+.hub{max-width:480px;margin:0 auto;padding:16px;display:grid;gap:16px}.hub header{display:grid;gap:4px;margin-bottom:8px}.hub header small{color:var(--muted)}.hub-card{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:16px;display:grid;gap:12px}.hub-card h1{font-size:24px;margin:0}.hub-card h2{font-size:18px;margin:0}.hub-card p{margin:0;color:var(--muted)}.hub dl{margin:0;display:grid;gap:8px}.hub dt{color:var(--muted);font-size:13px}.hub dd{margin:0;font-weight:500}.hub-actions{display:grid;gap:8px}.hub-actions button,.hub-actions a{min-height:44px;display:flex;align-items:center;justify-content:center;text-align:center}.hub .text-link{background:none;border:0;color:var(--on-selected);min-height:44px;font-weight:500}.hub .state{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;color:var(--text)}.hub .state strong{display:block;margin-bottom:4px}.hub nav{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}.hub nav a{text-decoration:underline}
+</style></head>
+<body><a class="skip" href="#hub-main">Ir al contenido</a><div class="review-note">Entrega de diseño del Patient Hub · Datos sintéticos · Abrir o previsualizar no ejecuta acciones · Repositorio propietario pendiente</div>
+<main id="hub-main" class="hub"><header><strong class="brand" style="font-size:20px">Nightingale</strong><small>Consultorio Centro · Medicina general</small></header>
+<section id="hub-appointment" aria-label="Tu cita">
+  <div class="hub-card"><p class="eyebrow">Tu cita</p><h1>Consulta de seguimiento</h1><dl><dt>Profesional</dt><dd>Dra. Valentina Ríos · Medicina general</dd><dt>Fecha y hora</dt><dd>Lunes 16 de noviembre de 2026 · 09:00–09:30 · hora de Caracas</dd><dt>Lugar</dt><dd>Consultorio Centro · Avenida Los Leones · Barquisimeto, Lara</dd><dt>Instrucciones</dt><dd>Llega 10 minutos antes con tu documento de identidad.</dd><dt>Estado</dt><dd><span class="badge">Programada</span></dd></dl>
+  <div class="hub-actions"><a class="button primary" href="#hub-confirm">Confirmar asistencia</a><a class="button" href="#hub-request">Solicitar cambio de fecha</a><a class="button" href="#hub-cancel">Cancelar cita</a></div></div>
+  <nav aria-label="Ejemplos de estados"><a href="#hub-confirm">Aceptada</a><a href="#hub-request">Solicitud recibida</a><a href="#hub-expired">Enlace vencido</a><a href="#hub-unavailable">Servicio no disponible</a></nav>
+</section>
+<section id="hub-confirm" aria-label="Asistencia confirmada" hidden>
+  <div class="hub-card"><p class="eyebrow">Resultado conocido</p><h1>Asistencia confirmada</h1><p>Lunes 16 de noviembre de 2026 · 09:00–09:30 · Consultorio Centro.</p><div class="state"><strong>Tu horario no cambió.</strong>Si necesitas otra fecha, solicítalo y conservaremos este horario hasta que el consultorio decida.</div><a class="text-link" href="#hub-appointment">Volver a tu cita</a></div>
+</section>
+<section id="hub-request" aria-label="Solicitud recibida" hidden>
+  <div class="hub-card"><p class="eyebrow">Resultado conocido</p><h1>Solicitud recibida</h1><p>El consultorio revisará tu solicitud de cambio.</p><div class="state"><strong>Tu horario actual se conserva.</strong>Pedir un cambio no reserva otro horario ni modifica esta cita por sí solo.</div><a class="text-link" href="#hub-appointment">Volver a tu cita</a></div>
+</section>
+<section id="hub-cancel" aria-label="Cancelar cita" hidden>
+  <div class="hub-card"><p class="eyebrow">Cancelar cita</p><h1>¿Cancelar tu cita del lunes 16 de noviembre, 09:00?</h1><div class="state"><strong>Qué pasará.</strong>Cuando el consultorio acepte la cancelación, este horario podrá ofrecerse a otra persona. Si el resultado aún se desconoce, tu cita permanece como está.</div><div class="hub-actions"><button class="primary" type="button" disabled>Sí, cancelar mi cita</button><a class="button" href="#hub-appointment">Volver sin cancelar</a></div><p>Ejemplo de diseño: el botón no ejecuta ninguna acción.</p></div>
+</section>
+<section id="hub-expired" aria-label="Enlace no disponible" hidden>
+  <div class="hub-card"><p class="eyebrow">Acceso</p><h1>Este enlace ya no está disponible</h1><p>Puede haber vencido o haber sido revocado. No mostramos los datos de la cita desde aquí.</p><div class="state"><strong>Siguiente paso.</strong>Pide un enlace nuevo al consultorio por los canales que tengas con ellos.</div></div>
+</section>
+<section id="hub-unavailable" aria-label="Servicio no disponible" hidden>
+  <div class="hub-card"><p class="eyebrow">Servicio</p><h1>Servicio no disponible</h1><p>No pudimos consultar tu cita ahora. Tu cita no cambia por este motivo.</p><div class="state"><strong>Siguiente paso.</strong>Intenta de nuevo más tarde o contacta al consultorio.</div><a class="text-link" href="#hub-appointment">Reintentar</a></div>
+</section>
+</main>
+<script>
+// Router mínimo de la muestra: muestra la sección del hash y enfoca su título.
+const sections = ["hub-appointment", "hub-confirm", "hub-request", "hub-cancel", "hub-expired", "hub-unavailable"];
+function select() {
+  const id = location.hash ? location.hash.slice(1) : "hub-appointment";
+  const current = sections.includes(id) ? id : "hub-appointment";
+  for (const section of sections) document.getElementById(section).hidden = section !== current;
+  document.getElementById(current).querySelector("h1").setAttribute("tabindex", "-1");
+  document.getElementById(current).querySelector("h1").focus({ preventScroll: true });
+}
+window.addEventListener("hashchange", select);
+select();
+</script>
+</body></html>

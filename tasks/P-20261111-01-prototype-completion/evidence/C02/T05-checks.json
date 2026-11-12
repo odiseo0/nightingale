@@ -1,0 +1,161 @@
+[
+  {
+    "case": "Create from slot with double click",
+    "url": "http://127.0.0.1:8766/#/cita/a20",
+    "patient": "Luis Fernando Pérez",
+    "activity": "Cita guardada\n22 de octubre · 10:30 – 11:00\n22 de octubre · 10:20 · Elena Arias"
+  },
+  {
+    "case": "Occupied interval preserves draft",
+    "end": "11:00",
+    "error": "Ese intervalo coincide con una cita o un bloqueo. Tus datos se conservan.",
+    "patient": "p2",
+    "start": "10:30"
+  },
+  {
+    "case": "Keep editing",
+    "start": "10:30"
+  },
+  {
+    "case": "One added appointment",
+    "rows": 9,
+    "newRecordLinks": 1
+  },
+  {
+    "case": "Reschedule 45 minutes",
+    "end": "12:00",
+    "endReadonly": true,
+    "patientChoices": 0,
+    "professionalChoices": 0,
+    "serviceChoices": 0,
+    "summary": "Comparar horariosSofía RivasPrimera consultaElena AriasHorario actualViernes, 23 de octubre14:00 – 14:45Nuevo horario Lunes, 26 de octubre 11:15 – 12:00 Centro Médico Los Olivos · Consultorio 204La confirmación anterior dejará de ser válida cuando se acepte el cambio."
+  },
+  {
+    "case": "Rescheduled record",
+    "facts": "Fecha\nLunes, 26 de octubre\nHorario\n11:15 – 12:00\nServicio\nPrimera consulta\nProfesional\nElena Arias\nLugar\nCentro Médico Los Olivos · Consultorio 204\nContacto\n+58 424 000 1007",
+    "history": "Nuevo horario guardado\n26 de octubre · 11:15 – 12:00\n22 de octubre · 10:20 · Elena Arias\nCita registrada\n23 de octubre · 14:00 – 14:45\n18 de octubre · 16:20 · Elena Arias"
+  },
+  {
+    "case": "Minor requires responsible",
+    "responsibleControl": 1
+  },
+  {
+    "case": "No responsible, not saved",
+    "editorStillVisible": 1
+  },
+  {
+    "case": "Minor booking",
+    "facts": "Fecha\nMartes, 27 de octubre\nHorario\n09:00 – 09:30\nServicio\nConsulta general\nProfesional\nElena Arias\nLugar\nCentro Médico Los Olivos · Consultorio 204\nContacto\n+58 412 000 2001\nResponsable\nLaura Rivas"
+  },
+  {
+    "case": "Related form retained",
+    "document": "EJ-000123",
+    "name": "Paciente de ejemplo"
+  },
+  {
+    "case": "Related registration restores booking",
+    "date": "2026-10-28",
+    "end": "11:30",
+    "focus": "booking-patient",
+    "patient": "Paciente de ejemplo · +58 4120000099",
+    "service": "Control de seguimiento",
+    "start": "11:00"
+  },
+  {
+    "case": "Related patient booked",
+    "patient": "Paciente de ejemplo"
+  },
+  {
+    "case": "Future appointment actions",
+    "complete": 0,
+    "absence": 0
+  },
+  {
+    "case": "Read-only detail",
+    "cancel": 0,
+    "reschedule": 0
+  },
+  {
+    "case": "Read-only editor",
+    "saveEnabled": false
+  },
+  {
+    "case": "After start and grace",
+    "complete": 1,
+    "absence": 1
+  },
+  {
+    "case": "Absence terminal",
+    "status": "Ausencia",
+    "mutatingButtons": 0
+  },
+  {
+    "case": "Staff confirmation",
+    "status": "Confirmada"
+  },
+  {
+    "case": "Cancellation confirmation",
+    "copy": "¿Cancelar esta cita?\n\nLuis Fernando Pérez\n22 de octubre · 09:30 – 10:00\nControl de seguimiento\n\nSe conservará la historia. El horario podrá ofrecerse a otra persona cuando se acepte la cancelación.\n\nCerrar\nConfirmar cancelación"
+  },
+  {
+    "case": "Cancel dialogue leaves booking unchanged",
+    "status": "Confirmada"
+  },
+  {
+    "case": "Offline cancellation holds shared slot",
+    "before": "Primer intervalo disponible\n10:30 – 11:00",
+    "after": "Primer intervalo disponible\n10:30 – 11:00",
+    "status": "Cancelada",
+    "reviewLink": 0
+  },
+  {
+    "case": "Simulated known acceptance frees cancelled slot",
+    "slot": "Primer intervalo disponible\n09:30 – 10:00",
+    "history": "Cancelación guardada\n22 de octubre · 09:30 – 10:00\n22 de octubre · 11:20 · Elena Arias\nAsistencia confirmada\n22 de octubre · 09:30 – 10:00\n22 de octubre · 11:20 · Elena Arias\nCita registrada\n22 de octubre · 09:30 – 10:00\n18 de octubre · 16:20 · Elena Arias",
+    "mutatingButtons": 0
+  },
+  {
+    "case": "Complete appointment",
+    "status": "Atendida",
+    "mutatingButtons": 0
+  },
+  {
+    "case": "Terminal reschedule blocked",
+    "formCount": 0,
+    "message": "Consulta la cita y su historia\n\nLas citas canceladas, atendidas o con ausencia no se pueden reabrir.\n\nVolver a la cita"
+  },
+  {
+    "case": "Browser Back guard",
+    "dialog": "Hay cambios sin guardar\n\nPuedes seguir editando o descartar los cambios del formulario.\n\nCerrar\nSeguir editando\nDescartar cambios",
+    "url": "http://127.0.0.1:8766/#/cita/nueva?fecha=2026-10-29&hora=09:00&fin=09:30"
+  },
+  {
+    "case": "Draft survives read-only round trip",
+    "date": "2026-10-29",
+    "end": "10:00",
+    "patient": "p1",
+    "start": "09:15"
+  },
+  {
+    "case": "Schedule block rejected",
+    "error": "Ese intervalo coincide con una cita o un bloqueo. Tus datos se conservan."
+  },
+  {
+    "case": "Concurrent conflict keeps proposal",
+    "end": "11:00",
+    "error": "El horario cambió en otro equipo. Conservamos la propuesta para que elijas otro intervalo.",
+    "patient": "p1",
+    "start": "10:30"
+  },
+  {
+    "case": "Unavailable service keeps one local intention",
+    "url": "http://127.0.0.1:8766/#/cita/a22",
+    "rows": 1,
+    "history": [
+      "Cita guardada29 de octubre · 09:00 – 09:3022 de octubre · 11:20 · Elena Arias",
+      ""
+    ],
+    "notice": 0,
+    "nextSlot": "Primer intervalo disponible\n09:30 – 10:00"
+  }
+]

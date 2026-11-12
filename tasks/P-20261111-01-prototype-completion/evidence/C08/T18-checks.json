@@ -1,0 +1,27 @@
+[
+  {
+    "case": "Review link appears only with pending intervention, derived from real state",
+    "route": "actividad",
+    "navBadge": 3,
+    "items": [
+      {"title": "Edición no aplicada", "source": "seeded example of a rejected shared edit", "actions": ["Revisar horario → configuracion/horarios", "Marcar revisado"]},
+      {"title": "Conciliación pendiente", "source": "request r4 with status partial (T11)", "action": "Ver solicitud → solicitud/r4"},
+      {"title": "Revocación por confirmar", "source": "Tablet de Lucía with status revoking (T16)", "action": "Ver dispositivos"}
+    ],
+    "noNoise": "automatic recoveries and unknown results create no items; stated on screen"
+  },
+  {
+    "case": "Conflict scenario adds the conflict item with comparison that keeps proposal and shared state",
+    "route": "actividad + conflicto/a3",
+    "checks": {"navBadgeWithConflict": 3, "conflictItem": "María Fernanda del Carmen González · 22 oct 10:00 – 10:30, propuesta conservada", "comparison": "proposal vs shared state preserved; no force/overwrite actions"}
+  },
+  {
+    "case": "Dismissal archives the item everywhere",
+    "route": "actividad / configuracion/horarios",
+    "checks": {"afterDismiss": "item leaves the list and the Horarios notice disappears", "archivedBy": "Marcar revisado (local, in memory)"}
+  },
+  {
+    "case": "Limits",
+    "implemented": "Review items are local examples tied to visible state; no sync queue, no forced resolution, no double intent."
+  }
+]

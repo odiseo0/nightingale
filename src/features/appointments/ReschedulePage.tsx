@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useBlocker, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, CircleNotch, Lock } from "@phosphor-icons/react";
+import Modal from "../../components/primitives/Modal";
 import {
   getAppointment, getBookingContext, rescheduleAppointment,
   type AppointmentState, type BookingContext, type EntityRow, visibleOf,
@@ -78,10 +79,16 @@ export default function ReschedulePage() {
     }
   }, [state, civil, zone, durationMinutes]);
 
+  /* El slot propuesto solo se invalida cuando deja de pertenecer al día
+   * elegido; un error de disponibilidad o un reintento no borran la
+   * propuesta del usuario. */
   useEffect(() => {
-    setSlot(null);
+    setSlot((current) => {
+      if (!current || !civil) return current;
+      return civilOfInstant(zone, current.startsAt) === civil ? current : null;
+    });
     void loadAvailability();
-  }, [loadAvailability]);
+  }, [loadAvailability, zone, civil]);
 
   const dirty = slot !== null;
   dirtyRef.current = dirty;
@@ -161,7 +168,7 @@ export default function ReschedulePage() {
         const raw = sessionStorage.getItem("agenda:estado");
         const stored = raw ? JSON.parse(raw) as Record<string, unknown> : {};
         sessionStorage.setItem("agenda:estado", JSON.stringify({ ...stored, selectedId: state!.appointmentId }));
-        sessionStorage.setItem("agenda:mensaje", "Reprogramación guardada en este equipo · Pendiente de aceptación.");
+        sessionStorage.setItem("agenda:mensaje", "Reprogramación guardada.");
       } catch { /* el mensaje persistente es opcional */ }
       navigate(`/cita/${state!.appointmentId}`);
     } catch (saveError: unknown) {
@@ -215,7 +222,7 @@ export default function ReschedulePage() {
               <div>
                 <dt>Estado de cita</dt>
                 <dd>{state.status === "confirmed" ? "Confirmada" : "Programada"}
-                  {state.confirmedAt && " · confirmada por el servidor anteriormente"}</dd>
+                  {state.confirmedAt && " · confirmada anteriormente"}</dd>
               </div>
             </dl>
           </section>
@@ -293,29 +300,25 @@ export default function ReschedulePage() {
             {sameSlot && <p className="muted">El intervalo propuesto coincide con el actual; elige otro horario.</p>}
             <p className="muted" style={{ fontSize: 13 }}>
               Al aceptarse la reprogramación, la confirmación anterior queda invalidada y la cita
-              vuelve a estar programada. El horario anterior no se libera hasta que la API acepte
-              el cambio. Guardar ahora solo crea una propuesta local en este equipo.
+              vuelve a estar programada. El horario anterior no queda libre hasta que el cambio
+              sea aceptado. Guardar ahora solo guarda la propuesta en este equipo.
             </p>
           </section>
         </div>
       </div>
 
-      {blocker.state === "blocked" && (
-        <div className="modal-backdrop" role="alertdialog" aria-labelledby="descartar-reprogramacion" aria-modal="true">
-          <div className="modal-card">
-            <h2 id="descartar-reprogramacion" style={{ fontSize: 20 }}>Cambios sin guardar</h2>
-            <p className="muted">Si sales ahora, la propuesta de reprogramación se perderá.</p>
-            <div className="toolbar">
-              <button type="button" className="btn btn--primary" onClick={() => blocker.reset?.()}>
-                Seguir editando
-              </button>
-              <button type="button" className="btn" onClick={() => blocker.proceed?.()}>
-                Descartar y salir
-              </button>
-            </div>
-          </div>
+      <Modal open={blocker.state === "blocked"} onClose={() => blocker.reset?.()} alert labelledBy="descartar-reprogramacion">
+        <h2 id="descartar-reprogramacion" style={{ fontSize: 20 }}>Cambios sin guardar</h2>
+        <p className="muted">Si sales ahora, la propuesta de reprogramación se perderá.</p>
+        <div className="toolbar">
+          <button type="button" className="btn btn--primary" onClick={() => blocker.reset?.()}>
+            Seguir editando
+          </button>
+          <button type="button" className="btn" onClick={() => blocker.proceed?.()}>
+            Descartar y salir
+          </button>
         </div>
-      )}
+      </Modal>
     </>
   );
 }

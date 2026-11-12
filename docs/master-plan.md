@@ -807,7 +807,7 @@ El criterio P06, aprobado por el usuario el 2026-10-23, separa interés de reser
 - `sync_inbox`.
 - `sync_cursor`.
 - Resultado local de operaciones.
-- Estado visible de sincronización.
+- Estado interno de sincronización y asuntos que requieren intervención.
 
 **Estado compartido en PostgreSQL, aceptado por Nightingale API:**
 
@@ -1252,7 +1252,7 @@ La creación offline deberá:
 
 - Validarse contra la copia local.
 - Guardarse con estado de sincronización `pending`.
-- Mostrar claramente su carácter provisional.
+- Conservar su carácter provisional internamente; confirmar solo el guardado local, sin etiquetas de sincronización normal.
 - No activar recordatorios cloud hasta ser aceptada.
 - Convertirse en definitiva o conflicto al sincronizar.
 
@@ -1631,6 +1631,8 @@ Los procesos cloud expondrán comprobaciones separadas de:
 
 Una falla del Hub, de recordatorios o de analítica no deberá impedir el arranque ni los casos de uso nativos que no requieren ese servicio. Su estado se informará por separado.
 
+**Revisión de presentación del 2026-11-09:** P-20261109-22 sustituye las indicaciones de exponer el proceso normal de sincronización. Se mantienen aceptación, persistencia, permisos, versiones e identidad de operaciones. «Guardado» confirma solo persistencia local. Véase [maestro de diseño](design-master-plan.md).
+
 ## 22. Esqueleto funcional de la interfaz
 
 El esqueleto existirá para integrar y comprobar funcionalidad. No representa el diseño visual definitivo.
@@ -1642,7 +1644,7 @@ El esqueleto existirá para integrar y comprobar funcionalidad. No representa el
 - Evitar decisiones de marca, color, ilustración o animación.
 - No crear un sistema de diseño definitivo.
 - No acoplar los casos de uso a los componentes React.
-- Permitir inspeccionar estados de sincronización y errores.
+- Permitir inspeccionar estados técnicos en Diagnóstico. En uso diario, sincronización normal invisible y problemas en contexto y Por revisar.
 
 ### 22.2 Rutas o superficies mínimas
 
@@ -1654,7 +1656,7 @@ El esqueleto existirá para integrar y comprobar funcionalidad. No representa el
 | Pacientes | Registrar, buscar y actualizar datos administrativos |
 | Solicitudes | Revisar reprogramaciones del Patient Hub |
 | Lista de espera | Registrar entradas y procesar ofertas |
-| Centro de sincronización | Mostrar conexión, Outbox, última sincronización y conflictos |
+| Por revisar | Mostrar conflictos, rechazos y restricciones que requieren intervención; enlace condicional. Datos técnicos solo en Diagnóstico |
 | Configuración | Probar preferencias y datos de cuenta permitidos |
 | Diagnóstico de desarrollo | Inspeccionar versión, dispositivo y estado de adaptadores sin exponer secretos |
 
@@ -1985,7 +1987,7 @@ Cada cierre deberá producir una modificación de este documento o un ADR refere
 
 Este repositorio contiene el escritorio Tauri, React, TypeScript, TailwindCSS, Rust y SQLite, organizado por componentes con dominio, aplicación y adaptadores separados. La interfaz inicial facilita integración y pruebas; no fija el diseño visual definitivo.
 
-Rust ejecuta los casos de uso nativos sobre SQLite sin Internet. Su coordinador sincroniza operaciones de alto nivel por HTTPS con Nightingale API. API autoriza y revalida su aceptación en PostgreSQL privado con restricciones, transacciones, idempotencia y versiones. El escritorio no tiene credenciales SQL. Los cambios locales pendientes y sus conflictos permanecen visibles.
+Rust ejecuta los casos de uso nativos sobre SQLite sin Internet. Su coordinador sincroniza operaciones de alto nivel por HTTPS con Nightingale API. API autoriza y revalida su aceptación en PostgreSQL privado con restricciones, transacciones, idempotencia y versiones. El escritorio no tiene credenciales SQL. Los cambios locales pendientes se conservan internamente. La sincronización normal es invisible; los problemas que exigen intervención aparecen en contexto y Por revisar.
 
 El Patient Hub es una excepción explícita: su API posee sus capacidades y Rust la consume sin duplicar su lógica ni su estado definitivo. Sin conexión se ofrece la última vista conocida, no una acción remota ficticiamente completada.
 

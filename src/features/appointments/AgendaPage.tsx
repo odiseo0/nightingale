@@ -6,9 +6,10 @@ import {
   type AppointmentState, type AppointmentStatus, type BookingContext,
   type EntityRow, visibleOf,
 } from "../../shared/api/appointments";
+import { getAccountView } from "../../shared/api/account";
 import {
   civilToday, dayRange, errorMessage, formatDateLong, formatTime, formatTimeEnd,
-  patientNameOf, shiftCivil, statusLabel, syncLabel,
+  patientNameOf, shiftCivil, showsProfessionalColumn, statusLabel,
 } from "./presentation";
 import AppointmentDetail from "./AppointmentDetail";
 import WeekPage from "./WeekPage";
@@ -34,6 +35,7 @@ export default function AgendaPage() {
   const navigate = useNavigate();
   const [session, setSession] = useState<SessionState>("loading");
   const [context, setContext] = useState<BookingContext | null>(null);
+  const [viewerRole, setViewerRole] = useState<"owner" | "assistant" | null>(null);
   const [zone, setZone] = useState("UTC");
   const [civil, setCivil] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>({
@@ -42,7 +44,6 @@ export default function AgendaPage() {
   const [rows, setRows] = useState<EntityRow<AppointmentState>[] | null>(null);
   const [total, setTotal] = useState(0);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -92,8 +93,9 @@ export default function AgendaPage() {
   const loadContext = useCallback(async () => {
     setSession("loading");
     try {
-      const data = await getBookingContext();
+      const [data, screen] = await Promise.all([getBookingContext(), getAccountView()]);
       setContext(data);
+      setViewerRole(screen.viewerRole ?? null);
       setZone(data.timeZone);
       setCivil((current) => current ?? civilToday(data.timeZone));
       setSession("ready");
@@ -108,7 +110,6 @@ export default function AgendaPage() {
     if (civil === null) return;
     const request = ++generation.current;
     const hadContent = rowsRef.current !== null;
-    setRefreshing(true);
     if (!hadContent) setInitialLoading(true);
     try {
       const page = await listAppointments({
@@ -129,7 +130,6 @@ export default function AgendaPage() {
     } finally {
       if (request === generation.current) {
         setInitialLoading(false);
-        setRefreshing(false);
       }
     }
   }, [zone, civil, filters]);
@@ -184,6 +184,7 @@ export default function AgendaPage() {
   const professionals = (context?.professionals ?? [])
     .map((row) => row.accepted ?? row.provisional)
     .filter((p): p is NonNullable<typeof p> => p !== null);
+  const showProfessional = showsProfessionalColumn(viewerRole, professionals.length);
   const offers = (context?.offers ?? [])
     .map((row) => row.accepted)
     .filter((o): o is NonNullable<typeof o> => o !== null);
@@ -257,6 +258,7 @@ export default function AgendaPage() {
           context={context}
           professionals={professionals}
           serviceNames={serviceNames}
+          showProfessional={showProfessional}
         />
       )}
 
@@ -264,22 +266,23 @@ export default function AgendaPage() {
       <>
       <div className="page-header">
         <div>
-          <h1 className="page-heading">Agenda</h1>
-          <p className="muted">
-            {formatDateLong(zone, civil)} · zona {zone}
-          </p>
+          <p className="muted" style={{ fontSize: 13, margin: "0 0 4px" }}>Agenda · zona {zone}</p>
+          <h1 className="page-heading" style={{ textTransform: "capitalize" }}>{formatDateLong(zone, civil)}</h1>
         </div>
-        <div className="toolbar" role="group" aria-label="Navegación de fecha">
-          {canCreate && (
-            <button
-              type="button"
-              className="btn btn--primary"
-              onClick={() => navigate("/cita/nueva")}
-            >
-              <Plus size={16} aria-hidden="true" />
-              Nueva cita
-            </button>
-          )}
+        {canCreate && (
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={() => navigate("/cita/nueva")}
+          >
+            <Plus size={16} aria-hidden="true" />
+            Nueva cita
+          </button>
+        )}
+      </div>
+
+      <div className="toolbar" style={{ justifyContent: "space-between" }}>
+        <div className="toolbar" role="group" aria-label="Navegación de fecha" style={{ gap: 8, margin: 0 }}>
           <button
             type="button"
             className="btn"
@@ -316,58 +319,60 @@ export default function AgendaPage() {
             />
           </label>
         </div>
-      </div>
-
-      <div className="toolbar" role="group" aria-label="Filtros de citas">
-        <Funnel size={16} aria-hidden="true" style={{ color: "var(--color-text-tertiary)" }} />
-        <label className="field-label">
-          Profesional
-          <select
-            className="select"
-            value={filters.professionalId}
-            onChange={(e) => setFilters({ ...filters, professionalId: e.target.value })}
-          >
-            <option value="">Todos</option>
-            {professionals.map((p) => (
-              <option key={p.professionalId} value={p.professionalId}>{p.publicName}</option>
-            ))}
-          </select>
-        </label>
-        <label className="field-label">
-          Servicio
-          <select
-            className="select"
-            value={filters.serviceId}
-            onChange={(e) => setFilters({ ...filters, serviceId: e.target.value })}
-          >
-            <option value="">Todos</option>
-            {[...serviceNames].map(([id, name]) => (
-              <option key={id} value={id}>{name}</option>
-            ))}
-          </select>
-        </label>
-        <label className="field-label">
-          Estado
-          <select
-            className="select"
-            value={filters.status}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-          >
-            <option value="">Todos</option>
-            {Object.entries(statusLabel).map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
-            ))}
-          </select>
-        </label>
-        {filterActive && (
-          <button
-            type="button"
-            className="btn"
-            onClick={() => setFilters({ professionalId: NO_FILTER, serviceId: NO_FILTER, status: NO_FILTER })}
-          >
-            Limpiar filtros
-          </button>
-        )}
+        <div className="toolbar" role="group" aria-label="Filtros de citas" style={{ gap: 8, margin: 0 }}>
+          <Funnel size={16} aria-hidden="true" style={{ color: "var(--color-text-tertiary)", alignSelf: "center" }} />
+          {showProfessional && (
+            <label className="field-label">
+              Profesional
+              <select
+                className="select"
+                value={filters.professionalId}
+                onChange={(e) => setFilters({ ...filters, professionalId: e.target.value })}
+              >
+                <option value="">Todos</option>
+                {professionals.map((p) => (
+                  <option key={p.professionalId} value={p.professionalId}>{p.publicName}</option>
+                ))}
+              </select>
+            </label>
+          )}
+          <label className="field-label">
+            Servicio
+            <select
+              className="select"
+              value={filters.serviceId}
+              onChange={(e) => setFilters({ ...filters, serviceId: e.target.value })}
+            >
+              <option value="">Todos</option>
+              {[...serviceNames].map(([id, name]) => (
+                <option key={id} value={id}>{name}</option>
+              ))}
+            </select>
+          </label>
+          <label className="field-label">
+            Estado
+            <select
+              className="select"
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+            >
+              <option value="">Todos</option>
+              {Object.entries(statusLabel).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </select>
+          </label>
+          {filterActive && (
+            <button
+              type="button"
+              className="btn"
+              style={{ alignSelf: "flex-end" }}
+              onClick={() => setFilters({ professionalId: NO_FILTER, serviceId: NO_FILTER, status: NO_FILTER })}
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </div>
       </div>
 
       {notice && (
@@ -377,8 +382,7 @@ export default function AgendaPage() {
       )}
 
       <p role="status" className="muted" aria-live="polite">
-        {refreshing && !initialLoading && "Actualizando citas…"}
-        {!refreshing && `${total} cita(s) este día en los datos disponibles en este equipo.`}
+        {`${total} cita(s) este día en los datos disponibles en este equipo.`}
       </p>
 
       {initialLoading && rows === null && !error && (
@@ -421,21 +425,17 @@ export default function AgendaPage() {
         <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
           <div className="table-scroll" style={{ flex: 1, minWidth: 0 }}>
             <table className="data-table">
-              <caption className="muted" style={{ textAlign: "left", padding: "8px 12px" }}>
-                Citas de {formatDateLong(zone, civil)}
-              </caption>
               <thead>
                 <tr>
                   <th scope="col">Hora</th>
                   <th scope="col">Paciente</th>
                   <th scope="col">Servicio</th>
-                  <th scope="col">Profesional</th>
+                  {showProfessional && <th scope="col">Profesional</th>}
                   <th scope="col">Estado</th>
-                  <th scope="col">Sincronización</th>
                 </tr>
               </thead>
               <tbody>
-                {visibleRows.map(({ row, state }) => (
+                {visibleRows.map(({ state }) => (
                   <tr key={state.appointmentId}>
                     <td className="num">
                       <button
@@ -451,24 +451,19 @@ export default function AgendaPage() {
                         {formatTime(zone, state.startsAt)}–{formatTimeEnd(zone, state.endsAt)}
                       </button>
                     </td>
-                    <td>{patientNameOf(context, state.patientId)}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="row-button"
+                        onClick={() => openRow(state.appointmentId)}
+                      >
+                        {patientNameOf(context, state.patientId)}
+                      </button>
+                    </td>
                     <td>{state.serviceName}</td>
-                    <td>{state.professionalName}</td>
+                    {showProfessional && <td>{state.professionalName}</td>}
                     <td>
                       <span className="badge">{statusLabel[state.status] ?? state.status}</span>
-                    </td>
-                    <td>
-                      {row.provisional && (
-                        <span className="badge badge--selected">Guardada en este equipo</span>
-                      )}
-                      {row.operations.map((op) => (
-                        <span key={op.operationId} className="badge badge--local">
-                          {syncLabel[op.status] ?? op.status}
-                        </span>
-                      ))}
-                      {!row.provisional && row.operations.length === 0 && (
-                        <span className="muted" style={{ fontSize: 13 }}>Aceptada</span>
-                      )}
                     </td>
                   </tr>
                 ))}

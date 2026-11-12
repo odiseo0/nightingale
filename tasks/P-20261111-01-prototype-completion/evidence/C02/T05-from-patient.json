@@ -1,0 +1,6 @@
+{
+  "case": "Create from patient record",
+  "patientControlId": "booking-patient",
+  "result": "DETALLE DE CITA\nCerrar detalle\nAM\nAna María Rodríguez\nConsulta general\nProgramada\nFecha\nJueves, 22 de octubre\nHorario\n10:30 – 11:00\nServicio\nConsulta general\nProfesional\nElena Arias\nLugar\nCentro Médico Los Olivos · Consultorio 204\nContacto\n+58 412 000 1001\nConfirmar asistencia\nReprogramar\nCancelar cita\nVer paciente\nComunicaciones\n\nNo hay comunicaciones registradas para esta cita.\n\nVer comunicaciones\nActividad de la cita\nCita guardada\n22 de octubre · 10:30 – 11:00\n22 de octubre · 10:20 · Elena Arias",
+  "url": "http://127.0.0.1:8766/#/cita/a20"
+}

@@ -1,0 +1,176 @@
+{
+  "date": "2026-11-12",
+  "columns": [
+    "Observación",
+    "Resultado",
+    "Severidad",
+    "Detalles",
+    "Notas",
+    "Página",
+    "Heurística"
+  ],
+  "rows": [
+    {
+      "Observación": "H01. Preparación confirma datos que no se reflejan.",
+      "Resultado": "No pasa",
+      "Severidad": "Mayor",
+      "Detalles": "Se confirma Consulta UX, 45 min y 08:00–11:00; Cuenta, Servicios y Horarios conservan valores previos.",
+      "Notas": "Unificar lo confirmado con lo que muestran las demás pantallas.",
+      "Página": "Preparación → Configuración",
+      "Heurística": "1. Estado visible"
+    },
+    {
+      "Observación": "H02. Cerrar Horarios descarta la edición sin aviso.",
+      "Resultado": "No pasa",
+      "Severidad": "Mayor",
+      "Detalles": "Tras cambiar 12:00 a 12:15, cerrar y volver, aparece 12:00.",
+      "Notas": "Proteger cambios sin guardar, como ya hace Citas.",
+      "Página": "Configuración → Horarios",
+      "Heurística": "5. Prevenir errores"
+    },
+    {
+      "Observación": "H03. No se pueden quitar tramos.",
+      "Resultado": "No pasa",
+      "Severidad": "Mayor",
+      "Detalles": "Se pueden añadir períodos, pero no eliminar uno añadido ni uno existente.",
+      "Notas": "Añadir una salida por tramo sin perder el resto del formulario.",
+      "Página": "Configuración → Horarios",
+      "Heurística": "3. Control y reversión"
+    },
+    {
+      "Observación": "H04. El formato de 12 horas no se aplica.",
+      "Resultado": "No pasa",
+      "Severidad": "Menor",
+      "Detalles": "Se guarda «12 horas», pero Agenda conserva 14:00 y 15:00.",
+      "Notas": "Aplicar la preferencia a las horas que muestra la interfaz.",
+      "Página": "Cuenta / Agenda",
+      "Heurística": "4. Patrones y consistencia"
+    },
+    {
+      "Observación": "H05. «Conciliación pendiente» expone lenguaje interno.",
+      "Resultado": "No pasa",
+      "Severidad": "Menor",
+      "Detalles": "La cita ya cambió, pero la etiqueta no aclara qué debe hacer el personal.",
+      "Notas": "Explicar el estado en palabras de la consulta; validar el término con recepción.",
+      "Página": "Detalle de solicitud r4",
+      "Heurística": "2. Lenguaje del usuario"
+    },
+    {
+      "Observación": "H06. La solicitud repite la misma explicación.",
+      "Resultado": "No pasa",
+      "Severidad": "Menor",
+      "Detalles": "En r4 aparece el mismo párrafo en «Estado de la solicitud» y «Conciliación».",
+      "Notas": "Conservar una explicación y un siguiente paso claro.",
+      "Página": "Detalle de solicitud r4",
+      "Heurística": "8. Eliminar ruido"
+    },
+    {
+      "Observación": "H07. El error de solapamiento orienta poco.",
+      "Resultado": "No pasa",
+      "Severidad": "Menor",
+      "Detalles": "Dice «una cita o un bloqueo», sin señalar la franja ocupada ni cómo corregirla.",
+      "Notas": "Los campos se conservan; falta ofrecer una alternativa o acceso seguro a disponibilidad.",
+      "Página": "Nueva cita",
+      "Heurística": "9. Errores útiles"
+    },
+    {
+      "Observación": "H08. El buscador anuncia citas, pero devuelve fichas.",
+      "Resultado": "No pasa",
+      "Severidad": "Menor",
+      "Detalles": "La búsqueda por nombre devuelve pacientes; no ofrece resultados de citas.",
+      "Notas": "Pendiente en T19; no se atribuye a una tarea terminada de T01–T11.",
+      "Página": "Búsqueda global",
+      "Heurística": "7. Principiantes y expertos"
+    },
+    {
+      "Observación": "H09. La ayuda explica la demo, no la tarea.",
+      "Resultado": "No pasa",
+      "Severidad": "Menor",
+      "Detalles": "El botón es visible, pero solo lleva al catálogo de pantallas y al diagnóstico.",
+      "Notas": "Pendiente en T19: ayuda breve sobre la acción que el usuario quiere completar.",
+      "Página": "Ayuda global",
+      "Heurística": "10. Ayuda fácil de encontrar"
+    },
+    {
+      "Observación": "H10. La cita protege los cambios sin guardar.",
+      "Resultado": "Pasa",
+      "Severidad": "—",
+      "Detalles": "Al salir ofrece seguir editando o descartar; seguir editando conserva 10:30.",
+      "Notas": "Buen patrón para extender a los formularios de configuración.",
+      "Página": "Reprogramar cita",
+      "Heurística": "5. Prevenir errores"
+    },
+    {
+      "Observación": "H11. Una ficha inactiva se puede reactivar.",
+      "Resultado": "Pasa",
+      "Severidad": "—",
+      "Detalles": "La inactivación explica su efecto; reactivar devuelve la ficha a su estado activo.",
+      "Notas": "Las citas ya registradas siguen visibles; comprobación en memoria del prototipo.",
+      "Página": "Ficha de paciente",
+      "Heurística": "3. Control y reversión"
+    },
+    {
+      "Observación": "H12. El horario anterior queda disponible para comparar.",
+      "Resultado": "Pasa",
+      "Severidad": "—",
+      "Detalles": "Reprogramar muestra horario actual y nuevo; la solicitud conserva la cita actual.",
+      "Notas": "Reduce la necesidad de recordar fechas al cambiar de tarea.",
+      "Página": "Reprogramar / Solicitudes",
+      "Heurística": "6. Reconocimiento"
+    },
+    {
+      "Observación": "H13. Los homónimos tienen un dato que los distingue.",
+      "Resultado": "Pasa",
+      "Severidad": "—",
+      "Detalles": "Las dos Ana María Rodríguez muestran teléfonos distintos en el directorio.",
+      "Notas": "La distinción no depende solo del color o las iniciales.",
+      "Página": "Pacientes",
+      "Heurística": "6. Reconocimiento"
+    },
+    {
+      "Observación": "H14. Cerrar el detalle conserva el contexto.",
+      "Resultado": "Pasa",
+      "Severidad": "—",
+      "Detalles": "Se mantienen fecha y filtro Confirmada; el foco vuelve al enlace de la cita.",
+      "Notas": "Evita tener que reconstruir la vista anterior.",
+      "Página": "Agenda / Detalle de cita",
+      "Heurística": "4. Patrones y consistencia"
+    },
+    {
+      "Observación": "H15. Hay acceso visible y un atajo de teclado.",
+      "Resultado": "Pasa",
+      "Severidad": "—",
+      "Detalles": "Buscar se abre con el botón o Ctrl+K, y Escape cierra el cuadro.",
+      "Notas": "Pasa para abrir búsqueda de pacientes; el alcance de citas sigue pendiente.",
+      "Página": "Marco de navegación",
+      "Heurística": "7. Principiantes y expertos"
+    },
+    {
+      "Observación": "H16. El trabajo local no añade avisos de sincronización.",
+      "Resultado": "Pasa",
+      "Severidad": "—",
+      "Detalles": "Con el escenario sin conexión y datos disponibles no aparecen chips de sincronización.",
+      "Notas": "El control de escenarios queda fuera de la navegación del producto.",
+      "Página": "Agenda",
+      "Heurística": "8. Eliminar ruido"
+    },
+    {
+      "Observación": "H17. El error de horario identifica qué está afectado.",
+      "Resultado": "Pasa",
+      "Severidad": "—",
+      "Detalles": "Indica la cita de Valentina a las 11:30, propone ajustar o reprogramar y conserva la edición.",
+      "Notas": "Es más útil que el mensaje genérico de Nueva cita.",
+      "Página": "Configuración → Horarios",
+      "Heurística": "9. Errores útiles"
+    },
+    {
+      "Observación": "H18. El fallo de lectura muestra una salida.",
+      "Resultado": "Pasa",
+      "Severidad": "—",
+      "Detalles": "«No pudimos leer la agenda» explica la situación y ofrece «Volver a cargar».",
+      "Notas": "El reintento devuelve la vista con sus datos en la simulación.",
+      "Página": "Agenda",
+      "Heurística": "1. Estado visible"
+    }
+  ]
+}

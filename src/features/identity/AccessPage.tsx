@@ -115,7 +115,7 @@ export default function AccessPage() {
       {/* Estados de acceso */}
       {core && !core.configured && (
         <div className="notice" role="alert">
-          <p>La API de desarrollo no está configurada en este equipo. El diagnóstico sigue disponible en Desarrollo.</p>
+          <p>El servicio remoto no está configurado en este equipo. El diagnóstico sigue disponible en Desarrollo.</p>
         </div>
       )}
       {core?.signedIn && core.access === "revoked" && (
@@ -138,7 +138,7 @@ export default function AccessPage() {
       {core?.outcome === "recovery_required" && (
         <div className="notice" role="alert">
           <Warning size={18} aria-hidden="true" />
-          <p>Se requiere recuperar la vista local. Sincroniza con conexión; los datos locales y pendientes no se borran.</p>
+          <p>Se requiere recuperar la vista local. Conéctate para recuperarla; los datos locales y pendientes no se borran.</p>
         </div>
       )}
 
@@ -200,7 +200,7 @@ export default function AccessPage() {
                   type="button"
                   className="btn"
                   disabled={!!busy || account.status !== "active"}
-                  onClick={() => void act("activate", () => activateAccount(account.id), "Cuenta activada; sincronizando datos iniciales.")}
+                  onClick={() => void act("activate", () => activateAccount(account.id), "Cuenta activada. Preparando los datos iniciales.")}
                 >
                   {account.displayName}
                   {account.id === core?.accountId ? " · Actual" : ""}

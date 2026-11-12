@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useBlocker } from "react-router-dom";
 import { CircleNotch, Lock } from "@phosphor-icons/react";
+import Modal from "../../components/primitives/Modal";
 import {
   getAccountView, getPreferences, setPreference, updateAccountDetails, updateAccountPolicy,
   type AccountScreen, type AccountView,
@@ -150,8 +151,7 @@ export default function AccountSettingsPage() {
         <div>
           <h1 className="page-heading">Cuenta</h1>
           <p className="muted">
-            Datos compartidos de la cuenta · versión aceptada {account.version}
-            {account.updatedAt && ` · última actualización ${account.updatedAt}`}
+            Datos compartidos de la cuenta
             {!canManage && " · solo lectura (sin permiso de gestión)"}
           </p>
         </div>
@@ -160,6 +160,7 @@ export default function AccountSettingsPage() {
       {notice && <div className="notice" role="status"><p>{notice}</p></div>}
       {formError && <div className="notice" role="alert"><p>{formError}</p></div>}
 
+      <div style={{ display: "grid", gap: 24, maxWidth: 640 }}>
       <form onSubmit={(event) => void saveDetails(event)} style={{ display: "grid", gap: 16 }}>
         <fieldset className="card" style={{ padding: 16, display: "grid", gap: 12, border: "1px solid var(--color-border)" }} disabled={!canManage || saving !== null}>
           <legend className="muted">Datos compartidos (requieren conexión y permiso)</legend>
@@ -170,8 +171,9 @@ export default function AccountSettingsPage() {
           </label>
           <div className="toolbar">
             <label className="field-label" style={{ flex: 1, minWidth: 160 }}>
-              Zona horaria (IANA)
+              Zona horaria
               <input type="text" className="input-text" value={form.timeZone ?? ""}
+                placeholder="America/Caracas"
                 onChange={(e) => setForm({ ...form, timeZone: e.target.value })} />
             </label>
             <label className="field-label" style={{ flex: 1, minWidth: 160 }}>
@@ -213,7 +215,7 @@ export default function AccountSettingsPage() {
               {saving === "details" ? "Guardando…" : "Guardar datos de cuenta"}
             </button>
             {!canManage && <p className="muted">Tu acceso permite solo lectura de estos datos.</p>}
-            {canManage && <p className="muted">Los cambios se envían a la API; la aceptación y la actualización de la vista se muestran por separado.</p>}
+            {canManage && <p className="muted">Estos cambios requieren conexión y permiso de gestión; aquí se muestra solo el resultado conocido.</p>}
           </div>
         </fieldset>
       </form>
@@ -235,23 +237,20 @@ export default function AccountSettingsPage() {
           </p>
         </div>
       </fieldset>
+      </div>
 
-      {blocker.state === "blocked" && (
-        <div className="modal-backdrop" role="alertdialog" aria-labelledby="descartar-cuenta" aria-modal="true">
-          <div className="modal-card">
-            <h2 id="descartar-cuenta" style={{ fontSize: 20 }}>Cambios sin guardar</h2>
-            <p className="muted">Si sales ahora, los cambios de la cuenta no se guardarán.</p>
-            <div className="toolbar">
-              <button type="button" className="btn btn--primary" onClick={() => blocker.reset?.()}>
-                Seguir editando
-              </button>
-              <button type="button" className="btn" onClick={() => blocker.proceed?.()}>
-                Descartar y salir
-              </button>
-            </div>
-          </div>
+      <Modal open={blocker.state === "blocked"} onClose={() => blocker.reset?.()} alert labelledBy="descartar-cuenta">
+        <h2 id="descartar-cuenta" style={{ fontSize: 20 }}>Cambios sin guardar</h2>
+        <p className="muted">Si sales ahora, los cambios de la cuenta no se guardarán.</p>
+        <div className="toolbar">
+          <button type="button" className="btn btn--primary" onClick={() => blocker.reset?.()}>
+            Seguir editando
+          </button>
+          <button type="button" className="btn" onClick={() => blocker.proceed?.()}>
+            Descartar y salir
+          </button>
         </div>
-      )}
+      </Modal>
     </>
   );
 }
@@ -261,17 +260,15 @@ function resultMessage(
   refreshStatus: "requested" | "failed" | "not_requested",
 ): string {
   const base = status === "accepted"
-    ? "Cambio aceptado por la API."
+    ? "Cambio aceptado."
     : status === "conflict"
-      ? "La cuenta cambió en el servidor; vuelve a cargar e inténtalo de nuevo."
+      ? "La cuenta cambió desde otro acceso; vuelve a cargar e inténtalo de nuevo."
       : status === "rejected"
         ? "Cambio no aceptado; revisa el permiso de tu acceso."
         : "Fallo temporal al enviar; el cambio no se guardó. Inténtalo de nuevo.";
   const refresh = refreshStatus === "failed"
-    ? " La actualización de la vista local falló; los datos locales se conservan y no se presentan como actualizados."
-    : refreshStatus === "requested"
-      ? " Actualizando la vista local con el resultado."
-      : "";
+    ? " La vista no se actualizó; los datos locales se conservan y no se presentan como actualizados."
+    : "";
   return base + refresh;
 }
 

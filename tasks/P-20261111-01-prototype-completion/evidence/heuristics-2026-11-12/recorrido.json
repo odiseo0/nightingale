@@ -1,0 +1,223 @@
+{
+  "date": "2026-11-12",
+  "source": "Nielsen Norman Group: ten usability heuristics",
+  "scope": "Current prototype, T01-T11; T19 gaps identified separately",
+  "evidence": [
+    {
+      "id": "search-time",
+      "url": "http://127.0.0.1:8766/#/agenda",
+      "text": "Buscar en la consulta\n\nNo hay coincidencias en los datos de ejemplo.\n\nCerrar"
+    },
+    {
+      "id": "search-name",
+      "text": "Buscar en la consulta\nAM\nAna María Rodríguez\nPaciente · +58 412 000 1001\nAM\nAna María Rodríguez\nPaciente · +58 414 555 0182\nCerrar"
+    },
+    {
+      "id": "help",
+      "text": "Ayuda del prototipo\n\nExplora la agenda, abre una cita o revisa la ficha de un paciente. Los formularios usan datos ficticios y no contactan con ningún servicio.\n\nVer todas las pantallas Diagnóstico de desarrollo\nCerrar"
+    },
+    {
+      "id": "schedule-edit-before-close",
+      "buttons": [
+        "",
+        "",
+        "Añadir tramo",
+        "Guardar cambios",
+        "Cerrar"
+      ],
+      "end": "12:15",
+      "intervals": 3
+    },
+    {
+      "id": "schedule-close",
+      "dialogOpen": null
+    },
+    {
+      "id": "schedule-reopen",
+      "end": "12:00",
+      "intervals": 2
+    },
+    {
+      "id": "schedule-error",
+      "text": "Este cambio dejaría 1 cita(s) vigente(s) fuera del horario: Valentina Herrera (22 de octubre 11:30). Reprograma esas citas o ajusta los tramos. Tus cambios se conservan.",
+      "end": "11:30"
+    },
+    {
+      "id": "hour-format-saved",
+      "value": "12 horas",
+      "toast": "Preferencias locales guardadas en el ejemplo."
+    },
+    {
+      "id": "hour-format-agenda",
+      "times": [
+        "09:00 – 09:30",
+        "09:30 – 10:00",
+        "10:00 – 10:30",
+        "11:00 – 11:30",
+        "11:30 – 12:00",
+        "14:00 – 14:30",
+        "14:30 – 15:00",
+        "15:00 – 15:30"
+      ]
+    },
+    {
+      "id": "reschedule-comparison",
+      "text": "Comparar horarios\nLuis Fernando Pérez\n\nControl de seguimiento\n\nElena Arias\n\nHorario actual\n\nJueves, 22 de octubre\n\n09:30 – 10:00\n\nNuevo horario\n\n Jueves, 22 de octubre\n\n 10:30 – 11:00\n\n Centro Médico Los Olivos · Consultorio 204\n\nLa confirmación anterior dejará de ser válida cuando se acepte el cambio."
+    },
+    {
+      "id": "appointment-draft-guard",
+      "text": "Hay cambios sin guardar\n\nPuedes seguir editando o descartar los cambios del formulario.\n\nCerrar\nSeguir editando\nDescartar cambios"
+    },
+    {
+      "id": "draft-kept",
+      "start": "10:30"
+    },
+    {
+      "id": "patient-homonyms",
+      "text": "Nombre\t\nContacto\t\nPróxima cita\tActividad\tFicha\tEstado\n\nAM\nAna María Rodríguez\n\t+58 412 000 1001\t22 de octubre, 09:00\t23 de octubre · programada\tFicha completa\tActivo\n\nAM\nAna María Rodríguez\n\t+58 414 555 0182\tSin cita\tSin citas conocidas\tFicha completa\tActivo"
+    },
+    {
+      "id": "patient-record",
+      "text": "AM\nAna María Rodríguez\n\nPaciente desde octubre de 2026\n\nFicha completa\nActivo\nInformación del paciente\nDocumento\nVenezuela · Documento nacional · 0000100 · Declarado\nTeléfono\n+58 412 000 1001\nCorreo\nana@example.test\nContacto preferido\nWhatsApp\nEditar informaciónInactivar ficha\nPróximos encuentros\nNueva cita\nHorario\t\nPaciente\t\nServicio\tEstado\t\nAcciones\n\n09:00 – 09:30\n22 de octubre\n\t\nAM\nAna María Rodríguez\n\tConsulta general\tConfirmada\t\n\n09:00 – 09:30\n23 de octubre\n\t\nAM\nAna María Rodríguez\n\tConsulta general\tProgramada\t\nHistorial\n5 de 7 citas\nHorario\t\nPaciente\t\nServicio\tEstado\t\nAcciones\n\n09:00 – 09:30\n5 de octubre\n\t\nAM\nAna María Rodríguez\n\tConsulta general\tAtendida\t\n\n09:00 – 09:30\n7 de octubre\n\t\nAM\nAna María Rodríguez\n\tConsulta general\tAtendida\t\n\n09:30 – 10:00\n9 de octubre\n\t\nAM\nAna María Rodríguez\n\tControl de seguimiento\tAtendida\t\n\n09:00 – 09:30\n12 de octubre\n\t\nAM\nAna María Rodríguez\n\tConsulta general\tAtendida\t\n\n09:00 – 09:30\n14 de octubre\n\t\nAM\nAna María Rodríguez\n\tConsulta general\tAtendida\t\nCargar más\nResponsables\n\nSin responsables vinculados.\n\nAñadir responsable\n\nParentesco, vigencia, representación y actividad son datos separados. El documento de un adulto no identifica al menor.\n\nPreferencias de comunicación\n\nWhatsApp para avisos administrativos de sus citas."
+    },
+    {
+      "id": "requests-list",
+      "text": "Solicitudes\n\nCambios que los pacientes han pedido desde su enlace de cita.\n\nLF\nLuis Fernando Pérez\nSolicitud de cambio\n\nSolicita cambiar su cita del 22 de octubre, 09:30.\n\nRecibida ayer, 16:20\nRevisar solicitud\nVH\nValentina Herrera\nSolicitud de cambio\n\nSolicita cambiar su cita del 22 de octubre, 11:30.\n\nRecibida hoy, 08:10\nRevisar solicitud\nAG\nAndrés Gutiérrez\nDesactualizada\n\nSolicita cambiar su cita del 23 de octubre, 14:45.\n\nRecibida hace 2 días, 11:05\nRevisar solicitud\nSR\nSofía Rivas\nConciliación pendiente\n\nSolicita cambiar su cita del 23 de octubre, 14:00.\n\nRecibida hace 3 días, 09:40\nRevisar solicitud\n\n2 solicitud(es) esperan tu revisión."
+    },
+    {
+      "id": "request-partial",
+      "text": "Solicitud de cambio\n\nEl paciente pide otra fecha. Su cita mantiene el horario actual.\n\nVolver a Solicitudes\nSR\nSofía Rivas\n\n+58 424 000 1007\n\nLo que pide el paciente\n\n«Necesito cambiar el día, avísenme por favor.»\n\nRecibida hace 3 días, 09:40\n\nEstado de la solicitud\nConciliación pendiente\n\nEl cambio de cita ya fue aceptado, pero esta solicitud sigue abierta: falta actualizarla en el ejemplo. No requiere una nueva reserva.\n\nConciliación\n\nEl cambio de cita ya fue aceptado, pero esta solicitud sigue abierta: falta actualizarla en el ejemplo. No requiere una nueva reserva.\n\nVer cita\nCita actual\n23 de octubre\n\n14:00 – 14:45\n\nPrimera consulta\n\nElena Arias\n\nConsultorio 204\n\nLa solicitud por sí sola no reserva ni mueve esta cita."
+    },
+    {
+      "id": "request-pending",
+      "text": "Solicitud de cambio\n\nEl paciente pide otra fecha. Su cita mantiene el horario actual.\n\nVolver a Solicitudes\nLF\nLuis Fernando Pérez\n\n+58 414 000 1002\n\nLo que pide el paciente\n\n«No podré asistir ese día. ¿Podrían ofrecerme otra fecha?»\n\nRecibida ayer, 16:20\n\nEstado de la solicitud\nSolicitud de cambio\n\nCita sin modificar: elegir un horario no cambia la cita hasta que guardes el cambio.\n\nPróximo paso\n\nBusca otro horario y guarda el cambio; la solicitud se actualizará al registrarlo. La cita conserva su horario mientras tanto.\n\nElegir nuevo horario\nCita actual\n22 de octubre\n\n09:30 – 10:00\n\nControl de seguimiento\n\nElena Arias\n\nConsultorio 204\n\nLa solicitud por sí sola no reserva ni mueve esta cita."
+    },
+    {
+      "id": "setup-saved",
+      "text": "N\nNightingale\nTu consulta está lista\n\nLos datos iniciales se han guardado.\n\nConsulta UX\n\nConsultorio UX · Hora de Caracas\n\nConsulta general\n\n45 minutos de referencia\n\nLunes a viernes\n\n08:00 – 11:00\n\nAbrir AgendaRevisar los datos"
+    },
+    {
+      "id": "setup-agenda",
+      "practice": "Consulta de Elena Arias",
+      "caption": [
+        "8 citas en el díaConsulta presencial · Consultorio 204"
+      ]
+    },
+    {
+      "id": "setup-account-after",
+      "fields": [
+        {
+          "name": "practice",
+          "value": "Consulta de Elena Arias"
+        },
+        {
+          "name": "professional",
+          "value": "Dra. Elena Arias"
+        },
+        {
+          "name": "specialty",
+          "value": "Medicina general"
+        },
+        {
+          "name": "placeName",
+          "value": "Centro Médico Los Olivos"
+        },
+        {
+          "name": "placeRoom",
+          "value": "Consultorio 204"
+        },
+        {
+          "name": "placeStreet",
+          "value": "Av. Los Olivos, Torre B"
+        },
+        {
+          "name": "city",
+          "value": "Caracas"
+        },
+        {
+          "name": "state",
+          "value": "Distrito Capital"
+        },
+        {
+          "name": "",
+          "value": "América / Caracas (UTC −04:00)"
+        }
+      ]
+    },
+    {
+      "id": "setup-services-after",
+      "text": "Configuración\n\nPreferencias y datos de tu consulta.\n\nCuenta\nServicios\nHorarios y bloqueos\nComunicaciones\nUsuarios y permisos\nDispositivos\nCatálogo y oferta\n\nEl catálogo pertenece al profesional; la oferta ajusta la duración de referencia y la visibilidad en esta consulta.\n\nAñadir servicio\nConsulta general\n\nDuración de referencia: 30 min · sin ajuste; usa la base de 30 min\n\nCatálogo del profesional: activo · Oferta de esta consulta: activa\nDesactivar oferta\nInactivar en catálogo\nControl de seguimiento\n\nDuración de referencia: 45 min · ajuste de la oferta sobre una base de 30 min\n\nCatálogo del profesional: activo · Oferta de esta consulta: activa\nDesactivar oferta\nInactivar en catálogo\nPrimera consulta\n\nDuración de referencia: 45 min · sin ajuste; usa la base de 45 min\n\nCatálogo del profesional: activo · Oferta de esta consulta: inactiva\nActivar oferta\nInactivar en catálogo\n\nLas citas ya registradas conservan su servicio y su duración aunque cambies el catálogo o la oferta. Las versiones técnicas no se muestran aquí."
+    },
+    {
+      "id": "patient-deactivation-confirm",
+      "text": "¿Inactivar la ficha de Ana María Rodríguez?\n\nInactivar no cancela sus citas: los encuentros programados siguen registrados y se conservan sus datos.\n\nLa ficha dejará de aparecer al crear citas nuevas hasta que se reactive.\n\nCerrar\nInactivar ficha"
+    },
+    {
+      "id": "patient-deactivated",
+      "appointments": [
+        "#/cita/a1",
+        "#/cita/a9",
+        "#/cita/a20",
+        "#/cita/a21",
+        "#/cita/a22",
+        "#/cita/a23",
+        "#/cita/a24"
+      ],
+      "beforeAppointments": [
+        "#/cita/nueva?paciente=p1",
+        "#/cita/a1",
+        "#/cita/a9",
+        "#/cita/a20",
+        "#/cita/a21",
+        "#/cita/a22",
+        "#/cita/a23",
+        "#/cita/a24"
+      ]
+    },
+    {
+      "id": "patient-reactivated",
+      "hasInactivate": true
+    },
+    {
+      "id": "offline-silent",
+      "text": "N\nNightingale\nConsulta de Elena Arias\nAgenda\nPacientes\nSolicitudes\n2\nLista de espera\nSeguimiento\nComunicaciones\nIndicadores\nConfiguración\nEA\nElena Arias\nMédica · Dueña\nAgenda\n Buscar en la consulta\nCtrl K\nHoy, jueves 22\n\n2026 · Hora de Caracas\n\nNueva cita\nDía\nSemana\nLista de citas\nHoy\nTodos los estados\nProgramada\nConfirmada\nAtendida\nAusencia\nCancelada\nFiltros\n8 citas en el día\nConsulta presencial · Consultorio 204\nHorario\t\nPaciente\t\nServicio\tEstado\t\nAcciones\n\n09:00 – 09:30\t\nAM\nAna María Rodríguez\n\tConsulta general\tConfirmada\t\n\n09:30 – 10:00\t\nLF\nLuis Fernando Pérez\n\tControl de seguimiento\tProgramada\t\n\n10:00 – 10:30\t\nMF\nMaría Fernanda del Carmen González\n\tConsulta general\tProgramada\t\n\n11:00 – 11:30\t\nCM\nCarlos Méndez\n\tPrimera consulta\tConfirmada\t\n\n11:30 – 12:00\t\nVH\nValentina Herrera\n\tControl de seguimiento\tConfirmada\t\n\n14:00 – 14:30\t\nJA\nJosé Antonio Castillo\n\tConsulta general\tProgramada\t\n\n14:30 – 15:00\t\nSR\nSofía Rivas\n\tPrimera consulta\tConfirmada\t\n\n15:00 – 15:30\t\nAG\nAndrés Gutiérrez\n\tControl de seguimiento\tConfirmada\t\nPrimer intervalo disponible\n10:30 – 11:00\nHorario y bloqueos del día\nPrototipo de diseño · Datos ficticios\nVer todas las pantallas\nColores propuestos\nProbar un escenario\nRestablecer"
+    },
+    {
+      "id": "agenda-read-error",
+      "text": "Hoy, jueves 22\n\n2026 · Hora de Caracas\n\nDía\nSemana\nLista de citas\nHoy\nTodos los estados\nProgramada\nConfirmada\nAtendida\nAusencia\nCancelada\nFiltros\nNo pudimos leer la agenda\n\nTus datos guardados se conservan. Vuelve a cargar esta vista.\n\nVolver a cargar"
+    },
+    {
+      "id": "shortcut",
+      "dialogTitle": "Buscar en la consulta"
+    },
+    {
+      "id": "context-return",
+      "date": "2026-10-22",
+      "filter": "Confirmada",
+      "focus": "#/cita/a1",
+      "text": "Estado: ConfirmadaLimpiar filtros"
+    },
+    {
+      "id": "new-appointment-layout",
+      "text": "Nueva cita\n\nBusca al paciente y revisa el intervalo antes de guardar.\n\nPaciente\nBuscar paciente\nPaciente\nElige un paciente\nAna María Rodríguez · +58 412 000 1001\nLuis Fernando Pérez · +58 414 000 1002\nMaría Fernanda del Carmen González · +58 424 000 1003\nCarlos Méndez · +58 416 000 1004\nValentina Herrera · +58 412 000 1005\nJosé Antonio Castillo · +58 414 000 1006\nSofía Rivas · +58 424 000 1007\nAndrés Gutiérrez · +58 416 000 1008\nGabriel Rivas · Contacto responsable\nRicardo Salas · Sin teléfono · ficha incompleta\nAna María Rodríguez · +58 414 555 0182\nBeatriz Luna · +58 · falta el número · ficha incompleta\n\nEl contacto ayuda a distinguir pacientes con el mismo nombre.\n\nRegistrar paciente\nServicio y horario\nServicio\nConsulta general\nControl de seguimiento\nFecha\nDesde\nHasta\n\nDuración de referencia del servicio: 45 minutos. Revisa el intervalo antes de guardar.\n\nHora de Caracas · Disponibilidad local: 19–30 de octubre. Consultar no reserva el intervalo.\n\nNo hay una opción disponible para ese intervalo en los datos conocidos.\n\nResumen de la cita\nSelecciona un paciente\n\nConsulta general\n\nElena Arias\n\nHorario elegido\n\n Jueves, 22 de octubre\n\n 10:30 – 11:15\n\n Centro Médico Los Olivos · Consultorio 204\n\nGuardar no equivale a enviar un recordatorio.\nGuardar cita\nDescartar"
+    },
+    {
+      "id": "appointment-overlap",
+      "text": "Ese intervalo coincide con una cita o un bloqueo. Tus datos se conservan.",
+      "fields": [
+        {
+          "name": "start",
+          "value": "10:30"
+        },
+        {
+          "name": "end",
+          "value": "11:15"
+        }
+      ]
+    },
+    {
+      "id": "setup-schedule-after",
+      "text": "Configuración\n\nPreferencias y datos de tu consulta.\n\nCuenta\nServicios\nHorarios y bloqueos\nComunicaciones\nUsuarios y permisos\nDispositivos\nHorario semanal\n\nDefine qué días atiendes, durante qué fechas y en qué horas. Hora de Caracas.\n\nAñadir regla\nDías de atención\nEditar horario\nLunes\nMartes\nMiércoles\nJueves\nViernes\n\nDel\n19 de octubre\nal\n31 de diciembre\n\n09:00 – 12:00\n3 h de atención\n14:00 – 17:00\n3 h de atención\nExcepciones por fecha\nAñadir excepción\nLunes, 26 de octubre\n\nCierre del día · Mantenimiento del consultorio\n\nEditar\nBloqueos\nAñadir bloqueo\nGestiones personales\n\n22 de octubre · 16:00 – 16:30\n\nAlcance: Toda la actividad del profesional\nEditar\n\nUn cambio que deje citas vigentes fuera del horario o dentro de un bloqueo se rechaza y muestra las citas afectadas; las citas no se mueven ni se cancelan desde aquí."
+    }
+  ]
+}

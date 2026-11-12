@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@fontsource/anek-latin':
-        specifier: ^5.3.0
-        version: 5.3.0
       '@phosphor-icons/react':
         specifier: 2.1.10
         version: 2.1.10(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -56,9 +53,6 @@ importers:
         version: 8.3.4(jiti@2.7.0)
 
 packages:
-
-  '@fontsource/anek-latin@5.3.0':
-    resolution: {integrity: sha512-iAypb7xKNSpCi4z6G5l0rEHD/9SZdc0+dykdyAttfbKWKQyWhKaG6sLVH0mJtKQGSaYHRyBzsOboF23N0opR5A==}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -689,8 +683,6 @@ packages:
         optional: true
 
 snapshots:
-
-  '@fontsource/anek-latin@5.3.0': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:

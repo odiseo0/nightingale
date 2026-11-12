@@ -1,0 +1,44 @@
+[
+  {
+    "case": "Each person has own identity, defined role and access; no custom roles",
+    "route": "configuracion/equipo",
+    "people": [
+      {"name": "Elena Arias", "email": "elena@example.test", "role": "Médica", "access": "Acceso activo"},
+      {"name": "Lucía Torres", "email": "lucia@example.test", "role": "Asistente", "access": "Acceso activo"}
+    ],
+    "note": "Los roles son los definidos; no hay roles personalizados.",
+    "inviteForm": {"fields": ["Correo de la persona", "Rol (solo Asistente)"], "help": "Solo existen los roles definidos; no hay roles personalizados. El envío no se ejecuta."}
+  },
+  {
+    "case": "Invitations show state with actions and explain limits",
+    "route": "configuracion/equipo",
+    "invitations": [
+      {"email": "pedro@example.test", "state": "Pendiente", "action": "Retirar invitación"},
+      {"email": "maria@example.test", "state": "Vencida", "action": "Invitar de nuevo"}
+    ],
+    "flows": {
+      "create": {"emptyEmailError": "Escribe el correo de la persona. Tus cambios se conservan.", "valid": "andrea@example.test queda Pendiente con la fecha del ejemplo", "toast": "Invitación registrada en el ejemplo; no se envía ningún correo real."},
+      "revoke": {"confirm": "El enlace dejará de servir y la persona no podrá unirse con esa invitación.", "result": "la invitación desaparece de la lista"},
+      "reinvite": {"prefilled": "maria@example.test", "result": "la vencida se sustituye por una pendiente nueva"}
+    }
+  },
+  {
+    "case": "Access review shows role, scope and connection caveats; removal shows subject and effect",
+    "route": "configuracion/equipo",
+    "personDialog": {"person": "Lucía Torres", "content": ["Asistente · Acceso activo", "Agenda, pacientes y comunicaciones; sin cambios de configuración", "Los cambios requieren conexión y autorización; los equipos desconectados reciben el cambio al reconectarse."]},
+    "removeAccess": {
+      "confirm": "¿Retirar el acceso de Lucía Torres? · Perderá acceso a la consulta: agenda, pacientes y configuración. Sus datos registrados se conservan. · Los equipos desconectados no reciben el cambio de inmediato: se aplicará cuando vuelvan a conectarse.",
+      "result": "Lucía Torres queda «Acceso retirado»",
+      "offline": "«Retirar el acceso requiere conexión y autorización. La persona conserva su acceso hasta entonces.» y el estado no cambia"
+    }
+  },
+  {
+    "case": "Assistant view is read-only",
+    "route": "configuracion/equipo",
+    "checks": {"noInviteButton": true, "noInvitationActions": true, "note": "Solo la persona que administra la consulta puede invitar o retirar accesos."}
+  },
+  {
+    "case": "Limits",
+    "implemented": "Invitations, roles and removals are in-memory examples; no email, account or permission change is sent."
+  }
+]

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { CaretLeft, CaretRight, CircleNotch } from "@phosphor-icons/react";
 import {
@@ -7,23 +7,23 @@ import {
 } from "../../shared/api/appointments";
 import { listBlocks, type BlockState } from "../../shared/api/scheduling";
 import {
-  civilMidnightUtc, dayRange, errorMessage, formatTime,
+  civilMidnightUtc, civilToday, dayRange, errorMessage, formatTime, formatTimeEnd,
   shiftCivil, statusLabel,
 } from "./presentation";
+import {
+  assignColumns, eventBox, visibleMinuteRange, WEEK_HOUR_HEIGHT,
+} from "./week-layout";
 
 interface WeekEvent {
   key: string;
-  top: number;
-  height: number;
+  startMin: number;
+  endMin: number;
   label: string;
+  detail: string;
   status: string;
   provisional: boolean;
   appointmentId: string;
 }
-
-const DAY_START_MINUTE = 7 * 60;
-const DAY_END_MINUTE = 20 * 60;
-const HOUR_HEIGHT = 44;
 
 interface Props {
   zone: string;
@@ -32,17 +32,23 @@ interface Props {
   patientName: (patientId: string) => string;
 }
 
-/** T01 · Vista Semana: citas por periodo con escala horaria local y bloqueos
- * con etiqueta propia. Sin drag-and-drop ni reserva desde celdas. */
+const PX_PER_MINUTE = WEEK_HOUR_HEIGHT / 60;
+
+/** Vista Semana: escala 96 px/hora, columnas sin solapamiento y rango visible
+ * que incluye los eventos conocidos. Sin drag-and-drop ni reserva desde
+ * celdas. */
 export default function WeekPage({ zone, civil, onCivilChange, patientName }: Props) {
   const [rows, setRows] = useState<EntityRow<AppointmentState>[] | null>(null);
   const [blocks, setBlocks] = useState<EntityRow<BlockState>[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   const generation = useRef(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const SCROLL_KEY = "semana:scroll";
 
-  /* Lunes de la semana que contiene `civil` (zona de la cuenta). */
-  const weekStartCivil = (() => {
+  /* Lunes de la semana que contiene `civil` (zona de la cuenta). Memorizado
+   * para que la lectura dependa de valores estables y no se repita en cada
+   * render. */
+  const weekStartCivil = useMemo(() => {
     const instant = new Date(civilMidnightUtc(zone, ...civil.split("-").map(Number) as [number, number, number]));
     const weekdayName = new Intl.DateTimeFormat("en-US", { timeZone: zone, weekday: "short" }).format(instant);
     const weekday = ({ Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 } as Record<string, number>)[weekdayName] ?? 0;
@@ -50,14 +56,33 @@ export default function WeekPage({ zone, civil, onCivilChange, patientName }: Pr
     const parts = new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(monday);
     const v = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
     return `${v("year")}-${v("month")}-${v("day")}`;
-  })();
+  }, [zone, civil]);
 
-  const days = Array.from({ length: 7 }, (_, i) =>
-    shiftCivil(zone, weekStartCivil, i));
+  const days = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => shiftCivil(zone, weekStartCivil, i)),
+    [zone, weekStartCivil],
+  );
+
+  /* Conservar la posición de lectura al volver del detalle. */
+  useEffect(() => {
+    return () => {
+      const element = scrollRef.current;
+      if (element) sessionStorage.setItem(SCROLL_KEY, String(element.scrollTop));
+    };
+  }, []);
+
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element || rows === null) return;
+    const saved = sessionStorage.getItem(SCROLL_KEY);
+    if (saved !== null) {
+      sessionStorage.removeItem(SCROLL_KEY);
+      element.scrollTop = Number(saved) || 0;
+    }
+  }, [rows]);
 
   const load = useCallback(async () => {
     const request = ++generation.current;
-    setRefreshing(true);
     try {
       const from = dayRange(zone, weekStartCivil).from;
       const until = dayRange(zone, days[6]).until;
@@ -72,8 +97,6 @@ export default function WeekPage({ zone, civil, onCivilChange, patientName }: Pr
     } catch (loadError: unknown) {
       if (request !== generation.current) return;
       setError(errorMessage(loadError));
-    } finally {
-      if (request === generation.current) setRefreshing(false);
     }
   }, [zone, weekStartCivil, days]);
 
@@ -95,13 +118,14 @@ export default function WeekPage({ zone, civil, onCivilChange, patientName }: Pr
       const start = Date.parse(state.startsAt);
       const end = Date.parse(state.endsAt);
       if (end <= fromMs || start >= untilMs) continue;
-      const startMin = Math.max(DAY_START_MINUTE, Math.round((start - fromMs) / 60_000));
-      const endMin = Math.min(DAY_END_MINUTE, Math.round((end - fromMs) / 60_000));
+      const timeRange = `${formatTime(zone, state.startsAt)}–${formatTimeEnd(zone, state.endsAt)}`;
+      const name = patientName(state.patientId);
       visible.push({
         key: state.appointmentId,
-        top: (startMin - DAY_START_MINUTE) * (HOUR_HEIGHT / 60),
-        height: Math.max(18, (endMin - startMin) * (HOUR_HEIGHT / 60)),
-        label: `${formatTime(zone, state.startsAt)} ${patientName(state.patientId)}`,
+        startMin: Math.max(0, Math.round((start - fromMs) / 60_000)),
+        endMin: Math.min(24 * 60, Math.round((end - fromMs) / 60_000)),
+        label: `${timeRange} ${name}`,
+        detail: `${name} · ${state.serviceName} · ${timeRange} · ${statusLabel[state.status] ?? state.status}`,
         status: state.status,
         provisional: Boolean(row.provisional),
         appointmentId: state.appointmentId,
@@ -113,13 +137,14 @@ export default function WeekPage({ zone, civil, onCivilChange, patientName }: Pr
       const start = Date.parse(block.startsAt);
       const end = Date.parse(block.endsAt);
       if (end <= fromMs || start >= untilMs) continue;
-      const startMin = Math.max(DAY_START_MINUTE, Math.round((start - fromMs) / 60_000));
-      const endMin = Math.min(DAY_END_MINUTE, Math.round((end - fromMs) / 60_000));
+      const startMin = Math.max(0, Math.round((start - fromMs) / 60_000));
+      const endMin = Math.min(24 * 60, Math.round((end - fromMs) / 60_000));
       visible.push({
         key: block.blockId,
-        top: (startMin - DAY_START_MINUTE) * (HOUR_HEIGHT / 60),
-        height: Math.max(16, (endMin - startMin) * (HOUR_HEIGHT / 60)),
+        startMin,
+        endMin,
         label: `Bloqueado${block.reasonCode ? `: ${block.reasonCode}` : ""}`,
+        detail: `Bloqueado ${formatTime(zone, block.startsAt)}–${formatTimeEnd(zone, block.endsAt)}`,
         status: "block",
         provisional: Boolean(row.provisional),
         appointmentId: "",
@@ -128,9 +153,15 @@ export default function WeekPage({ zone, civil, onCivilChange, patientName }: Pr
     return visible;
   };
 
+  /* Rango visible: horario base ampliado con los eventos y bloqueos de la
+   * semana, para que nada aparezca bajo una hora distinta de la real. */
+  const allMinuteSpans = days.flatMap((day) =>
+    eventsOfDay(day).map((event) => ({ startMin: event.startMin, endMin: event.endMin })));
+  const range = visibleMinuteRange(allMinuteSpans);
+  const bodyHeight = (range.endMinute - range.startMinute) * PX_PER_MINUTE;
   const hours = Array.from(
-    { length: (DAY_END_MINUTE - DAY_START_MINUTE) / 60 },
-    (_, i) => DAY_START_MINUTE / 60 + i,
+    { length: (range.endMinute - range.startMinute) / 60 },
+    (_, i) => range.startMinute / 60 + i,
   );
 
   return (
@@ -140,7 +171,7 @@ export default function WeekPage({ zone, civil, onCivilChange, patientName }: Pr
           <CaretLeft size={16} aria-hidden="true" />
           Semana anterior
         </button>
-        <button type="button" className="btn btn--subtle" onClick={() => onCivilChange(civil)}>
+        <button type="button" className="btn btn--subtle" onClick={() => onCivilChange(civilToday(zone))}>
           Semana actual
         </button>
         <button type="button" className="btn" onClick={() => onCivilChange(shiftCivil(zone, weekStartCivil, 7))}>
@@ -148,7 +179,7 @@ export default function WeekPage({ zone, civil, onCivilChange, patientName }: Pr
           <CaretRight size={16} aria-hidden="true" />
         </button>
         <span className="muted" role="status" aria-live="polite">
-          {refreshing ? "Actualizando…" : `${(rows ?? []).length} cita(s) en la semana (datos locales).`}
+          {rows === null ? " " : `${rows.length} cita(s) en la semana (datos locales).`}
         </span>
       </div>
 
@@ -167,53 +198,88 @@ export default function WeekPage({ zone, civil, onCivilChange, patientName }: Pr
       )}
 
       {rows !== null && (
-        <div className="table-scroll" role="region" aria-label="Vista semanal" tabIndex={0}>
+        <div className="table-scroll table-scroll--week" role="region" aria-label="Vista semanal" tabIndex={0} ref={scrollRef}>
           <div className="week-grid">
-            <div className="week-hours" aria-hidden="true">
-              <div style={{ height: HOUR_HEIGHT }} />
+            <div className="week-corner" aria-hidden="true" />
+            {days.map((day) => (
+              <div key={day} className="week-day-header" data-today={day === civil || undefined}>
+                <button
+                  type="button"
+                  className="btn btn--subtle"
+                  style={{ padding: "2px 8px", minHeight: 30 }}
+                  onClick={() => onCivilChange(day)}
+                  aria-label={`Ver ${dayDate(day)} en la vista de día`}
+                >
+                  {dayDate(day)}
+                </button>
+              </div>
+            ))}
+            <div className="week-hours" style={{ height: bodyHeight }} aria-hidden="true">
               {hours.map((hour) => (
-                <div key={hour} className="week-hour-label num">
+                <span
+                  key={hour}
+                  className="week-hour-label num"
+                  style={{ top: (hour * 60 - range.startMinute) * PX_PER_MINUTE }}
+                >
                   {String(hour).padStart(2, "0")}:00
-                </div>
+                </span>
               ))}
             </div>
             {days.map((day) => {
-              const isToday = day === civil;
+              const placed = assignColumns(eventsOfDay(day));
               return (
-                <div key={day} className="week-day" data-today={isToday || undefined}>
-                  <div className="week-day-header">
-                    <button
-                      type="button"
-                      className="btn btn--subtle"
-                      style={{ padding: "2px 8px" }}
-                      onClick={() => onCivilChange(day)}
-                      aria-label={`Ver ${dayDate(day)} en la vista de día`}
-                    >
-                      {dayDate(day)}
-                    </button>
-                  </div>
-                  <div className="week-day-body">
-                    {eventsOfDay(day).map((event) => event.appointmentId ? (
+                <div key={day} className="week-day-body" style={{ height: bodyHeight }}>
+                  {placed.map(({ item: event, column, columns }) => {
+                    const box = eventBox(event.startMin, event.endMin, range);
+                    const width = 100 / columns;
+                    const style = {
+                      top: box.top,
+                      height: Math.max(box.height, 18),
+                      left: `calc(${width * column}% + 2px)`,
+                      width: `calc(${width}% - 4px)`,
+                    };
+                    const brief = box.height < 40;
+                    if (!event.appointmentId) {
+                      return (
+                        <div
+                          key={event.key}
+                          className="week-event week-event--block"
+                          style={style}
+                          aria-label={event.detail}
+                          title={event.detail}
+                        >
+                          <span className="week-event-text">{event.label}</span>
+                        </div>
+                      );
+                    }
+                    return (
                       <Link
                         key={event.key}
                         to={`/cita/${event.appointmentId}`}
-                        className={`week-event${event.provisional ? " week-event--provisional" : ""}`}
-                        style={{ top: event.top, height: event.height }}
+                        className={[
+                          "week-event",
+                          event.provisional ? "week-event--provisional" : "",
+                          event.status === "cancelled" ? "week-event--cancelled" : "",
+                          brief ? "week-event--brief" : "",
+                        ].filter(Boolean).join(" ")}
+                        style={style}
+                        title={event.detail}
                       >
-                        <span className="week-event-text">{event.label}</span>
-                        <span className="badge">{statusLabel[event.status] ?? event.status}</span>
+                        {brief ? (
+                          <span className="week-event-text">{event.label}</span>
+                        ) : (
+                          <>
+                            <span className="week-event-text">{event.label}</span>
+                            {!brief && box.height >= 60 && (
+                              <span className="week-event-status">
+                                {statusLabel[event.status] ?? event.status}
+                              </span>
+                            )}
+                          </>
+                        )}
                       </Link>
-                    ) : (
-                      <div
-                        key={event.key}
-                        className="week-event week-event--block"
-                        style={{ top: event.top, height: event.height }}
-                        aria-label={event.label}
-                      >
-                        <span className="week-event-text">{event.label}</span>
-                      </div>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
               );
             })}

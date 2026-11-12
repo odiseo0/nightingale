@@ -1,0 +1,71 @@
+[
+  {
+    "case": "same tone after filter",
+    "before": {
+      "key": "p1",
+      "text": "AM",
+      "tone": "avatar avatar--cyan"
+    },
+    "after": {
+      "key": "p1",
+      "text": "AM",
+      "tone": "avatar avatar--cyan"
+    }
+  },
+  {
+    "avatar": "avatar avatar--cyan",
+    "case": "modal hierarchy",
+    "dateSize": "16px",
+    "dateWeight": "600",
+    "icons": 6,
+    "labelColor": "rgb(91, 103, 120)"
+  },
+  {
+    "case": "homonyms have distinct identity keys",
+    "nameWeight": "600",
+    "people": [
+      {
+        "key": "p1",
+        "text": "AM",
+        "tone": "avatar avatar--cyan"
+      },
+      {
+        "key": "p11",
+        "text": "AM",
+        "tone": "avatar avatar--sky"
+      }
+    ]
+  },
+  {
+    "case": "rename retains identity tone",
+    "key": "p1",
+    "text": "Ad",
+    "tone": "avatar avatar--cyan"
+  },
+  {
+    "case": "modal 800x600",
+    "dialogOverflow": false,
+    "documentOverflow": false
+  },
+  {
+    "case": "long name modal 375x812",
+    "dialogOverflow": false,
+    "documentOverflow": false,
+    "title": "María Fernanda del Carmen González"
+  },
+  {
+    "case": "reload retains identity tone",
+    "text": "AM",
+    "tone": "avatar avatar--cyan"
+  },
+  {
+    "case": "calendar preserved",
+    "divisions": 8,
+    "hourHeight": 95.99999237060548,
+    "nameWeight": "600"
+  },
+  {
+    "case": "console",
+    "errors": []
+  }
+]

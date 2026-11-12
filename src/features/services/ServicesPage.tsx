@@ -3,10 +3,10 @@ import { CircleNotch, Lock, PencilSimple, Plus, Power } from "@phosphor-icons/re
 import {
   createService, listCatalog, offerService, setServiceOfferStatus, setServiceStatus,
   updateProfessionalProfile, updateService, updateServiceOffer,
-  type CatalogRow, type CatalogScreen,
+  type CatalogScreen,
 } from "../../shared/api/services";
 import { getPreferences, setPreference } from "../../shared/api/account";
-import { mutationErrorMessage, syncLabel } from "../appointments/presentation";
+import { mutationErrorMessage } from "../appointments/presentation";
 
 type Editor =
   | { kind: "none" }
@@ -50,7 +50,7 @@ export default function ServicesPage() {
     return () => { generation.current += 1; window.clearInterval(timer); };
   }, [load]);
 
-  async function run(work: () => Promise<unknown>, success = "Cambio guardado en este equipo · Pendiente de aceptación.") {
+  async function run(work: () => Promise<unknown>, success = "Cambios guardados.") {
     if (savingRef.current) return;
     savingRef.current = true;
     setSaving(true);
@@ -84,7 +84,7 @@ export default function ServicesPage() {
         professionalId: professional.professionalId,
         name: newName.trim(),
         defaultDurationMinutes: Number(newDuration),
-      }), "Servicio guardado en este equipo · Pendiente de aceptación.");
+      }), "Servicio guardado.");
     } else if (editor.kind === "edit-service") {
       const duration = Number(newDuration);
       void run(() => updateService({
@@ -102,7 +102,7 @@ export default function ServicesPage() {
         professionalId: editor.professionalId,
         serviceId: editor.serviceId,
         durationMinutesOverride: newDuration.trim() === "" ? null : Number(newDuration),
-      }), "Oferta guardada en este equipo · Pendiente de aceptación.");
+      }), "Oferta guardada.");
     } else if (editor.kind === "edit-offer") {
       void run(() => updateServiceOffer({
         professionalId: editor.professionalId,
@@ -259,7 +259,6 @@ export default function ServicesPage() {
                   <th scope="col">Servicio</th>
                   <th scope="col">Duración base</th>
                   <th scope="col">Estado</th>
-                  <th scope="col">Sincronización</th>
                   <th scope="col">Acciones</th>
                 </tr>
               </thead>
@@ -276,7 +275,6 @@ export default function ServicesPage() {
                       <td>{name}</td>
                       <td className="num">{duration} min</td>
                       <td><span className="badge">{status === "active" ? "Activo" : "Inactivo"}</span></td>
-                      <td><SyncCell row={row} /></td>
                       <td>
                         {canManage && (
                           <div className="toolbar" style={{ gap: 6 }}>
@@ -295,7 +293,7 @@ export default function ServicesPage() {
                                 serviceId: service.serviceId,
                                 expectedVersion: service.version,
                                 status: status === "active" ? "inactive" : "active",
-                              }), `Servicio ${status === "active" ? "desactivado" : "activado"} en este equipo · Pendiente de aceptación.`)}>
+                              }), `Servicio ${status === "active" ? "desactivado" : "activado"}.`)}>
                               <Power size={14} aria-hidden="true" />
                               {status === "active" ? "Desactivar" : "Activar"}
                             </button>
@@ -342,7 +340,6 @@ export default function ServicesPage() {
                   <th scope="col">Servicio</th>
                   <th scope="col">Base / Ajuste / Efectiva</th>
                   <th scope="col">Estado</th>
-                  <th scope="col">Sincronización</th>
                   <th scope="col">Acciones</th>
                 </tr>
               </thead>
@@ -370,7 +367,6 @@ export default function ServicesPage() {
                           servicio {serviceStatus === "active" ? "activo" : "inactivo"}
                         </span>
                       </td>
-                      <td><SyncCell row={row} /></td>
                       <td>
                         {canManage && (
                           <div className="toolbar" style={{ gap: 6 }}>
@@ -384,7 +380,7 @@ export default function ServicesPage() {
                                 serviceId: offer.serviceId,
                                 expectedVersion: offer.version,
                                 status: status === "active" ? "inactive" : "active",
-                              }), `Oferta ${status === "active" ? "desactivada" : "activada"} en este equipo · Pendiente de aceptación.`)}>
+                              }), `Oferta ${status === "active" ? "desactivada" : "activada"}.`)}>
                               <Power size={14} aria-hidden="true" />
                               {status === "active" ? "Desactivar" : "Activar"}
                             </button>
@@ -399,23 +395,6 @@ export default function ServicesPage() {
           </div>
         )}
       </section>
-    </>
-  );
-}
-
-function SyncCell({ row }: { row: CatalogRow<{ status?: string }, unknown> & { localChanges: { operationId: string; syncStatus: string; code: string | null }[]; isProvisional: boolean } }) {
-  return (
-    <>
-      {row.isProvisional && <span className="badge badge--selected">Guardada en este equipo</span>}
-      {row.localChanges.map((change) => (
-        <span key={change.operationId} className="badge badge--local">
-          {syncLabel[change.syncStatus] ?? change.syncStatus}
-          {change.code ? ` · ${change.code}` : ""}
-        </span>
-      ))}
-      {!row.isProvisional && row.localChanges.length === 0 && (
-        <span className="muted" style={{ fontSize: 13 }}>Aceptada</span>
-      )}
     </>
   );
 }

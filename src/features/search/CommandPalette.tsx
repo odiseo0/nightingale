@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CircleNotch, MagnifyingGlass, User, CalendarBlank } from "@phosphor-icons/react";
+import Modal from "../../components/primitives/Modal";
 import { listAppointments, getBookingContext, type AppointmentState, type BookingContext, type EntityRow as AppointmentRow, visibleOf as visibleAppointment } from "../../shared/api/appointments";
 import { listPatients, type EntityRow as PatientRow, type ProfileState } from "../../shared/api/patients";
 import { civilToday, dayRange, errorMessage, formatDateFull, formatTime, formatTimeEnd, patientNameOf, statusLabel } from "../appointments/presentation";
@@ -27,6 +28,7 @@ export default function CommandPalette({ open, onClose, zone }: Props) {
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [state, setState] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const generation = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -36,6 +38,7 @@ export default function CommandPalette({ open, onClose, zone }: Props) {
       setQuery("");
       setResults(null);
       setState("idle");
+      setActiveIndex(-1);
       window.setTimeout(() => inputRef.current?.focus(), 30);
     }
   }, [open]);
@@ -90,6 +93,7 @@ export default function CommandPalette({ open, onClose, zone }: Props) {
       }
       setResults(found);
       setState("ready");
+      setActiveIndex(-1);
     } catch (searchError: unknown) {
       if (request !== generation.current) return;
       setState("error");
@@ -109,74 +113,87 @@ export default function CommandPalette({ open, onClose, zone }: Props) {
     return () => { generation.current += 1; window.clearTimeout(timer); };
   }, [query, open, search]);
 
-  if (!open) return null;
-
   function openResult(to: string) {
     onClose();
     navigate(to);
   }
 
+  /* Flechas recorren resultados desde el campo o desde un resultado; Enter
+   * abre el resultado activo (o el primero desde el campo); Escape cierra.
+   * El manejador vive en el contenedor común para cubrir ambos orígenes. */
+  function onPaletteKeyDown(event: React.KeyboardEvent) {
+    const items = results ?? [];
+    if (event.key === "Escape") {
+      event.stopPropagation();
+      onClose();
+      return;
+    }
+    if (event.key === "Enter" && event.target === inputRef.current && items.length > 0) {
+      event.preventDefault();
+      openResult(items[Math.max(0, activeIndex)].to);
+      return;
+    }
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    if (!items.length) return;
+    event.preventDefault();
+    const buttons = listRef.current?.querySelectorAll("button") ?? [];
+    if (!buttons.length) return;
+    const current = [...buttons].indexOf(buttons[0].ownerDocument.activeElement as HTMLButtonElement);
+    const nextIndex = event.key === "ArrowDown"
+      ? Math.min(items.length - 1, (current < 0 ? -1 : current) + 1)
+      : Math.max(0, current <= 0 ? 0 : current - 1);
+    setActiveIndex(nextIndex);
+    (buttons[nextIndex] as HTMLButtonElement).focus();
+  }
+
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Búsqueda global" onClick={onClose}>
-      <div className="modal-card" style={{ maxWidth: 560 }} onClick={(event) => event.stopPropagation()}>
-        <label className="field-label">
-          <span className="muted"><MagnifyingGlass size={14} aria-hidden="true" /> Buscar pacientes y citas</span>
-          <input
-            ref={inputRef}
-            type="search"
-            className="input-text"
-            placeholder="Escribe al menos 2 caracteres"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") {
-                event.stopPropagation();
-                onClose();
-              } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-                event.preventDefault();
-                const buttons = listRef.current?.querySelectorAll("button") ?? [];
-                if (!buttons.length) return;
-                const current = buttons[0].ownerDocument.activeElement;
-                const index = [...buttons].indexOf(current as HTMLButtonElement);
-                const next = event.key === "ArrowDown"
-                  ? buttons[Math.min(buttons.length - 1, index + 1 < 0 ? 0 : index + 1)]
-                  : buttons[Math.max(0, index <= 0 ? 0 : index - 1)];
-                (next as HTMLButtonElement).focus();
-              }
-            }}
-          />
-        </label>
-        <p className="muted" style={{ fontSize: 13 }}>
-          Búsqueda solo en los datos disponibles en este equipo; sin coincidencias locales no prueba que no exista en otra copia autorizada.
-        </p>
-        <div ref={listRef} role="listbox" aria-label="Resultados" style={{ display: "grid", gap: 6, maxHeight: 320, overflowY: "auto" }}>
-          {state === "loading" && <p className="muted" role="status"><CircleNotch size={16} aria-hidden="true" /> Buscando…</p>}
-          {state === "error" && <p className="notice" role="alert">No se pudo buscar. {error}</p>}
-          {state === "ready" && results !== null && results.length === 0 && (
-            <p className="muted">Sin coincidencias en los datos locales de este equipo.</p>
-          )}
-          {results?.map((result) => (
-            <button
-              key={result.key}
-              type="button"
-              role="option"
-              aria-selected={false}
-              className="btn"
-              style={{ justifyContent: "flex-start", textAlign: "left" }}
-              onClick={() => openResult(result.to)}
-            >
-              {result.type === "paciente" ? <User size={16} aria-hidden="true" /> : <CalendarBlank size={16} aria-hidden="true" />}
-              <span>
-                <strong>{result.title}</strong>
-                <span className="muted" style={{ fontSize: 13, display: "block" }}>
-                  {result.type === "paciente" ? "Paciente" : "Cita"} · {result.context}
-                </span>
+    <Modal open={open} onClose={onClose} label="Búsqueda global" maxWidth={560}>
+      <div onKeyDown={onPaletteKeyDown} style={{ display: "contents" }}>
+      <label className="field-label">
+        <span className="muted"><MagnifyingGlass size={14} aria-hidden="true" /> Buscar pacientes y citas</span>
+        <input
+          ref={inputRef}
+          type="search"
+          className="input-text"
+          placeholder="Escribe al menos 2 caracteres"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+      </label>
+      <p className="muted" style={{ fontSize: 13 }}>
+        Búsqueda solo en los datos disponibles en este equipo; sin coincidencias locales no prueba que no exista en otra copia autorizada.
+      </p>
+      <div ref={listRef} role="listbox" aria-label="Resultados" style={{ display: "grid", gap: 6, maxHeight: 320, overflowY: "auto" }}>
+        {state === "loading" && <p className="muted" role="status"><CircleNotch size={16} aria-hidden="true" /> Buscando…</p>}
+        {state === "error" && <p className="notice" role="alert">No se pudo buscar. {error}</p>}
+        {state === "ready" && results !== null && results.length === 0 && (
+          <p className="muted">Sin coincidencias en los datos locales de este equipo.</p>
+        )}
+        {results?.map((result, index) => (
+          <button
+            key={result.key}
+            type="button"
+            role="option"
+            aria-selected={index === activeIndex}
+            className="btn"
+            style={{ justifyContent: "flex-start", textAlign: "left" }}
+            onClick={() => openResult(result.to)}
+            onFocus={() => setActiveIndex(index)}
+          >
+            {result.type === "paciente" ? <User size={16} aria-hidden="true" /> : <CalendarBlank size={16} aria-hidden="true" />}
+            <span>
+              <strong>{result.title}</strong>
+              <span className="muted" style={{ fontSize: 13, display: "block" }}>
+                {result.type === "paciente" ? "Paciente" : "Cita"} · {result.context}
               </span>
-            </button>
-          ))}
-        </div>
-        <p className="muted" style={{ fontSize: 12 }}>Escape cierra y devuelve el foco al disparador.</p>
+            </span>
+          </button>
+        ))}
       </div>
-    </div>
+      <p className="muted" style={{ fontSize: 12 }}>
+        Flechas recorren los resultados, Enter abre el seleccionado y Escape cierra.
+      </p>
+      </div>
+    </Modal>
   );
 }

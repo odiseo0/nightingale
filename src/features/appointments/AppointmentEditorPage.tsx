@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useBlocker, useNavigate, useSearchParams } from "react-router-dom";
-import { CircleNotch, Plus } from "@phosphor-icons/react";
+import { CircleNotch } from "@phosphor-icons/react";
+import Modal from "../../components/primitives/Modal";
 import {
   createAppointment, getBookingContext,
   type BookingContext, type ProfileState, type ServiceOfferView, visibleOf,
@@ -13,7 +14,7 @@ import {
   civilToday, dayRange, errorMessage, formatDateLong, mutationErrorMessage,
 } from "./presentation";
 import BookingFields, { type ResponsibleState } from "./BookingFields";
-import AvailabilityPicker, { type AvailabilityState } from "./AvailabilityPicker";
+import type { AvailabilityState } from "./AvailabilityPicker";
 import BookingSummary from "./BookingSummary";
 
 const AGENDA_STATE_KEY = "agenda:estado";
@@ -228,8 +229,11 @@ export default function AppointmentEditorPage() {
     (v) => v.relationship.contactPersonId === responsibleId,
   ) ?? null;
 
-  const dirty = patientId !== null || offer !== null || slot !== null;
-  dirtyRef.current = dirty;
+  /* El aviso de salida solo se activa por cambios del usuario: la precarga,
+   * la selección automática única y la restauración del borrador no cuentan
+   * como edición. El ref nace falso en cada montaje y solo los manejadores
+   * de acción del usuario lo activan; resetearlo durante el render borraría
+   * la marca en el primer re-render posterior a la interacción. */
   // Forma función: se evalúa en el momento de la navegación y lee los refs,
   // así el retorno tras guardar (savedRef=true) nunca se interpone y las
   // salidas con cambios sin guardar sí bloquean.
@@ -237,13 +241,13 @@ export default function AppointmentEditorPage() {
   const blocker = useBlocker(() => dirtyRef.current && !savedRef.current && !registeringRef.current);
 
   useEffect(() => {
-    if (!dirty || saved) return;
+    if (!dirtyRef.current || saved) return;
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
     };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [dirty, saved]);
+  }, [saved]);
 
   const canSave = !!patientId && !!offer && !!slot
     && (!responsibleRequired || (contactsStatus === "ready" && !!responsibleId))
@@ -285,7 +289,7 @@ export default function AppointmentEditorPage() {
           civil,
           ...(newId ? { selectedId: newId } : {}),
         }));
-        sessionStorage.setItem(AGENDA_MESSAGE_KEY, "Guardada en este equipo · Pendiente de aceptación.");
+        sessionStorage.setItem(AGENDA_MESSAGE_KEY, "Cita guardada.");
       } catch { /* el mensaje persistente es opcional; la fecha y filtros ya se conservan */ }
       navigate("/agenda");
     } catch (saveError: unknown) {
@@ -355,34 +359,21 @@ export default function AppointmentEditorPage() {
             offers={offers}
             professionalName={professionalName}
             patientId={patientId}
-            onPatientChange={setPatientId}
+            onPatientChange={(value) => { dirtyRef.current = true; setPatientId(value); }}
             offer={offer}
-            onOfferChange={setOffer}
+            onOfferChange={(value) => { dirtyRef.current = true; setOffer(value); }}
             civil={civil}
-            onCivilChange={(value) => value && setCivil(value)}
+            onCivilChange={(value) => { if (value) { dirtyRef.current = true; setCivil(value); } }}
             responsibleId={responsibleId}
-            onResponsibleChange={setResponsibleId}
+            onResponsibleChange={(value) => { dirtyRef.current = true; setResponsibleId(value); }}
             responsible={responsibleState}
             onRetryContacts={() => void loadContacts()}
+            availability={availability}
+            slot={slot}
+            onSlotChange={(value) => { dirtyRef.current = true; setSlot(value); }}
+            onRetryAvailability={() => void loadAvailability()}
+            onRegisterPatient={goRegisterPatient}
           />
-
-          <div>
-            <button type="button" className="btn btn--subtle" onClick={goRegisterPatient}>
-              <Plus size={16} aria-hidden="true" />
-              El paciente no está en la lista: registrar paciente
-            </button>
-          </div>
-
-          <fieldset style={{ border: 0, padding: 0, margin: 0, display: "grid", gap: 12 }}>
-            <legend className="muted" style={{ marginBottom: 8 }}>Intervalo disponible</legend>
-            <AvailabilityPicker
-              zone={zone}
-              availability={availability}
-              slot={slot}
-              onSlotChange={setSlot}
-              onRetry={() => void loadAvailability()}
-            />
-          </fieldset>
         </div>
 
         <div className="editor-summary">
@@ -402,24 +393,20 @@ export default function AppointmentEditorPage() {
         </div>
       </div>
 
-      {blocker.state === "blocked" && (
-        <div className="modal-backdrop" role="alertdialog" aria-labelledby="descartar-titulo" aria-modal="true">
-          <div className="modal-card">
-            <h2 id="descartar-titulo" style={{ fontSize: 20 }}>Cambios sin guardar</h2>
-            <p className="muted">
-              Si sales ahora, la cita no se guardará y los cambios de este formulario se perderán.
-            </p>
-            <div className="toolbar">
-              <button type="button" className="btn btn--primary" onClick={() => blocker.reset?.()}>
-                Seguir editando
-              </button>
-              <button type="button" className="btn" onClick={() => blocker.proceed?.()}>
-                Descartar y salir
-              </button>
-            </div>
-          </div>
+      <Modal open={blocker.state === "blocked"} onClose={() => blocker.reset?.()} alert labelledBy="descartar-titulo">
+        <h2 id="descartar-titulo" style={{ fontSize: 20 }}>Cambios sin guardar</h2>
+        <p className="muted">
+          Si sales ahora, la cita no se guardará y los cambios de este formulario se perderán.
+        </p>
+        <div className="toolbar">
+          <button type="button" className="btn btn--primary" onClick={() => blocker.reset?.()}>
+            Seguir editando
+          </button>
+          <button type="button" className="btn" onClick={() => blocker.proceed?.()}>
+            Descartar y salir
+          </button>
         </div>
-      )}
+      </Modal>
     </>
   );
 }

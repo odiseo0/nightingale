@@ -1,0 +1,128 @@
+{
+  "status": "PASS",
+  "scope": "Fixture arithmetic and explicit lanes only; no DOM, pixel, overflow or keyboard test",
+  "pxPerHour": 96,
+  "minDayWidthPx": 224,
+  "geometry": [
+    {
+      "day": 0,
+      "name": "Ana María Rodríguez de los Ángeles",
+      "start": 540,
+      "end": 570,
+      "topPx": 864,
+      "heightPx": 48,
+      "lane": 0,
+      "lanes": 1
+    },
+    {
+      "day": 0,
+      "name": "José Núñez",
+      "start": 570,
+      "end": 630,
+      "topPx": 912,
+      "heightPx": 96,
+      "lane": 0,
+      "lanes": 1
+    },
+    {
+      "day": 0,
+      "name": "Inés Peña",
+      "start": 660,
+      "end": 690,
+      "topPx": 1056,
+      "heightPx": 48,
+      "lane": 0,
+      "lanes": 1
+    },
+    {
+      "day": 0,
+      "name": "Luis Méndez",
+      "start": 720,
+      "end": 750,
+      "topPx": 1152,
+      "heightPx": 48,
+      "lane": 0,
+      "lanes": 1
+    },
+    {
+      "day": 1,
+      "name": "Óscar Díaz",
+      "start": 540,
+      "end": 555,
+      "topPx": 864,
+      "heightPx": 24,
+      "lane": 0,
+      "lanes": 1
+    },
+    {
+      "day": 1,
+      "name": "María Fernanda del Carmen González",
+      "start": 600,
+      "end": 637,
+      "topPx": 960,
+      "heightPx": 59.2,
+      "lane": 0,
+      "lanes": 1
+    },
+    {
+      "day": 2,
+      "name": "Inés Peña",
+      "start": 540,
+      "end": 570,
+      "topPx": 864,
+      "heightPx": 48,
+      "lane": 0,
+      "lanes": 2
+    },
+    {
+      "day": 2,
+      "name": "Carlos Méndez",
+      "start": 540,
+      "end": 570,
+      "topPx": 864,
+      "heightPx": 48,
+      "lane": 1,
+      "lanes": 2
+    },
+    {
+      "day": 3,
+      "name": "Bloqueo de horario",
+      "start": 720,
+      "end": 780,
+      "topPx": 1152,
+      "heightPx": 96,
+      "lane": 0,
+      "lanes": 1
+    },
+    {
+      "day": 4,
+      "name": "Eva López",
+      "start": 0,
+      "end": 30,
+      "topPx": 0,
+      "heightPx": 48,
+      "lane": 0,
+      "lanes": 1
+    },
+    {
+      "day": 5,
+      "name": "Raúl Núñez",
+      "start": 1410,
+      "end": 1440,
+      "topPx": 2256,
+      "heightPx": 48,
+      "lane": 0,
+      "lanes": 1
+    },
+    {
+      "day": 6,
+      "name": "Raúl Núñez",
+      "start": 0,
+      "end": 30,
+      "topPx": 0,
+      "heightPx": 48,
+      "lane": 0,
+      "lanes": 1
+    }
+  ]
+}

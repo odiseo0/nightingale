@@ -1,5 +1,15 @@
 import { invoke } from "@tauri-apps/api/core";
 
+export interface ReviewSummary {
+  operationId: string;
+  status: string;
+  code: string | null;
+  action: string;
+  entityType: string;
+  entityKey: unknown;
+  createdAtMillis: number;
+}
+
 export interface PendingOperation {
   operationId: string;
   action: string;

@@ -1,0 +1,38 @@
+[
+  {
+    "case": "Weekly rules show days, intervals and validity; exceptions distinguish closed/replacement; blocks show scope",
+    "route": "configuracion/horarios",
+    "rule": "Lun · Mar · Mié · Jue · Vie · 09:00 – 12:00 | 14:00 – 17:00 · Vigente del 19 de octubre al 31 de diciembre",
+    "exception": "Lunes, 26 de octubre · Cierre del día · Mantenimiento del consultorio",
+    "block": "Gestiones personales · 22 de octubre 16:00 – 16:30 · Alcance: Toda la actividad del profesional",
+    "ruleForm": "day checkboxes, validity dates, dynamic interval rows, add-interval button, end-exclusive help"
+  },
+  {
+    "case": "Change crossing live appointments is rejected, lists affected appointments and keeps the form",
+    "route": "configuracion/horarios",
+    "action": "block 15:00 – 16:00 on 2026-10-22",
+    "error": "Este bloqueo cruza 1 cita(s) vigente(s): Andrés Gutiérrez 15:00 – 15:30. Reprograma esas citas o elige otro intervalo. Tus cambios se conservan.",
+    "formPreserved": true,
+    "secondAttempt": "block crossing 14:00 – 15:00 listed José Antonio Castillo 14:00 – 14:30; Sofía Rivas 14:30 – 15:00"
+  },
+  {
+    "case": "Rule/exception conflict paths use the same simulate-revert-list mechanism with owner and online limits",
+    "route": "configuracion/horarios",
+    "implemented": "rule-form and exception-form validate days, validity order, interval order, simulate the change, revert and list affected appointments when any live appointment falls outside windows"
+  },
+  {
+    "case": "Assistant view hides global block motives and removes editing actions",
+    "route": "configuracion/horarios",
+    "viewer": "assistant",
+    "blockLabel": "Bloqueo de agenda",
+    "motiveHidden": true,
+    "noAddOrEditButtons": true
+  },
+  {
+    "case": "Agenda, week and booking editor use the dynamic windows",
+    "routes": ["agenda", "agenda/semana", "cita/nueva"],
+    "weekClosedBands": "Fuera de horario bands computed from windows",
+    "firstAvailableSlot": "10:30 – 11:00 computed with windowsForDate and occupied intervals",
+    "saveValidation": "rejects intervals outside windows with readable hours text (windowsText)"
+  }
+]

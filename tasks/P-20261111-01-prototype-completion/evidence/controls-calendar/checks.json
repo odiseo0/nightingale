@@ -1,0 +1,62 @@
+{
+  "date": "2026-11-12",
+  "scope": "Original design-prototype only; direct visual iteration; no checkpoint approval inferred",
+  "browser": "Codex in-app browser, native customizable select supported",
+  "manual_checks": [
+    {
+      "check": "Agenda filter with Down and Enter",
+      "result": "Programada applied; 3 appointments; focus returned to appointment-filter; computed appearance base-select"
+    },
+    {
+      "check": "Calendar keyboard and Apply",
+      "result": "Right then Enter selected 2026-10-23; Apply changed Agenda; focus returned to calendar trigger"
+    },
+    {
+      "check": "Calendar inside schedule modal",
+      "result": "Month changed with native select keyboard; Escape closed calendar only; date stayed 2026-10-19"
+    },
+    {
+      "check": "Year and leap day; Cancel",
+      "result": "Selected February 29, 2024; Cancel preserved rule date 2026-10-19"
+    },
+    {
+      "check": "Interval duration and validation",
+      "result": "12:00 to 11:30 changed duration from 3 h to 2 h 30 min; save rejected the affected 11:30 appointment and kept inputs; restoring 12:00 saved"
+    },
+    {
+      "check": "Rescheduling",
+      "result": "Changed date to 2026-10-23 and start to 10:30; end became 11:00; same patient and service in summary; discard confirmation retained"
+    },
+    {
+      "check": "Appointment more actions",
+      "result": "Popover opened beside trigger; Escape closed it and kept appointment modal open; closing detail returned focus to appointment link"
+    },
+    {
+      "check": "375 x 812",
+      "result": "Schedule, appointment, calendar, new-patient selector and reschedule inspected; no document horizontal overflow; long patient options wrapped"
+    },
+    {
+      "check": "Calendar viewport edge",
+      "result": "At 375 px: document clientWidth 360, picker right 347.99 after correction; no cut-off"
+    },
+    {
+      "check": "800 x 600",
+      "result": "Reschedule layout inspected; fields remained readable and usable"
+    },
+    {
+      "check": "Default viewport",
+      "result": "Agenda dropdown, appointment, weekly schedule and rule editor inspected; temporary viewport reset"
+    },
+    {
+      "check": "Browser console",
+      "result": "No errors or warnings returned in inspected session"
+    }
+  ],
+  "limits": [
+    "Not a full T01-T11 regression audit",
+    "Screen reader and real touch-device testing pending",
+    "Unsupported customizable-select engines retain native select styling; no cross-engine visual parity claimed",
+    "Time-input display format follows browser locale; underlying values remain HH:mm",
+    "Data fictional and in memory; no production UI, API or database changes"
+  ]
+}

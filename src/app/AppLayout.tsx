@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { CalendarBlank, Gear, List, MagnifyingGlass, Question, Users, ArrowsClockwise, SignIn, X } from "@phosphor-icons/react";
 import CommandPalette from "../features/search/CommandPalette";
+import Modal from "../components/primitives/Modal";
 import { getAccountView, type AccountView } from "../shared/api/account";
 import { getCoreStatus } from "../shared/api/identity";
 
@@ -14,7 +15,7 @@ const TITLES: [RegExp, string][] = [
   [/^\/cita\/nueva/, "Nueva cita"],
   [/^\/cita\/.*\/reprogramar/, "Reprogramar cita"],
   [/^\/cita\//, "Detalle de cita"],
-  [/^\/cambios/, "Cambios"],
+  [/^\/cambios/, "Por revisar"],
   [/^\/acceso/, "Acceso y preparación"],
   [/^\/diagnostico/, "Diagnóstico"],
   [/^\/configuracion/, "Configuración"],
@@ -31,6 +32,8 @@ function titleFor(pathname: string): string {
 export default function AppLayout() {
   const location = useLocation();
   const [account, setAccount] = useState<AccountView | null>(null);
+  /* Por revisar solo cuenta asuntos que exigen una decisión: conflicto,
+   * rechazo o revisión requerida. El proceso normal sigue invisible. */
   const [attentionCount, setAttentionCount] = useState(0);
   const [signedIn, setSignedIn] = useState(true);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -41,9 +44,15 @@ export default function AppLayout() {
   const [zone, setZone] = useState("UTC");
 
   useEffect(() => {
+    let cancelled = false;
     getAccountView()
-      .then((screen) => { if (screen.account) setZone(screen.account.timeZone); })
-      .catch(() => { /* zona por defecto */ });
+      .then((screen) => {
+        if (cancelled) return;
+        setAccount(screen.account);
+        if (screen.account) setZone(screen.account.timeZone);
+      })
+      .catch(() => { /* contexto de cuenta no disponible */ });
+    return () => { cancelled = true; };
   }, [location.pathname]);
 
   /* Ctrl/Cmd+K abre la búsqueda global (con alternativa visible en la barra). */
@@ -58,7 +67,8 @@ export default function AppLayout() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  /* Enlace discreto al centro de cambios: solo con contador cuando hay algo. */
+  /* Enlace condicional a Por revisar: solo hay contador cuando existe algo
+   * que requiera intervención; pendiente/enviando/desconocido no se muestran. */
   useEffect(() => {
     let cancelled = false;
     const refresh = () => getCoreStatus()
@@ -66,25 +76,12 @@ export default function AppLayout() {
         if (cancelled) return;
         setSignedIn(status.signedIn);
         const outbox = status.sync?.outbox;
-        setAttentionCount(outbox
-          ? outbox.pending + outbox.retryable + outbox.unknown + outbox.inFlight
-            + outbox.conflicts + outbox.rejected + outbox.reviewRequired
-          : 0);
+        setAttentionCount(outbox ? outbox.conflicts + outbox.rejected + outbox.reviewRequired : 0);
       })
       .catch(() => { /* sin sesión: sin contador */ });
     void refresh();
     const timer = window.setInterval(() => void refresh(), 15_000);
     return () => { cancelled = true; window.clearInterval(timer); };
-  }, [location.pathname]);
-
-  useEffect(() => {
-    let cancelled = false;
-    getAccountView()
-      .then((screen) => {
-        if (!cancelled) setAccount(screen.account);
-      })
-      .catch(() => { /* contexto de cuenta no disponible */ });
-    return () => { cancelled = true; };
   }, [location.pathname]);
 
   useEffect(() => {
@@ -128,6 +125,7 @@ export default function AppLayout() {
       <aside className="app-sidebar" data-open={menuOpen} id="navegacion-principal">
         <div className="app-brand">Nightingale</div>
         <nav className="app-nav" aria-label="Navegación principal">
+          <p className="nav-caption">Trabajo diario</p>
           <NavLink to="/agenda" className="nav-link">
             <CalendarBlank size={18} aria-hidden="true" />
             Agenda
@@ -142,22 +140,21 @@ export default function AppLayout() {
             <Users size={18} aria-hidden="true" />
             Pacientes
           </NavLink>
-          <NavLink to="/cambios" className="nav-link">
-            <ArrowsClockwise size={18} aria-hidden="true" />
-            Cambios
-            {attentionCount > 0 && (
-              <span className="badge badge--selected" aria-label={`${attentionCount} cambios pendientes o por revisar`}>
-                {attentionCount}
-              </span>
-            )}
-          </NavLink>
+          {attentionCount > 0 && (
+            <NavLink to="/cambios" className="nav-link">
+              <ArrowsClockwise size={18} aria-hidden="true" />
+              Por revisar
+            </NavLink>
+          )}
+        </nav>
+        <nav className="app-nav app-nav--utilities" aria-label="Utilidades">
+          <button type="button" className="nav-link" style={{ border: 0, background: "transparent", cursor: "pointer", fontFamily: "var(--font-sans)" }} onClick={() => setHelpOpen(true)}>
+            <Question size={18} aria-hidden="true" />
+            Ayuda
+          </button>
           <NavLink to="/configuracion/cuenta" className="nav-link">
             <Gear size={18} aria-hidden="true" />
             Configuración
-          </NavLink>
-          <NavLink to="/desarrollo" className="nav-link">
-            <List size={18} aria-hidden="true" />
-            Desarrollo
           </NavLink>
         </nav>
       </aside>
@@ -196,34 +193,30 @@ export default function AppLayout() {
         zone={zone}
       />
 
-      {helpOpen && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Ayuda" onClick={() => setHelpOpen(false)}>
-          <div className="modal-card" onClick={(event) => event.stopPropagation()}>
-            <h2 style={{ fontSize: 20 }}>Ayuda</h2>
-            <p className="muted">
-              Estás en <strong>{title}</strong>. La navegación muestra solo superficies funcionales;
-              el diagnóstico técnico vive fuera del trabajo diario en Desarrollo.
-            </p>
-            <ul style={{ margin: 0, paddingLeft: 20, display: "grid", gap: 6 }}>
-              <li>Agenda: día, semana y lista de citas con detalle y acciones del ciclo.</li>
-              <li>Pacientes: directorio, ficha administrativa y registro.</li>
-              <li>Cambios: sincronización pendiente y conflictos.</li>
-              <li>Configuración: cuenta, servicios y horarios.</li>
-            </ul>
-            <div className="toolbar">
-              <NavLink to="/diagnostico" className="btn" onClick={() => setHelpOpen(false)}>
-                Abrir diagnóstico (S13)
-              </NavLink>
-              <NavLink to="/desarrollo" className="btn" onClick={() => setHelpOpen(false)}>
-                Panel técnico (Desarrollo)
-              </NavLink>
-              <button type="button" className="btn btn--primary" onClick={() => setHelpOpen(false)}>
-                Cerrar
-              </button>
-            </div>
-          </div>
+      <Modal open={helpOpen} onClose={() => setHelpOpen(false)} label="Ayuda">
+        <h2 style={{ fontSize: 20 }}>Ayuda</h2>
+        <p className="muted">
+          Estás en <strong>{title}</strong>. La navegación muestra solo superficies funcionales;
+          el diagnóstico técnico vive fuera del trabajo diario en Desarrollo.
+        </p>
+        <ul style={{ margin: 0, paddingLeft: 20, display: "grid", gap: 6 }}>
+          <li>Agenda: día, semana y lista de citas con detalle y acciones del ciclo.</li>
+          <li>Pacientes: directorio, ficha administrativa y registro.</li>
+          <li>Por revisar: aparece solo cuando un conflicto o rechazo necesita tu decisión.</li>
+          <li>Configuración: cuenta, servicios y horarios.</li>
+        </ul>
+        <div className="toolbar">
+          <NavLink to="/diagnostico" className="btn" onClick={() => setHelpOpen(false)}>
+            Abrir diagnóstico técnico
+          </NavLink>
+          <NavLink to="/desarrollo" className="btn" onClick={() => setHelpOpen(false)}>
+            Herramientas de desarrollo
+          </NavLink>
+          <button type="button" className="btn btn--primary" onClick={() => setHelpOpen(false)}>
+            Cerrar
+          </button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

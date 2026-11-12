@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { CircleNotch, Info } from "@phosphor-icons/react";
 import { getDiagnostics } from "../../shared/api/diagnostics";
 import { getStorageStatus } from "../../shared/api/storage";
@@ -65,6 +66,7 @@ export default function DiagnosticsPage() {
           <p className="muted">Metadatos técnicos locales de esta instalación.</p>
         </div>
         <button type="button" className="btn" onClick={() => void load()}>Actualizar</button>
+        <Link className="btn" to="/agenda">Volver a la agenda</Link>
       </div>
 
       <div className="notice">

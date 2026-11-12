@@ -5,6 +5,25 @@
 **Estado:** Aprobado\
 **Ámbito:** Estructura y reglas para el diseño, la experiencia de uso y el frontend de Nightingale
 
+## Revisión aprobada del 2026-11-09
+
+El plan [P-20261109-22](../tasks/P-20261109-22-interface-refresh/plan.md) fija estas reglas de presentación. No cambia dominio ni contratos.
+
+- Montserrat para títulos y encabezados; Mulish para lectura, navegación, tablas, formularios y controles. Pesos reales 400/500/600, archivos locales con origen y licencia.
+- La sincronización normal es invisible: sin columnas, etiquetas, contadores, bordes discontinuos, botones ni avisos de proceso. Los reintentos automáticos y la falta de red que permite trabajo local no interrumpen.
+- Los problemas que exigen una decisión aparecen junto al dato y en «Por revisar». Su enlace solo aparece si hay intervención pendiente. Diagnóstico conserva los datos técnicos fuera del uso diario.
+- «Cita guardada» o «Cambios guardados» confirma persistencia local. No promete reserva compartida, mensaje enviado ni horario liberado. El resultado desconocido conserva la misma intención e impide duplicarla.
+- Las direcciones de lectura terminan en ciudad y estado, sin país ni separadores vacíos. País almacenado/editable y país emisor de documentos se conservan.
+- Ocultar columna y filtro Profesional solo para el dueño con un único profesional disponible. Asistentes y cuentas con varios profesionales lo conservan. No inferir rol por canManage ni quitar professionalId.
+- Conservar Servicio y su dato actual; no añadir motivo de visita.
+- Tomar de Linear, Attio y Twenty navegación, barras compactas, tablas, filtros, paneles y formularios. Conservar azul propio, Phosphor y alcance de Nightingale.
+- Semana parte de 96 px/hora y al menos 160 px/día, con desplazamiento propio, horas/cabeceras identificables y eventos sin taparse. La muestra se revisa antes de llevar las medidas al producto.
+
+
+## Revisión tipográfica solicitada el 2026-11-12
+
+La interfaz deberá aplicar las reglas de [DESIGN.md](../DESIGN.md#3-typography-rules) y [DESIGN-RULES.md](../DESIGN-RULES.md): líneas de lectura de 45–75 caracteres cuando el ancho lo permita; tamaños en múltiplos de 4 desde 12px; títulos con interlineado compacto y texto pequeño con más aire. Las superficies estrechas podrán usar líneas más cortas, sin forzar desbordamiento. Esta petición autoriza su aplicación al prototipo actual; no cierra checkpoints ni cambia reglas de dominio.
+
 ## 1. Función de este documento
 
 Este documento organiza el diseño y la interfaz de Nightingale. Define los principios de experiencia, la arquitectura de información, las superficies, los recorridos, los componentes, los estados, las reglas de presentación y las comprobaciones que deberán respetar los trabajos posteriores.
@@ -72,7 +91,7 @@ Reglas de precedencia:
 7. El código y el prototipo son fuentes secundarias. Si divergen de una intención aprobada, deberá corregirse la implementación o actualizarse formalmente la intención.
 8. Ante una contradicción no resuelta, el trabajo afectado deberá detenerse hasta actualizar la fuente correspondiente.
 
-La revisión histórica SF contiene referencias anteriores a Inter y pesos 510/590. DS las sustituye: Anek Latin, Aileron y pesos 400/500/600 son las reglas actuales. DP conserva Inter como evidencia histórica y no deberá usarse para restablecer esa tipografía.
+La revisión histórica SF contiene referencias anteriores a Inter y pesos 510/590. DS las sustituye: Montserrat, Mulish y pesos 400/500/600 son las reglas actuales. DP conserva Inter como evidencia histórica y no deberá usarse para restablecer esa tipografía.
 
 ## 4. Alcance y exclusiones
 
@@ -140,7 +159,7 @@ No se diseñarán como parte de esta versión:
 - El sistema conservará el contexto necesario para que el usuario no memorice datos entre pantallas.
 - Fecha, filtros, búsqueda, selección y posición deberán restaurarse al volver cuando la tarea lo requiera.
 - Los valores que deban compararse permanecerán juntos: horario anterior/propuesto, propuesta local/estado compartido y solicitud/cita vigente.
-- La complejidad técnica se traducirá a resultados comprensibles sin ocultar incertidumbre ni estados pendientes.
+- La complejidad técnica se traduce a resultados comprensibles. Se conserva la incertidumbre internamente; la vista explica su efecto solo cuando exige intervención o limita una acción.
 - Los formularios conservarán los datos ante errores y al registrar una entidad relacionada.
 
 ### 5.3 Confianza y honestidad operativa
@@ -171,7 +190,7 @@ No se enumerarán todas las leyes en cada plan. Miller no impone un máximo de e
 
 ### 6.1 Navegación propuesta
 
-**Propuesta UX, pendiente de aprobación final:**
+**Modelo futuro de referencia.** La renovación aprobada mantiene hoy Agenda/Pacientes, Por revisar condicional y Configuración/Ayuda en utilidades. Los destinos futuros siguientes no se añaden antes de disponer de contratos y autorización de implementación:
 
 ```text
 Acceso / preparación cuando corresponda
@@ -191,7 +210,7 @@ Seguimiento
   └─ Indicadores
 
 Utilidades
-  ├─ Cambios por revisar
+  ├─ Por revisar · solo si requiere intervención
   ├─ Configuración
   └─ Ayuda / Diagnóstico de desarrollo
 ```
@@ -210,7 +229,7 @@ Salvo que la tarea exija otra estructura:
 6. Avisos relacionados con el trabajo.
 7. Detalle o acciones secundarias en contexto.
 
-Los avisos de sincronización no ocuparán la posición principal en funcionamiento normal. Un conflicto o pérdida de permiso sí podrá destacarse cuando impida completar la tarea.
+La sincronización normal no mostrará avisos, etiquetas, columnas, contadores ni controles de proceso. Un conflicto o pérdida de permiso sí podrá destacarse cuando impida completar la tarea.
 
 ### 6.3 Contexto persistente y retorno
 
@@ -248,7 +267,7 @@ Los IDs S01–S14 son identificadores estables de referencia. Las rutas de DP so
 | S08 | Lista de espera | Recuperar huecos con candidatos compatibles | Entradas, preferencias, ofertas, vencimiento y asignación por personal |
 | S09 | Comunicaciones | Supervisar entregas, respuestas y problemas | Tipo, fecha, estado, antigüedad, cita y contacto |
 | S10 | Indicadores | Comprender resultados administrativos | Periodo, valores, denominadores, definiciones y antigüedad |
-| S11 | Sincronización y conflictos | Revisar trabajo no aceptado o divergente | Pendientes, fallos, resultados desconocidos, comparación y recuperación |
+| S11 | Por revisar | Revisar problemas que requieren intervención | Conflictos, rechazos y restricciones, comparación y recuperación contratada |
 | S12 | Configuración | Mantener datos y políticas autorizadas | Cuenta, servicios, agenda, comunicaciones, equipo, dispositivos y preferencias |
 | S13 | Diagnóstico | Inspeccionar el entorno de desarrollo | Versiones, adaptadores y estado técnico permitido, sin secretos |
 | S14 | Patient Hub | Gestionar una cita existente | Consulta, confirmación, cancelación, solicitud y resultados conocidos |
@@ -297,7 +316,7 @@ Los recorridos siguientes son obligatorios de especificar antes de implementar l
 
 ### 8.1 Reglas transversales de recorrido
 
-- Toda acción mostrará recepción inmediata o progreso; el resultado remoto se informará por separado.
+- Toda acción expresa mostrará recepción inmediata o progreso. El intercambio automático correcto será invisible; solo los problemas que requieren intervención se informarán en contexto y en Por revisar.
 - Un error conservará los datos y la intención cuando el contrato lo exija.
 - Un doble clic no creará una segunda intención.
 - Una actualización remota no sobrescribirá silenciosamente un formulario en edición.
@@ -384,11 +403,11 @@ El orden de lectura será:
 
 1. Paciente y estado de cita.
 2. Fecha, inicio/fin, servicio y lugar.
-3. Sincronización solo cuando requiera atención o sea necesaria para interpretar el resultado.
+3. Problemas que requieren intervención, cuando existan.
 4. Contacto administrativo permitido.
 5. Confirmación o solicitud relacionada.
 6. Comunicaciones.
-7. Historia aceptada y operaciones locales separadas.
+7. Actividad comprensible; operaciones y versiones solo en diagnóstico.
 
 El detalle será lateral cuando quepa con texto legible y ocupará una superficie propia en ventanas estrechas. Conservará el mismo contenido y acciones en ambas presentaciones. Al cerrar un detalle lateral se devolverá el foco al elemento que lo abrió.
 
@@ -438,7 +457,7 @@ No se afirmará que el horario anterior quedó liberado antes de la aceptación.
 
 ### 10.5 Historia y ocupación
 
-La historia aceptada es inmutable y distinta del registro de operaciones locales y de la auditoría técnica. La interfaz los identificará por separado.
+La historia aceptada es inmutable y distinta del registro de operaciones locales y de la auditoría técnica. Se conservan separados; la vista diaria muestra actividad, y diagnóstico conserva operaciones y auditoría.
 
 Solo la cancelación libera ocupación en el contrato actual. Programada, confirmada, atendida y ausencia conservan ocupación. Reprogramar crea una nueva versión con otro intervalo y estado programada. La UI no calculará estas reglas por su cuenta.
 
@@ -455,7 +474,7 @@ Toda vista de Agenda deberá distinguir:
 - Fecha no descargada o cobertura insuficiente.
 - Datos desactualizados.
 - Error de lectura local.
-- Cambios locales pendientes.
+- Cambios locales pendientes como estado interno, sin etiquetas de proceso.
 - Conflicto que requiere revisión.
 - Falta de permiso.
 
@@ -506,7 +525,7 @@ La ficha contendrá:
 - Contactos y responsables permitidos.
 - Preferencias o consentimiento cuando estén definidos.
 - Próximas citas e historial paginado.
-- Cambios locales pendientes cuando afecten al resultado.
+- Problemas que requieren intervención cuando afecten al resultado.
 
 Las acciones principales serán Nueva cita y Editar información administrativa, según permiso. Desactivar o fusionar son operaciones separadas; no existirá un botón genérico Eliminar. Las coincidencias de nombre, teléfono o documento no fusionarán personas ni vincularán fichas entre cuentas.
 
@@ -526,7 +545,7 @@ La acción principal será Revisar horario o Elegir nuevo horario, no Aceptar co
 La conciliación deberá representar fallos parciales, por ejemplo:
 
 - Cambio de cita aceptado; falta actualizar la solicitud.
-- Cambio todavía pendiente de sincronización.
+- Cambio pendiente de aceptación como estado interno; explicar una limitación solo si requiere intervención.
 - Resultado remoto desconocido.
 - Solicitud desactualizada o ya modificada.
 
@@ -586,19 +605,9 @@ Los gráficos serán sobrios y secundarios al dato. Tendrán etiquetas, escala c
 
 ### 14.1 Centro de cambios y conflictos
 
-El acceso a sincronización será discreto en funcionamiento normal y visible cuando haya algo que revisar. La superficie podrá mostrar:
+Por revisar aparece solo si existen conflictos, rechazos o restricciones que necesitan intervención. Cada asunto explica el problema junto al dato y ofrece solo las alternativas contratadas. No muestra última sincronización, colas, contadores, estados normales, botones de sincronizar ni resultados desconocidos que aún se recuperan automáticamente.
 
-- Última sincronización correcta conocida.
-- Operaciones pendientes y su alcance.
-- Reintentos temporales.
-- Resultados desconocidos.
-- Rechazos y revisiones.
-- Conflictos.
-- Cuenta y dispositivo afectados.
-
-El vocabulario principal será orientado al trabajo: “Guardada en este equipo”, “Pendiente de aceptación”, “Resultado por comprobar” o “Necesita revisión”. Outbox, SQL, cursores y UUID podrán aparecer solo en diagnóstico o detalle técnico autorizado.
-
-Un conflicto de cita comparará propuesta local y estado compartido, explicará qué cambió y ofrecerá elegir otra hora o descartar la intención local. No habrá “Forzar guardado” ni “Último cambio gana”.
+El diagnóstico conserva operaciones, versiones y datos técnicos sin secretos. Un conflicto compara propuesta y estado compartido sin borrar la intención. No ofrece forzar, descartar ni sobrescribir si el contrato no permite esa acción.
 
 ### 14.2 Cuenta y preferencias
 
@@ -608,7 +617,7 @@ La configuración separará:
 - Preferencias del dispositivo que se guardan localmente.
 - Capacidades no disponibles o de solo lectura.
 
-La zona IANA, lugar, política de ausencia y versión aceptada serán explícitos cuando eviten ambigüedad. Los cambios remotos mostrarán si la API aceptó pero la vista local aún no se actualizó.
+Zona, lugar y política serán comprensibles. Versiones permanecen internas. La actualización automática no muestra etapas técnicas; un problema que requiere intervención se explica junto al dato. Las direcciones de lectura terminan en ciudad y estado, sin país; se conservan los campos editables.
 
 El tema claro es el único definido. Aunque el esqueleto pueda almacenar `system`, `light` o `dark`, este documento no define una paleta oscura ni su comportamiento final; queda **Pendiente** y requerirá un plan específico.
 
@@ -619,8 +628,8 @@ La configuración distinguirá:
 - Catálogo del profesional.
 - Oferta del servicio en una cuenta.
 - Duración base y ajuste de oferta.
-- Versión del servicio y versión de la oferta.
-- Activo/inactivo y propuesta local/aceptada.
+- Versiones internas separadas de servicio y oferta, fuera del contenido diario.
+- Activo/inactivo. Propuesta local y estado aceptado se conservan internamente sin etiquetas de proceso.
 
 Cambiar un servicio no modificará citas anteriores. La UI mostrará ese efecto antes de guardar. La duración fija o variable como decisión de experiencia queda **Pendiente**, aunque el contrato siempre use inicio/fin y una duración de referencia.
 
@@ -700,7 +709,7 @@ No se mostrará información de otra cita al recuperar un enlace. La duración d
 
 ### 16.1 Lenguaje visual
 
-La interfaz transmitirá confianza, calma, claridad, privacidad y precisión. La referencia de oficio visual procede de Attio y Linear como aplicaciones administrativas, sin copiar marca, layouts propietarios ni funciones.
+La interfaz transmitirá confianza, calma, claridad, privacidad y precisión. La referencia de oficio visual procede de Attio, Linear y Twenty como aplicaciones administrativas, tomando elementos y patrones de interfaz, sin copiar marcas ni añadir funciones ajenas.
 
 Se utilizarán:
 
@@ -742,12 +751,12 @@ Los colores de error, advertencia y estado crítico no están definidos en DS. M
 
 ### 17.1 Font pairing
 
-- **Anek Latin:** títulos, cabeceras, display y encabezados de tarjetas.
-- **Aileron:** cuerpo, navegación, controles, formularios, tablas, captions, enlaces y texto técnico.
+- **Montserrat:** títulos, cabeceras, display y encabezados de tarjetas.
+- **Mulish:** cuerpo, navegación, controles, formularios, tablas, captions, enlaces y texto técnico.
 
 No se intercambiarán estos roles para resolver problemas locales. Los pesos compartidos son 400 para lectura, 500 para énfasis de UI y 600 para énfasis fuerte; 300 queda limitado a contenido no crítico.
 
-Los tamaños conservan la escala de DS. Los roles de 10–12 px no se usarán para nombres, horas, instrucciones, acciones ni datos esenciales. Los datos técnicos usarán Aileron y `font-variant-numeric: tabular-nums` cuando la alineación sea útil; no se añadirá otra familia monoespaciada.
+Los tamaños seguirán la escala de 4 px de DS, desde 12 px. Los 12 px se reservan para texto de apoyo y controles secundarios; los nombres, datos principales, etiquetas esenciales y lectura parten de 16 px. Los párrafos tendrán 45–75 caracteres por línea cuando el ancho lo permita, sin imponer un mínimo en superficies estrechas. Los títulos usarán interlineado compacto y el texto pequeño, aprox. 1.67. Los datos técnicos usarán Mulish y `font-variant-numeric: tabular-nums` cuando la alineación sea útil; no se añadirá otra familia monoespaciada.
 
 No se aplicarán features OpenType de Inter como `cv01` o `ss03`. Solo se activarán features soportadas por los archivos empaquetados y verificadas en render real.
 
@@ -756,7 +765,7 @@ No se aplicarán features OpenType de Inter como `cv01` o `ss03`. Solo se activa
 Los planes que incorporen fuentes deberán:
 
 - Usar archivos locales con formatos apropiados y fallback de sistema.
-- Conservar licencias y atribución de Anek Latin y Aileron.
+- Conservar licencias y atribución de Montserrat y Mulish.
 - Definir `font-display`, pesos y subsets sin depender silenciosamente de un CDN.
 - Comprobar caracteres del español, signos, fechas, teléfonos y nombres reales ficticios.
 - Evitar síntesis de pesos inexistentes y revisar legibilidad a tamaños pequeños.
@@ -945,7 +954,7 @@ Ninguna entidad tendrá un único “estado” visual que mezcle estas dimension
 |---|---|---|
 | Cita | Programada, confirmada, cancelada, atendida, ausencia | Texto de dominio y acciones válidas |
 | Solicitud | Recibida, en revisión, resuelta o estado contratado | Separada de la cita vigente |
-| Sincronización | Pendiente, enviando, desconocido, reintento, aceptado, conflicto, rechazo, revisión | Visible cuando afecte al resultado |
+| Sincronización | Pendiente, enviando, desconocido, reintento, aceptado, conflicto, rechazo, revisión | Proceso normal invisible; intervención en contexto y Por revisar |
 | Comunicación | Programada, enviada, entregada, respondida, fallo | No equivale a asistencia |
 | Permiso/acceso | Activo, solo lectura, revocado, inactivo, desconocido | Explica capacidad y siguiente paso |
 | Cobertura | Dentro de ventana, sin ventana, insuficiente | Evita interpretar ausencia de datos como vacío |
@@ -953,20 +962,15 @@ Ninguna entidad tendrá un único “estado” visual que mezcle estas dimension
 | Formulario | Pristine, dirty, validando, enviando, error | Conserva intención y no implica guardado |
 | Vista | Cargando, refrescando, vacía, error | No altera el estado de negocio |
 
-### 21.2 Etiquetas de sincronización
+### 21.2 Presentación de sincronización
 
-| Contrato local | Texto orientado al usuario |
+| Contrato local | Presentación diaria |
 |---|---|
-| pending | Guardada en este equipo · Pendiente de aceptación |
-| in_flight | Enviando cambio |
-| unknown | Resultado por comprobar |
-| retryable | Se reintentará / Pendiente de reintento |
-| accepted | Aceptada; actualizando la vista local |
-| conflict | Necesita revisión por un cambio compartido |
-| rejected | No aceptada; requiere revisión |
-| review_required | Requiere revisión |
+| pending, in_flight, retryable, accepted | Sin etiqueta ni aviso de proceso |
+| unknown | Recuperación automática con la misma identidad; impedir duplicación sin exponer la fase técnica |
+| conflict, rejected, review_required | Explicar el problema en contexto y Por revisar solo si requiere intervención |
 
-En funcionamiento normal no se repetirán etiquetas técnicas en cada fila. El detalle y el centro de cambios conservarán la información necesaria.
+El diagnóstico conserva estos estados. Guardado local correcto: «Cita guardada» o «Cambios guardados», sin prometer efectos remotos no conocidos.
 
 ### 21.3 Matriz mínima de estados por superficie
 
@@ -1004,7 +1008,7 @@ Al guardar:
 
 1. La UI muestra recepción/progreso inmediato.
 2. Rust persiste el cambio y su operación en la misma transacción local.
-3. La vista presenta el estado provisional correspondiente.
+3. La vista confirma persistencia local con «Cita guardada» o «Cambios guardados», sin etiqueta de sincronización.
 4. La sincronización solicita aceptación sin duplicar la intención.
 5. La UI actualiza solo con el resultado conocido.
 
@@ -1013,7 +1017,7 @@ La aceptación remota y la posterior descarga de la vista son etapas distintas. 
 ### 22.3 Fallos y reintentos
 
 - Un fallo temporal conserva el trabajo y permite reintento según contrato.
-- Una respuesta perdida deja Resultado por comprobar; no autoriza crear otra operación equivalente.
+- Una respuesta perdida conserva su identidad para recuperación automática; no autoriza crear otra operación equivalente. Explicar una restricción solo cuando afecte la acción del usuario.
 - Un rechazo no elimina la intención ni la atribuye a otro actor.
 - Un conflicto muestra estado compartido y propuesta sin elegir automáticamente.
 - La recuperación no borra la cola ni presenta datos no recibidos como actuales.
@@ -1059,7 +1063,7 @@ Rust/API siguen validando reglas aunque React ya haya comprobado forma. Un error
 
 ### 23.4 Envío y duplicación
 
-Durante el envío se conservarán los valores y se indicará progreso. Se impedirá una segunda intención accidental sin bloquear la lectura ni el diagnóstico del fallo. El éxito local y el remoto se anunciarán por separado.
+Durante el envío se conservarán los valores y se indicará progreso. Se impedirá una segunda intención accidental sin bloquear la lectura ni el diagnóstico del fallo. El guardado local se anuncia sin prometer efectos remotos; la aceptación automática correcta no añade avisos.
 
 ### 23.5 Salida y borradores
 
@@ -1070,20 +1074,20 @@ Descartar no persistirá cambios. Si hay datos modificados, se ofrecerá Seguir 
 | Situación | Presentación requerida |
 |---|---|
 | Primera carga | Indicador o skeleton relacionado; no vacío prematuro |
-| Actualización | Conservar contenido y mostrar actividad sin borrar contexto |
+| Actualización | Conservar contenido y contexto; sin aviso de sincronización normal |
 | Vacío real | Explicar que no hay elementos y ofrecer acción válida |
 | Sin coincidencias | Conservar consulta/filtros y permitir limpiarlos |
 | No descargado | Explicar cobertura ausente y acción para obtener datos |
 | Desactualizado | Mostrar antigüedad y no afirmar estado actual |
 | Error local | Mensaje útil, conservación y reintento |
 | Servicio no disponible | Trabajo local conservado y alcance de la interrupción |
-| Guardado local | Confirmar recepción y provisionalidad |
-| Aceptado | Confirmar aceptación y estado de actualización de vista |
+| Guardado local | «Cita guardada» o «Cambios guardados» tras persistir |
+| Aceptado | Actualización silenciosa sin etiquetas de proceso |
 | Conflicto | Comparar y ofrecer decisión explícita |
 | Permiso insuficiente | Explicar capacidad y alternativa autorizada |
 | Acción desconocida | Resultado por comprobar, nunca nuevo intento ciego |
 
-Los toasts serán apropiados para confirmaciones no críticas. Los errores que impiden continuar, los conflictos y los resultados desconocidos tendrán una representación persistente.
+Los toasts serán apropiados para confirmaciones no críticas. Los problemas que requieren intervención tendrán una representación persistente en contexto y Por revisar. La recuperación automática normal permanece invisible.
 
 ## 25. Permisos, privacidad y seguridad
 
@@ -1118,7 +1122,7 @@ Los textos explicarán resultado y siguiente paso, evitando jerga técnica, alar
 
 ### 26.2 Vocabulario de estados
 
-Se mantendrá un glosario común para cita, solicitud, comunicación y sincronización. “Provisional” podrá usarse cuando ayude, pero el texto principal explicará “Guardada en este equipo · Pendiente de aceptación”.
+Se mantendrá un glosario común de estados de dominio. Los estados de sincronización permanecen internos; el texto principal confirma solo el guardado local conocido.
 
 “Confirmada” se reservará para el estado de cita. No se usará para afirmar guardado local, entrega de mensaje o descarga de vista.
 
@@ -1276,7 +1280,7 @@ Reglas:
 
 - Un comando por caso de uso, no comandos genéricos orientados a tablas.
 - Errores estables y seguros; no interpolar objetos arbitrarios en la interfaz.
-- Estado aceptado, provisional y operaciones relacionadas permanecen distinguibles.
+- Estado aceptado, provisional y operaciones relacionadas permanecen distinguibles internamente, sin etiquetas del proceso normal.
 - Fechas, versiones y permisos se interpretan según Rust/API, no mediante supuestos del navegador.
 - La lectura local no necesita red; las acciones remotas se identifican explícitamente.
 
@@ -1505,7 +1509,7 @@ DP no acredita accesibilidad completa, servicios, autenticación, sincronizació
 
 | Área | Decisión pendiente | Regla mientras permanezca abierta |
 |---|---|---|
-| Navegación y rutas | Aprobación final de inicio, vistas, orden y rutas | S01–S14 y propuestas no se presentan como definitivas |
+| Navegación futura | Destinos sin contrato o implementación | La navegación actual sigue P-20261109-22; conservar rutas incluida /cambios |
 | Validación | Recorridos con médico/asistente/pacientes | Registrar pendiente; no afirmar validación |
 | Tema | Dark/system y comportamiento de preferencia | Solo tema claro definido |
 | Semántica cromática | Error, advertencia y crítico | Texto/estructura; no colores arbitrarios |
@@ -1528,7 +1532,7 @@ Cada cierre deberá actualizar este documento, un ADR o el plan propietario corr
 
 Nightingale es una interfaz administrativa HealthTech para médicos, especialistas y asistentes. Su experiencia prioriza Agenda, claridad, continuidad, lectura densa y acciones explícitas. No incorpora historia clínica ni funciones fuera del alcance.
 
-El lenguaje visual procede de DS: superficies claras, azul controlado, Anek Latin para títulos, Aileron para texto general/técnico y Phosphor Icons. Attio y Linear inspiran precisión administrativa, no identidad ni funcionalidad.
+El lenguaje visual procede de DS: superficies claras, azul controlado, Montserrat para títulos, Mulish para texto general/técnico y Phosphor Icons. Attio, Linear y Twenty inspiran precisión administrativa, no identidad ni funcionalidad.
 
 Rust ejecuta los casos de uso nativos y SQLite conserva el trabajo local. React presenta resultados mediante clientes Tauri tipados y no decide reglas de negocio. El estado de cita, solicitud, sincronización, comunicación, permiso, cobertura, formulario y vista permanece separado.
 

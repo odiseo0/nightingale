@@ -17,7 +17,7 @@ export interface AccountView {
   version: number;
   updatedAt: string | null;
 }
-export interface AccountScreen { account: AccountView | null; preferences: Preferences; canManage: boolean }
+export interface AccountScreen { viewerRole: "owner" | "assistant"; account: AccountView | null; preferences: Preferences; canManage: boolean }
 export type AccountDetailsPatch = Partial<Pick<AccountView,
   "displayName" | "timeZone" | "locationName" | "locationAddress" | "locationCity" | "locationState" | "locationCountry"
 >>;

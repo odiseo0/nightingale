@@ -7,9 +7,15 @@ import {
 } from "../../shared/api/scheduling";
 import { getBookingContext } from "../../shared/api/appointments";
 import { getAccountView } from "../../shared/api/account";
-import { mutationErrorMessage, syncLabel } from "../appointments/presentation";
+import { mutationErrorMessage } from "../appointments/presentation";
 
 const weekdayLabel = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+const blockReasonLabel: Record<string, string> = {
+  vacation: "Vacaciones",
+  administrative: "Administrativo",
+  unavailable: "No disponible",
+};
 
 const minutesToTime = (minutes: number) =>
   `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
@@ -67,7 +73,7 @@ export default function ScheduleSettingsPage() {
     return () => { generation.current += 1; window.clearInterval(timer); };
   }, [load]);
 
-  async function run(work: () => Promise<unknown>, success = "Cambio guardado en este equipo · Pendiente de aceptación.") {
+  async function run(work: () => Promise<unknown>, success = "Cambios guardados.") {
     if (savingRef.current) return;
     savingRef.current = true;
     setSaving(true);
@@ -97,7 +103,7 @@ export default function ScheduleSettingsPage() {
       localEndMinute: end,
       validFrom: ruleDraft.validFrom || new Date().toISOString().slice(0, 10),
       ...(ruleDraft.validUntil ? { validUntil: ruleDraft.validUntil } : {}),
-    }), "Regla guardada en este equipo · Pendiente de aceptación.");
+    }), "Regla guardada.");
   }
 
   function submitException(event: FormEvent<HTMLFormElement>) {
@@ -110,7 +116,7 @@ export default function ScheduleSettingsPage() {
       ...(exceptionDraft.kind === "replacement"
         ? { localStartMinute: timeToMinutes(exceptionDraft.start), localEndMinute: timeToMinutes(exceptionDraft.end) }
         : {}),
-    }), "Excepción guardada en este equipo · Pendiente de aceptación.");
+    }), "Excepción guardada.");
   }
 
   function submitBlock(event: FormEvent<HTMLFormElement>) {
@@ -126,7 +132,7 @@ export default function ScheduleSettingsPage() {
       startsAt: new Date(blockDraft.start).toISOString(),
       endsAt: new Date(blockDraft.end).toISOString(),
       reasonCode: blockDraft.reason as "vacation" | "administrative" | "unavailable",
-    }), "Bloqueo guardado en este equipo · Pendiente de aceptación.");
+    }), "Bloqueo guardado.");
   }
 
   if (phase === "loading") {
@@ -222,7 +228,7 @@ export default function ScheduleSettingsPage() {
           <div className="table-scroll">
             <table className="data-table">
               <thead>
-                <tr><th scope="col">Día</th><th scope="col">Horario</th><th scope="col">Vigencia</th><th scope="col">Estado</th><th scope="col">Sincronización</th><th scope="col">Acciones</th></tr>
+                <tr><th scope="col">Día</th><th scope="col">Horario</th><th scope="col">Vigencia</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr>
               </thead>
               <tbody>
                 {rules.map((row) => {
@@ -235,14 +241,13 @@ export default function ScheduleSettingsPage() {
                       <td className="num">{minutesToTime(rule.localStartMinute)}–{minutesToTime(rule.localEndMinute)}</td>
                       <td className="num">{rule.validFrom}{rule.validUntil ? ` – ${rule.validUntil}` : " en adelante"}</td>
                       <td><span className="badge">{rule.status === "active" ? "Activa" : "Inactiva"}</span></td>
-                      <td><SyncCell row={row} /></td>
                       <td>
                         <div className="toolbar" style={{ gap: 6 }}>
                           <button type="button" className="btn btn--subtle" disabled={busy || saving}
                             onClick={() => void run(() => setRuleStatus({
                               ruleId: rule.ruleId, base: baseOf(row),
                               status: rule.status === "active" ? "inactive" : "active",
-                            }), `Regla ${rule.status === "active" ? "desactivada" : "activada"} en este equipo · Pendiente de aceptación.`)}>
+                            }), `Regla ${rule.status === "active" ? "desactivada" : "activada"}.`)}>
                             <Power size={14} aria-hidden="true" />
                             {rule.status === "active" ? "Desactivar" : "Activar"}
                           </button>
@@ -311,7 +316,7 @@ export default function ScheduleSettingsPage() {
           <div className="table-scroll">
             <table className="data-table">
               <thead>
-                <tr><th scope="col">Fecha</th><th scope="col">Tipo</th><th scope="col">Horario</th><th scope="col">Estado</th><th scope="col">Sincronización</th><th scope="col">Acciones</th></tr>
+                <tr><th scope="col">Fecha</th><th scope="col">Tipo</th><th scope="col">Horario</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr>
               </thead>
               <tbody>
                 {exceptions.map((row) => {
@@ -326,13 +331,12 @@ export default function ScheduleSettingsPage() {
                         {exception.kind === "closed" ? "—" : `${minutesToTime(exception.localStartMinute ?? 0)}–${minutesToTime(exception.localEndMinute ?? 0)}`}
                       </td>
                       <td><span className="badge">{exception.status === "active" ? "Activa" : "Inactiva"}</span></td>
-                      <td><SyncCell row={row} /></td>
                       <td>
                         <button type="button" className="btn btn--subtle" disabled={busy || saving}
                           onClick={() => void run(() => setExceptionStatus({
                             exceptionId: exception.exceptionId, base: baseOf(row),
                             status: exception.status === "active" ? "inactive" : "active",
-                          }), `Excepción ${exception.status === "active" ? "desactivada" : "activada"} en este equipo · Pendiente de aceptación.`)}>
+                          }), `Excepción ${exception.status === "active" ? "desactivada" : "activada"}.`)}>
                           <Power size={14} aria-hidden="true" />
                           {exception.status === "active" ? "Desactivar" : "Activar"}
                         </button>
@@ -400,7 +404,7 @@ export default function ScheduleSettingsPage() {
           <div className="table-scroll">
             <table className="data-table">
               <thead>
-                <tr><th scope="col">Intervalo</th><th scope="col">Ámbito</th><th scope="col">Motivo</th><th scope="col">Estado</th><th scope="col">Sincronización</th><th scope="col">Acciones</th></tr>
+                <tr><th scope="col">Intervalo</th><th scope="col">Ámbito</th><th scope="col">Motivo</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr>
               </thead>
               <tbody>
                 {blocks.map((row) => {
@@ -411,15 +415,14 @@ export default function ScheduleSettingsPage() {
                     <tr key={block.blockId}>
                       <td className="num">{new Date(block.startsAt).toLocaleString("es")} – {new Date(block.endsAt).toLocaleString("es")}</td>
                       <td>{block.blockAccountId ? "Cuenta" : "Global"}</td>
-                      <td>{block.reasonCode ?? "—"}</td>
+                      <td>{block.reasonCode ? (blockReasonLabel[block.reasonCode] ?? block.reasonCode) : "No registrado"}</td>
                       <td><span className="badge">{block.status === "active" ? "Activo" : "Inactivo"}</span></td>
-                      <td><SyncCell row={row} /></td>
                       <td>
                         <button type="button" className="btn btn--subtle" disabled={busy || saving}
                           onClick={() => void run(() => setBlockStatus({
                             blockId: block.blockId, base: baseOf(row),
                             status: block.status === "active" ? "inactive" : "active",
-                          }), `Bloqueo ${block.status === "active" ? "desactivado" : "activado"} en este equipo · Pendiente de aceptación.`)}>
+                          }), `Bloqueo ${block.status === "active" ? "desactivado" : "activado"}.`)}>
                           <Power size={14} aria-hidden="true" />
                           {block.status === "active" ? "Desactivar" : "Activar"}
                         </button>
@@ -432,23 +435,6 @@ export default function ScheduleSettingsPage() {
           </div>
         )}
       </section>
-    </>
-  );
-}
-
-function SyncCell<T>({ row }: { row: EntityRow<T> }) {
-  return (
-    <>
-      {row.provisional && <span className="badge badge--selected">Guardada en este equipo</span>}
-      {row.operations.map((op) => (
-        <span key={op.operationId} className="badge badge--local">
-          {syncLabel[op.status] ?? op.status}
-          {op.error ? ` · ${op.error}` : ""}
-        </span>
-      ))}
-      {!row.provisional && row.operations.length === 0 && (
-        <span className="muted" style={{ fontSize: 13 }}>Aceptada</span>
-      )}
     </>
   );
 }

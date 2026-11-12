@@ -1,0 +1,26 @@
+[
+  {
+    "case": "Reminder, patient-action and link policies are distinct sections",
+    "route": "configuracion/comunicaciones",
+    "sections": [
+      {"title": "Recordatorios", "editable": true, "content": "Recordatorio previo a la cita · Anticipación · Incluir el enlace a la cita del paciente"},
+      {"title": "Acciones del paciente", "editable": false, "content": "Confirmar asistencia, cancelar o pedir un cambio según la política vigente; el plazo de cancelación está pendiente de acuerdo y la muestra no lo fija"},
+      {"title": "Enlaces de cita", "editable": false, "content": "La vigencia del enlace y su verificación adicional no están contratadas; se muestran como diseño, no como regla del producto"}
+    ]
+  },
+  {
+    "case": "Values without approved policy are marked as review examples",
+    "implemented": "la Anticipación lleva «Ejemplo de revisión · sin política aprobada» y la sección aclara que la política definitiva debe acordarse con la consulta"
+  },
+  {
+    "case": "Save and failure keep the form and never claim messages were sent",
+    "route": "configuracion/comunicaciones",
+    "offline": {"changed": "Anticipación a 48 horas antes", "error": "Cambiar la configuración compartida requiere conexión y acceso al servicio. Tus cambios se conservan.", "formKept": "el selector conserva 48 horas"},
+    "assistant": "«Solo la persona que administra la consulta puede cambiar la política de comunicaciones. Tus cambios se conservan.»",
+    "success": {"toast": "Configuración guardada en el ejemplo. No se envían mensajes por este cambio.", "note": "Guardar cambia el ejemplo; no envía mensajes ni modifica citas existentes."}
+  },
+  {
+    "case": "Limits",
+    "implemented": "The policy page is an example of the pending business decision; no reminder, message or link rule is enforced or sent."
+  }
+]

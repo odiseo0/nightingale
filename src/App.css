@@ -1,24 +1,20 @@
 @import "tailwindcss";
-@import "@fontsource/anek-latin/400.css";
-@import "@fontsource/anek-latin/500.css";
-@import "@fontsource/anek-latin/600.css";
-
-/* Aileron no distribuye peso Medium: el rango 500–600 usa el archivo
-   SemiBold real; 400 usa Regular. Sin síntesis de pesos. */
+/* Local variable fonts; Vite bundles the CSS url() assets.
+   https://vite.dev/guide/assets.html#importing-asset-as-url */
 @font-face {
-  font-family: "Aileron";
+  font-family: "Montserrat";
   font-style: normal;
-  font-weight: 400;
+  font-weight: 400 600;
   font-display: swap;
-  src: url("./assets/fonts/aileron-latin-400-normal.woff2") format("woff2");
+  src: url("./assets/fonts/montserrat-latin-variable.woff2") format("woff2");
 }
 
 @font-face {
-  font-family: "Aileron";
+  font-family: "Mulish";
   font-style: normal;
-  font-weight: 500 600;
+  font-weight: 400 600;
   font-display: swap;
-  src: url("./assets/fonts/aileron-latin-600-normal.woff2") format("woff2");
+  src: url("./assets/fonts/mulish-latin-variable.woff2") format("woff2");
 }
 
 @layer base {
@@ -56,9 +52,9 @@
     --color-status-success-bg: #dcfce7;
 
     /* Tipografía */
-    --font-display: "Anek Latin", "SF Pro Display", -apple-system, system-ui,
+    --font-display: "Montserrat", "SF Pro Display", -apple-system, system-ui,
       "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-    --font-sans: "Aileron", "SF Pro Display", -apple-system, system-ui,
+    --font-sans: "Mulish", "SF Pro Display", -apple-system, system-ui,
       "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 
     /* Geometría */
@@ -129,11 +125,11 @@
 }
 
 .app-sidebar {
-  width: 232px;
+  width: 216px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
   padding: 24px 16px;
   background: var(--color-surface-secondary);
   border-right: 1px solid var(--color-border);
@@ -154,6 +150,22 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.app-nav--utilities {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.nav-caption {
+  margin: 0 0 4px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .nav-link {
@@ -192,10 +204,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 24px;
+  padding: 0 24px;
   background: var(--color-bg);
   border-bottom: 1px solid var(--color-border);
-  min-height: 57px;
+  min-height: 52px;
 }
 
 .topbar-context {
@@ -609,62 +621,86 @@
   color: var(--color-on-accent-soft);
 }
 
-/* ---- Vista Semana ---- */
+/* ---- Vista Semana (96 px/hora; 48 px/media hora) ---- */
+
+.table-scroll--week {
+  overflow: auto;
+  max-height: calc(100vh - 260px);
+}
 
 .week-grid {
   display: grid;
-  grid-template-columns: 52px repeat(7, minmax(120px, 1fr));
-  min-width: 900px;
+  grid-template-columns: 64px repeat(7, minmax(160px, 1fr));
+  min-width: 1184px;
+  background: var(--color-surface-elevated);
 }
 
-.week-hours {
-  border-right: 1px solid var(--color-border-subtle);
-}
-
-.week-hour-label {
-  height: 44px;
-  font-size: 12px;
-  color: var(--color-text-tertiary);
-  text-align: right;
-  padding-right: 6px;
-  transform: translateY(-8px);
-}
-
-.week-day {
-  border-right: 1px solid var(--color-border-subtle);
-  min-width: 0;
-}
-
-.week-day[data-today] .week-day-header {
-  background: var(--color-surface-selected);
+.week-corner {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  height: 40px;
+  background: var(--color-surface-secondary);
+  border-bottom: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
 }
 
 .week-day-header {
-  height: 44px;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--color-surface-secondary);
   border-bottom: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border-subtle);
+}
+
+.week-day-header[data-today] {
+  background: var(--color-surface-selected);
+}
+
+.week-hours {
   position: sticky;
-  top: 0;
+  left: 0;
+  z-index: 2;
   background: var(--color-surface-elevated);
+  border-right: 1px solid var(--color-border);
+}
+
+.week-hour-label {
+  position: absolute;
+  right: 6px;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: var(--color-text-tertiary);
 }
 
 .week-day-body {
   position: relative;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 43px,
-    var(--color-border-subtle) 43px,
-    var(--color-border-subtle) 44px
-  );
+  border-right: 1px solid var(--color-border-subtle);
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      var(--color-border) 0,
+      var(--color-border) 1px,
+      transparent 1px,
+      transparent 96px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      var(--color-border-subtle) 0,
+      var(--color-border-subtle) 1px,
+      transparent 1px,
+      transparent 48px
+    );
 }
 
 .week-event {
   position: absolute;
-  left: 3px;
-  right: 3px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -675,12 +711,18 @@
   border-left: 3px solid var(--color-accent);
   background: var(--color-surface-secondary);
   font-size: 12px;
+  line-height: 1.35;
   color: var(--color-text-primary);
   text-decoration: none;
 }
 
 .week-event:hover {
   background: var(--color-surface-interaction);
+}
+
+.week-event:focus-visible {
+  z-index: 1;
+  outline-offset: 0;
 }
 
 .week-event--provisional {
@@ -690,11 +732,41 @@
 .week-event--block {
   border-left-style: double;
   border-left-width: 4px;
-  background: var(--color-surface-interaction);
+  border-left-color: var(--color-text-tertiary);
+  background: repeating-linear-gradient(
+    135deg,
+    var(--color-surface-interaction) 0,
+    var(--color-surface-interaction) 6px,
+    var(--color-border) 6px,
+    var(--color-border) 7px
+  );
+  color: var(--color-text-secondary);
+}
+
+.week-event--cancelled {
+  border-left-color: var(--color-text-tertiary);
+  background: var(--color-bg);
+}
+
+.week-event--cancelled .week-event-text {
+  text-decoration: line-through;
   color: var(--color-text-secondary);
 }
 
 .week-event-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.week-event--brief {
+  padding: 1px 6px;
+}
+
+.week-event-status {
+  font-size: 11px;
+  color: var(--color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -738,28 +810,24 @@
   gap: 8px;
 }
 
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  background: var(--color-overlay, rgba(17, 24, 39, 0.4));
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.modal {
+  width: 100%;
   padding: 24px;
-}
-
-.modal-card {
-  background: var(--color-surface-elevated);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
   box-shadow: var(--shadow-dialog);
-  padding: 24px;
-  max-width: 440px;
-  width: 100%;
+}
+
+.modal[open] {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.modal::backdrop {
+  background: rgba(17, 24, 39, 0.4);
 }
 
 /* ---- Paneles técnicos heredados (/desarrollo) ---- */

@@ -1,0 +1,23 @@
+{
+  "exactWeekBefore": {
+    "left": 325.5272521972656,
+    "top": 414.5454406738281,
+    "windowTop": 257.45452880859375
+  },
+  "exactWeekAfter": {
+    "focus": "#/cita/a16",
+    "hourScale": 96,
+    "left": 325.5272521972656,
+    "top": 414.5454406738281,
+    "windowTop": 257.45452880859375
+  },
+  "c02DetailFocus": {
+    "tag": "H2",
+    "text": "Sofía Rivas"
+  },
+  "c02EditorLayout": {
+    "actionsTop": 1299.72265625,
+    "overflow": false,
+    "summaryBottom": 1273.7317199707031
+  }
+}

@@ -1,0 +1,60 @@
+[
+  {
+    "case": "Waiting list has no commercial concepts: no offers, interest, expiry or conversion",
+    "route": "lista-espera",
+    "decision": "Usuario, 2026-11-12: «Quitemos eso de ofertas, los pacientes no son leads.»",
+    "checks": {
+      "noOffersTab": true,
+      "noOfferState": "waitlistOffers removed from seed and code",
+      "catalogHasNoOffersEntry": true,
+      "columns": ["Paciente", "Servicio", "Preferencia", "En espera desde", "Estado", "Acciones"],
+      "priorityNote": "El orden de esta lista no fija una prioridad de asignación; la política de prioridad sigue pendiente."
+    }
+  },
+  {
+    "case": "Compatible slots are computed from schedule and known occupancy",
+    "route": "lista-espera",
+    "dialog": "Horarios compatibles para Valentina Herrera",
+    "context": "Control de seguimiento · Mañanas · lunes a viernes",
+    "slot": {"date": "Viernes, 23 de octubre", "interval": "09:30 – 10:15", "durationMatchesService": true},
+    "note": "Solo aparecen intervalos compatibles con el horario y la ocupación conocida."
+  },
+  {
+    "case": "Assignment requires explicit staff confirmation",
+    "route": "lista-espera",
+    "confirmDialog": "¿Asignar este horario a Valentina Herrera?",
+    "summary": "Control de seguimiento · 23 de octubre · 09:30 – 10:15",
+    "text": "Crea la cita en el ejemplo tras una aceptación ilustrada del personal. La API volvería a comprobar disponibilidad antes de confirmar.",
+    "afterConfirm": {"entry": "Asignada", "entryActions": "none", "appointment": "Cita creada con servicio y duración de la entrada"}
+  },
+  {
+    "case": "Occupied interval keeps the entry (defensive recheck)",
+    "implemented": "do-assign-slot re-checks occupiedIntervals before creating the appointment; on conflict it toasts «Ese horario ya no está disponible; la entrada se conserva en la lista de espera.» and keeps the entry waiting",
+    "reachability": "Candidates already exclude occupied intervals, so the recheck is a race guard; the conserve-entry behavior was verified in browser in the previous iteration (v1) and the same check is exercised here on every assignment"
+  },
+  {
+    "case": "No colon-parsing bug in slot actions",
+    "implemented": "slot date/start/end travel as data attributes (data-date, data-start, data-end) instead of a colon-joined action string, which had truncated times («09 – 30») because times contain colons; bug found in browser review and fixed"
+  },
+  {
+    "case": "Keyboard and narrow sizes",
+    "checks": {
+      "escapeClosesAssignDialog": true,
+      "escapeClosesCandidatesDialog": true,
+      "at800x600": "table keeps its own horizontal scroll without document overflow; touch targets verified under mobile emulation"
+    }
+  },
+  {
+    "case": "Regression",
+    "checks": {
+      "solicitudesList": "four statuses and pending footer unchanged",
+      "pantallasCatalog": "no Ofertas entry; routes intact",
+      "editEntryDialog": "unchanged from previous verification",
+      "addEntryValidation": "unchanged from previous verification"
+    }
+  },
+  {
+    "case": "Limits",
+    "implemented": "Results are in-memory examples; no real booking or messaging is simulated. Priority policy remains open by design."
+  }
+]

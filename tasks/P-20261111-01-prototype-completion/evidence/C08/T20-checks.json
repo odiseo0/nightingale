@@ -1,0 +1,41 @@
+[
+  {
+    "case": "Confirm, cancel and request-change have clear confirmations and results",
+    "routes": ["hub/cita", "hub/confirmada", "hub/cancelar", "hub/cancelada", "hub/cambiar", "hub/solicitud"],
+    "checks": {
+      "confirmNormal": "hub-confirm → «Asistencia confirmada»",
+      "cancel": "hub-cancel → «Tu cita se ha cancelado» with guidance to contact the practice for a new appointment",
+      "requestChange": "keeps the schedule: «Tu cita conserva su horario… Pedir un cambio no reserva otra hora»; no public agenda offered"
+    }
+  },
+  {
+    "case": "Unknown result is distinguished from service outage and reached by a real flow",
+    "route": "hub/no-disponible",
+    "flow": "with the unavailable scenario, hub-confirm lands on «No pudimos comprobar el resultado» with «Volver a comprobar» (honest toast) and «Volver a mi cita»"
+  },
+  {
+    "case": "Service outage is its own screen, separated from the unknown result",
+    "route": "hub/servicio",
+    "content": "«No pudimos mostrar tu cita» · retry toasts that the service is still unavailable; catalog label fixed (was mixed under «Servicio no disponible»)"
+  },
+  {
+    "case": "Modified appointment shows the new schedule with the previous one",
+    "route": "hub/cita-modificada",
+    "content": "viernes 23 oct 09:30 – 10:00 with «Horario anterior: jueves 22 de octubre, 09:00 – 09:30»"
+  },
+  {
+    "case": "Expired or revoked link is distinct",
+    "route": "hub/enlace-vencido",
+    "content": "«Este enlace ya no está disponible» — may have expired or the practice deactivated it; ask the practice for a new link"
+  },
+  {
+    "case": "320 px keeps one column, touch targets, focus and readable text",
+    "route": "hub/cita-modificada",
+    "viewport": "320×720 (mobile/touch emulation)",
+    "capture": "T20-hub-cita-modificada-320.png"
+  },
+  {
+    "case": "Limits",
+    "implemented": "Hub stages are independent visual examples; no registration, installation or real service is simulated."
+  }
+]

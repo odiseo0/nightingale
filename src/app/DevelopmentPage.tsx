@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { getDiagnostics, type Diagnostics } from "../shared/api/diagnostics";
 import { getStorageStatus, type StorageStatus } from "../shared/api/storage";
 import { getPendingOperations, type PendingOperations } from "../shared/api/sync";
@@ -40,6 +41,9 @@ export default function DevelopmentPage() {
 
   return (
     <div className="dev-panel" style={{ maxWidth: 768 }}>
+      <p style={{ marginBottom: 12 }}>
+        <Link className="btn" to="/agenda">Volver a la agenda</Link>
+      </p>
       <section aria-labelledby="diagnostics-heading" className="space-y-4">
         <h2 id="diagnostics-heading" className="text-xl font-semibold">
           Diagnóstico local

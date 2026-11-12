@@ -52,7 +52,6 @@ export default function AvailabilityPicker({ zone, availability, slot, onSlotCha
     <div style={{ display: "grid", gap: 12 }}>
       <p className="muted" role="status">
         {coverageLabel[evaluation.coverage] ?? evaluation.coverage}
-        {evaluation.provisional && " Incluye cambios locales pendientes de aceptación."}
       </p>
 
       {intervals.length === 0 ? (

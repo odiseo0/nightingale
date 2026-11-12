@@ -5,20 +5,35 @@
 > **Foundation:** The typographic rhythm, spacing, component geometry, and restraint of the supplied Linear-inspired design system.  
 > **Theme status:** Approved light palette; this document is the adapted implementation specification, not a redesign of the underlying component architecture.
 
+## Revisión aprobada del 2026-11-09
+
+El plan [P-20261109-22](tasks/P-20261109-22-interface-refresh/plan.md) fija estas reglas de presentación. No cambia dominio ni contratos.
+
+- Montserrat para títulos y encabezados; Mulish para lectura, navegación, tablas, formularios y controles. Pesos reales 400/500/600, archivos locales con origen y licencia.
+- La sincronización normal es invisible: sin columnas, etiquetas, contadores, bordes discontinuos, botones ni avisos de proceso. Los reintentos automáticos y la falta de red que permite trabajo local no interrumpen.
+- Los problemas que exigen una decisión aparecen junto al dato y en «Por revisar». Su enlace solo aparece si hay intervención pendiente. Diagnóstico conserva los datos técnicos fuera del uso diario.
+- «Cita guardada» o «Cambios guardados» confirma persistencia local. No promete reserva compartida, mensaje enviado ni horario liberado. El resultado desconocido conserva la misma intención e impide duplicarla.
+- Las direcciones de lectura terminan en ciudad y estado, sin país ni separadores vacíos. País almacenado/editable y país emisor de documentos se conservan.
+- Ocultar columna y filtro Profesional solo para el dueño con un único profesional disponible. Asistentes y cuentas con varios profesionales lo conservan. No inferir rol por canManage ni quitar professionalId.
+- Conservar Servicio y su dato actual; no añadir motivo de visita.
+- Tomar de Linear, Attio y Twenty navegación, barras compactas, tablas, filtros, paneles y formularios. Conservar azul propio, Phosphor y alcance de Nightingale.
+- Semana parte de 96 px/hora y al menos 160 px/día, con desplazamiento propio, horas/cabeceras identificables y eventos sin taparse. La muestra se revisa antes de llevar las medidas al producto.
+
+
 ## 1. Visual Theme & Atmosphere
 
 The product uses a **native light visual system**. Its canvas is an intentionally soft, blue-tinted off-white (`#F8FAFC`) rather than a stark white. Information is organized through restrained changes in surface color: near-white elevated cards (`#FCFDFE`), cool secondary areas (`#F1F5F9`), and interaction fills (`#E9EFF5`). Fine borders (`#DCE5EE`) and light, diffuse shadows provide definition without visual noise.
 
 The design should convey **trust, calm, clarity, privacy, and precision**. It should feel appropriate for reviewing appointments, personal health information, activity metrics, and care tasks, while avoiding sterile hospital cues, decorative gradients, or excessive visual urgency. Color reinforces the hierarchy but must not be the sole carrier of a health-related meaning.
 
-Typography uses a deliberate **Anek Latin + Aileron** pairing. Anek Latin gives titles and headings a distinct, controlled voice; Aileron handles general interface text, sustained reading, and technical information. The shared weight roles are 400 for reading, 500 for product UI emphasis, and 600 for strong emphasis; 300 is limited to intentionally de-emphasized content. Display sizes preserve compact negative letter-spacing. **Phosphor Icons** is the single interface icon set.
+Typography uses a deliberate **Montserrat + Mulish** pairing. Montserrat gives titles and headings a distinct, controlled voice; Mulish handles general interface text, sustained reading, and technical information. The shared weight roles are 400 for reading, 500 for product UI emphasis, and 600 for strong emphasis; 300 is limited to intentionally de-emphasized content. Display sizes preserve compact negative letter-spacing. **Phosphor Icons** is the single interface icon set.
 
 The chromatic identity is a **controlled blue accent**: `#2563EB` for primary actions and interactive emphasis; `#1D4ED8` for hover and text on pale blue; `#1E40AF` for pressed interactions; and `#DBEAFE` for selected backgrounds. Blues should appear with intent, rather than covering large background areas. Green is retained **only as a semantic status color**, never as a second brand accent.
 
 **Key Characteristics:**
 - Light-mode-native surfaces: `#F8FAFC` canvas, `#F1F5F9` panels, `#FCFDFE` elevated cards.
 - Soft but visible edge separation: `#DCE5EE` standard borders, plus very subtle translucent dark strokes where appropriate.
-- Anek Latin for titles and headings; Aileron for general and technical text.
+- Montserrat for titles and headings; Mulish for general and technical text.
 - Phosphor Icons with consistent style, weight, and sizing.
 - Signature 500 weight for navigation, controls, and ordinary emphasis.
 - Negative display letter-spacing (for example, -1.584px at 72px, -1.056px at 48px).
@@ -115,49 +130,45 @@ These examples meet WCAG AA **text contrast** thresholds for normal-sized text. 
 
 ### Font Family
 
-- **Titles and headings:** `Anek Latin`, with fallbacks: `SF Pro Display, -apple-system, system-ui, Segoe UI, Roboto, Helvetica Neue, sans-serif`. Use it for display text, page titles, section headings, and card headers, not for general body copy.
-- **General interface and reading text:** `Aileron`, with the same system sans-serif fallbacks. Use it for body copy, navigation, controls, forms, tables, captions, links, technical values, units, and code. Use `font-variant-numeric: tabular-nums` when numerical alignment matters; do not introduce a separate monospace family.
+- **Titles and headings:** `Montserrat`, with fallbacks: `SF Pro Display, -apple-system, system-ui, Segoe UI, Roboto, Helvetica Neue, sans-serif`. Use it for display text, page titles, section headings, and card headers, not for general body copy.
+- **General interface and reading text:** `Mulish`, with the same system sans-serif fallbacks. Use it for body copy, navigation, controls, forms, tables, captions, links, technical values, units, and code. Use `font-variant-numeric: tabular-nums` when numerical alignment matters; do not introduce a separate monospace family.
 - **OpenType Features:** Do not carry over Inter-specific features such as `"cv01"` or `"ss03"`. Use each font's defaults; enable an optional feature only when the bundled font supports it and rendered text has been checked.
 - **Default Font Color:** `#111827`; secondary, tertiary, link, and inverted text use semantic tokens instead of arbitrary opacity changes.
 
 ### Hierarchy
 
-The original size and spacing scale is preserved. Roles of 10–12px are appropriate only for noncritical micro-labels where reading conditions allow; **do not use micro type for key clinical values, safety instructions, medication information, or essential form labels**. The weight roles now use values available in Aileron: 400, 500, and 600.
+Typography uses a **4px size scale**: 12, 16, 20, 24, 28, 32, 36, 40, 48, 64 and 72px at the default 16px root size. Use relative units in the interface so user font settings and zoom still work. Do not add intermediate sizes to solve a local layout issue. Text below 12px is outside this scale. Use weights 400, 500 and 600 for the main text roles.
 
 | Role | Font | Size | Weight | Line Height | Letter Spacing | Notes |
 |------|------|------|--------|-------------|----------------|-------|
-| Display XL | Anek Latin | 72px (4.50rem) | 500 | 1.00 (tight) | -1.584px | Hero headlines, maximum impact |
-| Display Large | Anek Latin | 64px (4.00rem) | 500 | 1.00 (tight) | -1.408px | Secondary hero text |
-| Display | Anek Latin | 48px (3.00rem) | 500 | 1.00 (tight) | -1.056px | Section headlines |
-| Heading 1 | Anek Latin | 32px (2.00rem) | 500 | 1.13 (tight) | -0.704px | Major section titles |
-| Heading 2 | Anek Latin | 24px (1.50rem) | 500 | 1.33 | -0.288px | Sub-section headings |
-| Heading 3 | Anek Latin | 20px (1.25rem) | 600 | 1.33 | -0.24px | Feature titles, card headers |
-| Body Large | Aileron | 18px (1.13rem) | 400 | 1.60 (relaxed) | -0.165px | Introduction text, explanations |
-| Body Emphasis | Aileron | 17px (1.06rem) | 600 | 1.60 (relaxed) | normal | Emphasized body, content subheadings |
-| Body | Aileron | 16px (1.00rem) | 400 | 1.50 | normal | Standard reading text |
-| Body Medium | Aileron | 16px (1.00rem) | 500 | 1.50 | normal | Navigation, labels |
-| Body Semibold | Aileron | 16px (1.00rem) | 600 | 1.50 | normal | Strong emphasis |
-| Small | Aileron | 15px (0.94rem) | 400 | 1.60 (relaxed) | -0.165px | Secondary body text |
-| Small Medium | Aileron | 15px (0.94rem) | 500 | 1.60 (relaxed) | -0.165px | Emphasized small text |
-| Small Semibold | Aileron | 15px (0.94rem) | 600 | 1.60 (relaxed) | -0.165px | Strong small text |
-| Small Light | Aileron | 15px (0.94rem) | 300 | 1.47 | -0.165px | Noncritical de-emphasized body |
-| Caption Large | Aileron | 14px (0.88rem) | 500–600 | 1.50 | -0.182px | Category and supplemental headers |
-| Caption | Aileron | 13px (0.81rem) | 400–500 | 1.50 | -0.13px | Noncritical metadata and timestamps |
-| Label | Aileron | 12px (0.75rem) | 400–600 | 1.40 | normal | Compact button or auxiliary labels only |
-| Micro | Aileron | 11px (0.69rem) | 500 | 1.40 | normal | Nonessential micro labels |
-| Tiny | Aileron | 10px (0.63rem) | 400–500 | 1.50 | -0.15px | Auxiliary overline labels |
-| Link Large | Aileron | 16px (1.00rem) | 400 | 1.50 | normal | Standard links |
-| Link Medium | Aileron | 15px (0.94rem) | 500 | 2.67 | normal | Spaced navigation links |
-| Link Small | Aileron | 14px (0.88rem) | 500 | 1.50 | normal | Compact links |
-| Link Caption | Aileron | 13px (0.81rem) | 400–500 | 1.50 | -0.13px | Footer, auxiliary links |
-| Technical Body | Aileron | 14px (0.88rem) | 400 | 1.50 | normal | Technical text, units, code |
-| Technical Caption | Aileron | 13px (0.81rem) | 400 | 1.50 | normal | Code labels |
-| Technical Label | Aileron | 12px (0.75rem) | 400 | 1.40 | normal | Noncritical technical metadata |
+| Display XL | Montserrat | 72px (4.50rem) | 500 | 1.00 | -1.584px | Large display text |
+| Display Large | Montserrat | 64px (4.00rem) | 500 | 1.00 | -1.408px | Secondary display text |
+| Display | Montserrat | 48px (3.00rem) | 500 | 1.00 | -1.056px | Display headings |
+| Heading 1 | Montserrat | 32px (2.00rem) | 500–600 | 1.20 | -0.704px | Major headings |
+| Heading 2 | Montserrat | 24px (1.50rem) | 500–600 | 1.20 | -0.288px | Page and section headings |
+| Heading 3 | Montserrat | 20px (1.25rem) | 600 | 1.20 | -0.24px | Card and dialog headings |
+| Compact heading | Montserrat | 16px (1.00rem) | 600 | 1.25 | normal | Small section headings |
+| Body Large | Mulish | 20px (1.25rem) | 400 | 1.60 | normal | Introductions |
+| Body | Mulish | 16px (1.00rem) | 400 | 1.50 | normal | Reading text |
+| Body Medium | Mulish | 16px (1.00rem) | 500 | 1.50 | normal | Navigation, labels and controls |
+| Body Semibold | Mulish | 16px (1.00rem) | 600 | 1.50 | normal | Strong emphasis |
+| Caption | Mulish | 12px (0.75rem) | 400–500 | 1.67 | normal | Supporting text and timestamps |
+| Compact label | Mulish | 12px (0.75rem) | 500–600 | 1.67 | normal | Status labels and compact controls |
+| Technical Body | Mulish | 16px (1.00rem) | 400 | 1.50 | normal | Technical text and units |
+| Technical Caption | Mulish | 12px (0.75rem) | 400 | 1.67 | normal | Supporting technical metadata |
+
+### Line length and leading
+
+- **Reading width:** Aim for 45–75 characters per full line of explanatory prose, including spaces, when the available width allows it. Start with a `max-inline-size` of about `60ch`, then check real text in Mulish. The `ch` unit measures the width of zero, so it does not guarantee an exact character count.
+- **Small surfaces:** Do not force a 45-character minimum in narrow dialogs, cards or mobile views. Let text wrap within its container. Short labels, names, dates, table cells and the last line of a paragraph do not need 45 characters.
+- **Tight headings:** Use 1.00–1.25 line height for titles. Check wrapped titles for collisions and clipping.
+- **Open small text:** Use about 1.67 line height for 12px supporting text, and at least 1.50 for reading text. Keep related text closer than the next group so the extra leading does not hide the structure.
+- **Flexible height:** Let text and controls grow when they wrap or the user increases text size. Keep calendar event geometry tied to actual appointment time; use its full detail for content that cannot fit in the event.
 
 ### Principles
 
-- **Font roles are explicit:** Anek Latin provides the title and heading voice; Aileron carries general reading and product UI. Do not swap these roles to solve a local styling problem.
-- **500 is the signature UI weight:** Preserve restrained emphasis between regular and semibold. Anek Latin and Aileron share the 400/500/600 role hierarchy.
+- **Font roles are explicit:** Montserrat provides the title and heading voice; Mulish carries general reading and product UI. Do not swap these roles to solve a local styling problem.
+- **500 is the signature UI weight:** Preserve restrained emphasis between regular and semibold. Montserrat and Mulish share the 400/500/600 role hierarchy.
 - **Compression at scale:** Use -1.584px at 72px, -1.408px at 64px, -1.056px at 48px, and -0.704px at 32px. Relax letter-spacing toward normal for smaller text.
 - **Three-tier weight system:** 400 (read), 500 (navigate/emphasize), 600 (strong). Use 300 only where readability is not compromised.
 - **Health data legibility:** Present measurements with unambiguous units, dates, and context; give critical values at least body-sized typography rather than micro-label styling.
@@ -167,7 +178,7 @@ The original size and spacing scale is preserved. Roles of 10–12px are appropr
 
 - Use **[Phosphor Icons](https://phosphoricons.com/)** as the only interface icon set. Do not mix it with another icon library or use emojis as interface icons.
 - Default to the **Regular** style and a consistent optical size within each region. Use another Phosphor weight only for a deliberate, documented hierarchy; do not mix filled, duotone, and outlined treatments decoratively.
-- Keep icons visually aligned with the Aileron UI label they accompany. Prefer text labels for unfamiliar actions and provide an accessible name for every icon-only control.
+- Keep icons visually aligned with the Mulish UI label they accompany. Prefer text labels for unfamiliar actions and provide an accessible name for every icon-only control.
 - Icon color follows the same semantic foreground tokens as text; color never carries meaning by itself.
 
 ## 4. Component Stylings
@@ -282,7 +293,7 @@ The original size and spacing scale is preserved. Roles of 10–12px are appropr
 - Background: `#DCFCE7` for a textual success badge; a standalone status dot may use `#10B981`.
 - Text: `#166534`.
 - Radius: 9999px for a text pill, 50% for a dot.
-- Font: 12–13px weight 500 for readable status labels; 10px is reserved for nonessential technical tagging.
+- Font: 12px weight 500 with open leading for readable status labels; do not use text below 12px.
 - Use: Administrative completion, connected state, finished tasks. Do not imply medical normality without context.
 
 **Neutral Pill**
@@ -300,7 +311,7 @@ The original size and spacing scale is preserved. Roles of 10–12px are appropr
 - Padding: 0px 8px 0px 2px.
 - Radius: 2px.
 - Border: `1px solid #DCE5EE`.
-- Font: 10px weight 500 only for low-priority, nonessential labels.
+- Font: 12px weight 500 with 1.67 line height for supporting labels.
 - Use: Version tags, auxiliary inline labels.
 
 **Selected / Informational Badge**
@@ -313,7 +324,7 @@ The original size and spacing scale is preserved. Roles of 10–12px are appropr
 
 - Light sticky header on `#F8FAFC`; sidebar or grouped navigation region on `#F1F5F9` where useful.
 - Product-specific HealthTech logomark left-aligned. Do not reuse Linear's trademarked logomark as the identity of this application.
-- Links: Aileron 13–14px weight 500, `#475569` for secondary navigation.
+- Links: Mulish 16px weight 500, `#475569` for secondary navigation.
 - Active/selected: `#DBEAFE` background and `#1D4ED8` text; selected state must also be conveyed semantically.
 - Hover: `#E9EFF5` on neutral navigation surfaces, or a text shift toward `#111827`.
 - CTA: `#2563EB` primary button or a bordered ghost button.
@@ -385,7 +396,7 @@ The original size and spacing scale is preserved. Roles of 10–12px are appropr
 
 ### Do
 
-- Use Anek Latin for titles and headings, and Aileron for general interface and reading text.
+- Use Montserrat for titles and headings, and Mulish for general interface and reading text.
 - Use weight 500 for restrained default emphasis and preserve the 400/500/600 hierarchy.
 - Use Phosphor Icons consistently, with labels or accessible names wherever meaning would otherwise be ambiguous.
 - Apply negative display letter-spacing (for example -1.584px at 72px, -1.056px at 48px).
@@ -407,7 +418,7 @@ The original size and spacing scale is preserved. Roles of 10–12px are appropr
 - Don't use light-gray placeholders or disabled text for essential medical or administrative information.
 - Don't apply decorative blue to every card, chart, border, or status.
 - Don't use positive tracking on large display headlines.
-- Don't apply Inter-specific OpenType features, use Anek Latin for body copy, or replace the 500 signature weight with default 700 bold.
+- Don't apply Inter-specific OpenType features, use Montserrat for body copy, or replace the 500 signature weight with default 700 bold.
 - Don't mix Phosphor with another icon set or combine its styles without a clear purpose.
 - Don't use heavy dark shadows as the primary elevation language.
 - Don't use green status dots without text/icon/context, or conflate a completed workflow with a clinically normal reading.
@@ -431,7 +442,7 @@ Keep the original responsive breakpoints. The mobile ranges intentionally overla
 ### Touch Targets
 
 - Keep comfortable button padding and a minimum 6px radius for standard buttons.
-- Preserve the source's 13–14px compact navigation where appropriate, but enlarge important labels for accessibility.
+- Use 16px navigation labels, or the defined 12px compact role for secondary controls; keep the 4px type scale.
 - Aim for 44px by 44px touch targets on mobile for primary controls and icon-only buttons; do not confuse visual icon size with tap target size.
 - Pill tags retain modest internal text padding while receiving an adequate clickable area.
 - Circular icon buttons remain easy to distinguish against pale surfaces through a visible border or hit-area treatment.
@@ -480,16 +491,16 @@ Keep the original responsive breakpoints. The mobile ranges intentionally overla
 
 ### Example Component Prompts
 
-- **Hero section:** "Create a HealthTech hero on `#F8FAFC`. Set the headline in Anek Latin 48px, weight 500, line-height 1.00, letter-spacing -1.056px, color `#111827`. Use an 18px Aileron weight-400 subtitle in `#475569`, line-height 1.60. Add a `#2563EB` primary button with `#F8FAFC` text, 6px radius, 8px 16px padding, and a ghost secondary button with `1px solid #DCE5EE` border."
-- **Card:** "Design a patient-friendly summary card on `#F8FAFC`: `#FCFDFE` surface, `1px solid #DCE5EE` border, 8px radius, subtle dark-on-light shadow. Title at 20px Anek Latin weight 600, letter-spacing -0.24px, color `#111827`. Supporting body at 15px Aileron weight 400, color `#475569`, letter-spacing -0.165px. Give any displayed measurement an explicit unit."
-- **Pill badge:** "Build a neutral pill with `#F1F5F9` background, `#475569` text, 9999px radius, 0px 10px horizontal padding, `1px solid #DCE5EE` border, 12px Aileron weight 500. Use `#DBEAFE` and `#1D4ED8` when selected."
-- **Navigation:** "Create a light sticky header on `#F8FAFC`. Use Aileron 13px weight 500 for navigation labels in `#475569`; apply `#DBEAFE` and `#1D4ED8` for the selected entry. Use Phosphor Regular icons and a right-aligned `#2563EB` CTA with 6px radius, and a `1px solid #DCE5EE` bottom divider."
-- **Command palette:** "Create a command palette with `#FCFDFE` background, `1px solid #DCE5EE` border, 12px radius, and a soft layered shadow. Input at 16px Aileron weight 400 and `#111827`. Results use 13–15px weight 500 labels in `#475569` with readable `#5B6778` metadata and consistent Phosphor icons; preserve keyboard focus indicators."
+- **Hero section:** "Create a HealthTech hero on `#F8FAFC`. Set the headline in Montserrat 48px, weight 500, line-height 1.00, letter-spacing -1.056px, color `#111827`. Use a 20px Mulish weight-400 subtitle in `#475569`, line-height 1.60. Add a `#2563EB` primary button with `#F8FAFC` text, 6px radius, 8px 16px padding, and a ghost secondary button with `1px solid #DCE5EE` border."
+- **Card:** "Design a patient-friendly summary card on `#F8FAFC`: `#FCFDFE` surface, `1px solid #DCE5EE` border, 8px radius, subtle dark-on-light shadow. Title at 20px Montserrat weight 600, letter-spacing -0.24px, color `#111827`. Supporting body at 16px Mulish weight 400, color `#475569`, letter-spacing -0.165px. Give any displayed measurement an explicit unit."
+- **Pill badge:** "Build a neutral pill with `#F1F5F9` background, `#475569` text, 9999px radius, 0px 10px horizontal padding, `1px solid #DCE5EE` border, 12px Mulish weight 500. Use `#DBEAFE` and `#1D4ED8` when selected."
+- **Navigation:** "Create a light sticky header on `#F8FAFC`. Use Mulish 16px weight 500 for navigation labels in `#475569`; apply `#DBEAFE` and `#1D4ED8` for the selected entry. Use Phosphor Regular icons and a right-aligned `#2563EB` CTA with 6px radius, and a `1px solid #DCE5EE` bottom divider."
+- **Command palette:** "Create a command palette with `#FCFDFE` background, `1px solid #DCE5EE` border, 12px radius, and a soft layered shadow. Input at 16px Mulish weight 400 and `#111827`. Results use 16px weight 500 labels in `#475569` with readable `#5B6778` metadata and consistent Phosphor icons; preserve keyboard focus indicators."
 - **Metric panel:** "Create a simple health activity summary using `#FCFDFE` for the card, `#111827` for the value, `#475569` for its label, and `#2563EB` only for a progress indicator. Show the unit, time range, and descriptive status as text; do not infer clinical thresholds from the brand color."
 
 ### Iteration Guide
 
-1. Use Anek Latin for titles and headings, and Aileron for general interface and technical text. Use tabular numerals when alignment matters instead of introducing another font family.
+1. Use Montserrat for titles and headings, and Mulish for general interface and technical text. Use tabular numerals when alignment matters instead of introducing another font family.
 2. Scale letter-spacing with font size: -1.584px at 72px, -1.056px at 48px, -0.704px at 32px, normal for small text unless specified by the type scale.
 3. Preserve weights 400 (read), 500 (emphasize/navigate), 600 (announce).
 4. Use native light surface hierarchy: `#F8FAFC` page → `#F1F5F9` panels → `#FCFDFE` elevated cards, with `#DCE5EE` edges where needed.
@@ -533,9 +544,9 @@ This reference token block translates the approved palette into a light-mode-fir
   --color-status-success-indicator: #10B981;
 
   /* Font pairing and geometry */
-  --font-display: "Anek Latin", "SF Pro Display", -apple-system,
+  --font-display: "Montserrat", "SF Pro Display", -apple-system,
     system-ui, "Segoe UI", Roboto, Helvetica, sans-serif;
-  --font-sans: "Aileron", "SF Pro Display", -apple-system,
+  --font-sans: "Mulish", "SF Pro Display", -apple-system,
     system-ui, "Segoe UI", Roboto, Helvetica, sans-serif;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
@@ -599,7 +610,7 @@ h1, h2, h3, h4, h5, h6 {
 - **Focus:** Keep focus indicators visible on every interactive surface, including selected-blue backgrounds and dialogs.
 - **Semantic controls:** Use proper labels, button names, validation messages, ARIA state, and keyboard interaction rather than relying on a color cue.
 - **Health information:** Show measurement units, date/time or measurement period, and source/context when relevant. Do not interpret health values by an accent color alone.
-- **Density:** The source type scale contains 10–12px auxiliary roles; increase size wherever the text is required for a medical decision or to complete a core user flow.
+- **Density:** The type scale starts at 12px for supporting text; use at least 16px for key data, essential form labels and reading text.
 - **Motion and feedback:** Communicate state changes in text where appropriate; honor reduced-motion preferences for transitions.
 - **Testing:** Review actual screens on mobile, desktop, and varied display settings. Ratios documented above apply to the specified solid color pairs, not automatically to translucent overlays, shadows, icons, or images.
 
@@ -607,10 +618,12 @@ h1, h2, h3, h4, h5, h6 {
 
 ### Reference Products
 
+- **[Twenty](https://twenty.com/es/product):** tables, filters, detail panels, and forms.
+
 - **[Attio](https://attio.com/):** inspiration for administrative clarity, dense information presentation, quiet structure, and contextual actions.
 - **[Linear](https://linear.app/):** inspiration for precision, typographic rhythm, compact geometry, restrained hierarchy, and focused workflows.
 
-These products serve different purposes, but their administrative interfaces inform Nightingale's visual craft. They are references, not templates: do not copy their branding, trademarks, proprietary layouts, or functionality. Nightingale keeps its own HealthTech administrative scope, Anek Latin + Aileron pairing, Phosphor iconography, and approved light palette.
+These products serve different purposes, but their administrative interfaces inform Nightingale's visual craft. Use their interface elements and patterns. Keep Nightingale’s brand and scope; do not copy marks or add their functions. Nightingale keeps its own HealthTech administrative scope, Montserrat + Mulish pairing, Phosphor iconography, and approved light palette.
 
 ### Required UX Process
 
@@ -618,8 +631,8 @@ Always apply [`.agents/laws-of-ux/SKILL.md`](.agents/laws-of-ux/SKILL.md) to eve
 
 ### Asset References
 
-- [Anek Latin by Ek Type](https://ektype.in/anek-latin.html) for titles and headings.
-- [Aileron by Sora Sagano / Dot Colon](https://www.dotcolon.net/font/aileron/) for general interface and reading text.
+- [Montserrat on Google Fonts](https://fonts.google.com/specimen/Montserrat) for titles and headings.
+- [Mulish on Google Fonts](https://fonts.google.com/specimen/Mulish) for general interface and reading text.
 - [Phosphor Icons](https://phosphoricons.com/) for interface iconography.
 
 ---

@@ -1,5 +1,26 @@
 # SaaS interface design rules
 
+## Revisión aprobada del 2026-11-09
+
+El plan [P-20261109-22](tasks/P-20261109-22-interface-refresh/plan.md) fija estas reglas de presentación. No cambia dominio ni contratos.
+
+- Montserrat para títulos y encabezados; Mulish para lectura, navegación, tablas, formularios y controles. Pesos reales 400/500/600, archivos locales con origen y licencia.
+- La sincronización normal es invisible: sin columnas, etiquetas, contadores, bordes discontinuos, botones ni avisos de proceso. Los reintentos automáticos y la falta de red que permite trabajo local no interrumpen.
+- Los problemas que exigen una decisión aparecen junto al dato y en «Por revisar». Su enlace solo aparece si hay intervención pendiente. Diagnóstico conserva los datos técnicos fuera del uso diario.
+- «Cita guardada» o «Cambios guardados» confirma persistencia local. No promete reserva compartida, mensaje enviado ni horario liberado. El resultado desconocido conserva la misma intención e impide duplicarla.
+- Las direcciones de lectura terminan en ciudad y estado, sin país ni separadores vacíos. País almacenado/editable y país emisor de documentos se conservan.
+- Ocultar columna y filtro Profesional solo para el dueño con un único profesional disponible. Asistentes y cuentas con varios profesionales lo conservan. No inferir rol por canManage ni quitar professionalId.
+- Conservar Servicio y su dato actual; no añadir motivo de visita.
+- Tomar de Linear, Attio y Twenty navegación, barras compactas, tablas, filtros, paneles y formularios. Conservar azul propio, Phosphor y alcance de Nightingale.
+- Semana parte de 96 px/hora y al menos 160 px/día, con desplazamiento propio, horas/cabeceras identificables y eventos sin taparse. La muestra se revisa antes de llevar las medidas al producto.
+
+
+## Reglas tipográficas del 2026-11-12
+
+- **Longitud de lectura:** entre 45 y 75 caracteres por línea completa de texto explicativo, incluidos espacios, cuando el ancho lo permita. Usar unos 60ch como punto de partida y revisar el texto real. No imponer un ancho mínimo en móvil, tarjetas o modales estrechos; nombres, fechas, etiquetas, celdas y últimas líneas pueden ser más cortos.
+- **Tamaños de 4 en 4:** 12, 16, 20, 24, 28, 32px y siguientes múltiplos de 4. Usar los roles de `DESIGN.md`, sin tamaños intermedios ni texto inferior a 12px. Conservar el aumento de fuente y el zoom que elija el usuario.
+- **Interlineado por función:** títulos compactos (1.00–1.25); lectura a partir de 1.50; texto de apoyo de 12px con más aire (aprox. 1.67). Revisar títulos de varias líneas y conservar la relación visual entre etiquetas, datos y grupos.
+
 ## Core idea
 
 Good code does not make a SaaS product look professional. Clear choices, strong structure, and consistent details do.
@@ -18,9 +39,9 @@ Users care about the result. Guide them toward it and remove anything that gets 
 
 6. **Use `DESIGN.md` as the source of truth.** Define the type scale, spacing, colors, borders, corners, icons, and component states.
 7. **Use one name for each action.** Do not use “Delete,” “Remove,” and “Trash” for the same result.
-8. **Keep text styles consistent.** Use Anek Latin for titles and headings, and Aileron for general interface and reading text. Define clear styles for body text, labels, and supporting details.
+8. **Keep text styles consistent.** Use Montserrat for titles and headings, and Mulish for general interface and reading text. Define clear styles for body text, labels, and supporting details.
 9. **Use strong type contrast.** Important text must stand apart from supporting text, but small text must remain easy to read.
-10. **Use technical text styles with care.** Keep IDs, dates, metrics, units, and code in Aileron; use tabular numerals when alignment matters instead of introducing another font family.
+10. **Use technical text styles with care.** Keep IDs, dates, metrics, units, and code in Mulish; use tabular numerals when alignment matters instead of introducing another font family.
 11. **Keep corner shapes consistent.** Use a small set of corner sizes and give each one a purpose.
 12. **Use Phosphor Icons as the one icon set.** Keep icon size, weight, and style consistent. Do not mix icon libraries or use emojis as interface icons.
 
@@ -47,7 +68,7 @@ Users care about the result. Guide them toward it and remove anything that gets 
 ## 5. Show progress and results
 
 27. **Respond to every action.** Give immediate proof that the product received the user’s input.
-28. **Show progress for slow work.** Use a spinner, skeleton, progress bar, or useful status message.
+28. **Show progress for slow user work.** Use a spinner, skeleton, progress bar, or useful status message. Keep normal background sync silent.
 29. **Show clear completion.** The user should not need to refresh the page to check if something worked.
 30. **Mark useful milestones.** Celebrate meaningful progress, not every small action.
 31. **Show the value created.** Display useful results such as time saved or work completed.
